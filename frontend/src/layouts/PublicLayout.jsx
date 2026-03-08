@@ -1,6 +1,7 @@
 // frontend/src/layouts/PublicLayout.jsx
 import { Outlet } from "react-router-dom";
 import PublicNavbar from "../components/PublicNavbar";
+import Footer from "../components/Footer";
 
 export default function PublicLayout() {
   return (
@@ -9,6 +10,7 @@ export default function PublicLayout() {
       <main style={{ paddingTop: 18 }}>
         <Outlet />
       </main>
+      <Footer />
     </>
   );
 }
