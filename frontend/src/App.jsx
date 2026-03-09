@@ -14,6 +14,7 @@ import About from "./pages/public/About";
 import Contact from "./pages/public/Contact";
 import PartyPackages from "./pages/public/PartyPackages";
 import ClassDetails from "./pages/public/ClassDetails";
+import PlayArea from "./pages/public/PlayArea";
 import PaymentCard from "./pages/public/PaymentCard";
 import PaymentCash from "./pages/public/PaymentCash";
 import PaymentBankTransfer from "./pages/public/PaymentBankTransfer";
@@ -94,7 +95,9 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/party-packages" element={<PartyPackages />} />
-            <Route path="/class/:id" element={<ClassDetails />} />
+            <Route path="/classes" element={<ClassDetails />} />
+            <Route path="/play-area" element={<PlayArea />} />
+          
 
             {/* Payment screens (UI only) */}
             <Route path="/pay/card" element={<PaymentCard />} />

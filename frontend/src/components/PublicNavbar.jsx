@@ -1,6 +1,7 @@
-// frontend/src/components/PublicNavbar.jsx
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
+import { useEffect, useRef, useState } from "react";
+import "../global.css";
 
 export default function PublicNavbar() {
   const { token, role, logout } = useAuth();
@@ -9,20 +10,45 @@ export default function PublicNavbar() {
 
   const isParent = !!token && role === "PARENT";
 
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const dropdownRef = useRef(null);
+
   const navItemClass = ({ isActive }) =>
     "navLink" + (isActive ? " navLinkActive" : "");
 
   const onLogout = () => {
     logout();
-    nav("/"); // go home after logout
+    nav("/");
   };
+
+  const toggleDropdown = (menu) => {
+    setOpenDropdown(openDropdown === menu ? null : menu);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="navWrap">
       <div className="navInner">
         {/* Brand */}
         <Link to="/" className="brand">
-          <span className="brandIcon">🧸</span>
+          <span className="brandIcon">
+            <img
+              src="profile.png"
+              width="44"
+              style={{ borderRadius: "5px" }}
+              alt="Profile"
+            />
+          </span>
           <span className="brandText">
             <span className="brandTitle">Poddo Playhouse</span>
             <span className="brandTag">Fun • Safe • Learning</span>
@@ -34,12 +60,43 @@ export default function PublicNavbar() {
           <NavLink className={navItemClass} to="/">
             Home
           </NavLink>
-          <NavLink className={navItemClass} to="/services">
-            Services
-          </NavLink>
-          <NavLink className={navItemClass} to="/party-packages">
-            Party Area
-          </NavLink>
+
+          <div className="navDropdown" ref={dropdownRef}>
+            <span
+              className={`navLink ${openDropdown === "services" ? "navLinkActive" : ""}`}
+              onClick={() => toggleDropdown("services")}
+              style={{ cursor: "pointer" }}
+            >
+              Services
+            </span>
+
+            {openDropdown === "services" && (
+              <div className="dropdownMenu">
+                <Link
+                  to="/classes"
+                  className="dropdownItem"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  Classes
+                </Link>
+                <Link
+                  to="/play-area"
+                  className="dropdownItem"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  Play Area
+                </Link>
+                <Link
+                  to="/party-packages"
+                  className="dropdownItem"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  Party Area
+                </Link>
+              </div>
+            )}
+          </div>
+
           <NavLink className={navItemClass} to="/about">
             About
           </NavLink>
