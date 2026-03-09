@@ -9,9 +9,13 @@ export default function AdminInquiries() {
   const load = async () => {
     setErr("");
     try {
-      // If you already have: GET /api/inquiry (admin/receptionist)
       const res = await api.get("/api/inquiry");
-      setRows(res.data?.inquiries || res.data || []);
+      const data = Array.isArray(res.data?.inquiries)
+        ? res.data.inquiries
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+      setRows(data);
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to load inquiries (Unauthorized?)");
     }
@@ -21,9 +25,10 @@ export default function AdminInquiries() {
 
   const cols = [
     { key: "id", header: "ID" },
-    { key: "name", header: "Name" },
+    { key: "customer_name", header: "Name" },
     { key: "email", header: "Email" },
     { key: "phone", header: "Phone" },
+    { key: "inquiry_type", header: "Type" },
     { key: "message", header: "Message" },
     { key: "status", header: "Status" },
     { key: "created_at", header: "Created", render: (r) => (r.created_at ? new Date(r.created_at).toLocaleString() : "-") },
