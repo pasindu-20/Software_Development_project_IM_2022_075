@@ -112,7 +112,7 @@ export default function AdminEventsClasses() {
     } catch (e2) {
       setErr(
         e2?.response?.data?.message ||
-          (editingId ? "Failed to update class / event" : "Failed to create class / event")
+        (editingId ? "Failed to update class / event" : "Failed to create class / event")
       );
     } finally {
       setBusy(false);
@@ -175,6 +175,8 @@ export default function AdminEventsClasses() {
 
       await load();
     } catch (e) {
+      console.error("Delete error:", e);
+      console.error("Delete error response:", e?.response?.data);
       setErr(e?.response?.data?.message || "Failed to delete class / event");
     }
   };
@@ -360,6 +362,7 @@ export default function AdminEventsClasses() {
         <input
           type="date"
           value={eventDate}
+          min={new Date().toISOString().split("T")[0]}
           onChange={(e) => setEventDate(e.target.value)}
         />
 

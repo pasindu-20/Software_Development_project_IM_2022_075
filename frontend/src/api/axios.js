@@ -1,4 +1,3 @@
-// frontend/src/api/axios.js
 import axios from "axios";
 
 // If you have VITE_API_URL in .env, it will use that.

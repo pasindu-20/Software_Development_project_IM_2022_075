@@ -148,9 +148,10 @@ export default function App() {
           <Route path="/auth/forgot" element={<ForgotPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
 
+
           {/* Change password (JWT required, any role) */}
           <Route
-            path="/auth/changepassword"
+            path="/auth/change-password"
             element={
               <ProtectedRoute>
                 <ChangePassword />

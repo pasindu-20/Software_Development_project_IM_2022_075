@@ -24,13 +24,13 @@ async function ensurePlayAreasTable() {
 
   try {
     await db.query(`ALTER TABLE play_areas ADD COLUMN description TEXT NULL`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE play_areas ADD COLUMN age_group VARCHAR(100) NULL`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE play_areas ADD COLUMN image_url TEXT NULL`);
-  } catch (err) {}
+  } catch (err) { }
 }
 
 async function ensureClassesTableShape() {
@@ -57,34 +57,34 @@ async function ensureClassesTableShape() {
 
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN description TEXT NULL AFTER title`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN image_url TEXT NULL AFTER description`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN age_min INT NULL AFTER image_url`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN age_max INT NULL AFTER age_min`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN item_type ENUM('CLASS','EVENT') NOT NULL DEFAULT 'CLASS' AFTER fee`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN instructor_id INT NULL AFTER item_type`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN event_date DATE NULL AFTER instructor_id`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN start_time TIME NULL AFTER event_date`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN end_time TIME NULL AFTER start_time`);
-  } catch (err) {}
+  } catch (err) { }
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
-  } catch (err) {}
+  } catch (err) { }
 }
 
 exports.createStaff = async (req, res) => {
@@ -146,30 +146,93 @@ exports.listStaff = async (req, res) => {
   }
 };
 
+async function tableExists(tableName) {
+  const [rows] = await db.query(
+    `
+    SELECT COUNT(*) AS count
+    FROM information_schema.tables
+    WHERE table_schema = DATABASE()
+      AND table_name = ?
+    `,
+    [tableName]
+  );
+  return Number(rows[0]?.count || 0) > 0;
+}
+
+async function columnExists(tableName, columnName) {
+  const [rows] = await db.query(
+    `
+    SELECT COUNT(*) AS count
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = ?
+      AND column_name = ?
+    `,
+    [tableName, columnName]
+  );
+  return Number(rows[0]?.count || 0) > 0;
+}
+
+async function getPaymentsDateColumn() {
+  if (!(await tableExists("payments"))) return null;
+
+  if (await columnExists("payments", "paid_at")) return "paid_at";
+  if (await columnExists("payments", "created_at")) return "created_at";
+  if (await columnExists("payments", "updated_at")) return "updated_at";
+
+  return null;
+}
+
+
+
 exports.dashboardCards = async (req, res) => {
   try {
-    const [[inquiries]] = await db.query(`
-      SELECT
-        COUNT(*) AS totalInquiries,
-        SUM(CASE WHEN status = 'NEW' THEN 1 ELSE 0 END) AS newInquiries
-      FROM customer_inquiries
-    `);
+    let totalInquiries = 0;
+    let newInquiries = 0;
+    let totalEnrollments = 0;
+    let totalRevenue = 0;
 
-    const [[enrollments]] = await db.query(`
-      SELECT COUNT(*) AS totalEnrollments FROM enrollments
-    `);
+    if (await tableExists("customer_inquiries")) {
+      const [[inquiries]] = await db.query(`
+    SELECT
+      COUNT(*) AS totalInquiries,
+      SUM(
+        CASE
+          WHEN created_at >= NOW() - INTERVAL 7 DAY THEN 1
+          ELSE 0
+        END
+      ) AS newInquiries
+    FROM customer_inquiries
+  `);
 
-    const [[revenue]] = await db.query(`
-      SELECT COALESCE(SUM(amount), 0) AS totalRevenue
-      FROM payments
-      WHERE payment_status IN ('SUCCESS', 'PAID')
-    `);
+      totalInquiries = Number(inquiries?.totalInquiries || 0);
+      newInquiries = Number(inquiries?.newInquiries || 0);
+    }
+
+    if (await tableExists("enrollments")) {
+      const [[enrollments]] = await db.query(`
+        SELECT COUNT(*) AS totalEnrollments
+        FROM enrollments
+      `);
+
+      totalEnrollments = Number(enrollments?.totalEnrollments || 0);
+    }
+
+    if (await tableExists("payments")) {
+      const [[revenue]] = await db.query(`
+        SELECT COALESCE(SUM(amount), 0) AS totalRevenue
+        FROM payments
+        WHERE payment_status IN ('SUCCESS', 'PAID')
+      `);
+
+      totalRevenue = Number(revenue?.totalRevenue || 0);
+    }
 
     res.json({
-      totalInquiries: Number(inquiries?.totalInquiries || 0),
-      newInquiries: Number(inquiries?.newInquiries || 0),
-      totalEnrollments: Number(enrollments?.totalEnrollments || 0),
-      totalRevenue: Number(revenue?.totalRevenue || 0),
+      totalInquiries,
+      newInquiries,
+      totalEnrollments,
+      totalRevenue,
     });
   } catch (err) {
     console.error("dashboardCards error:", err);
@@ -200,12 +263,23 @@ exports.inquiriesByStatus = async (req, res) => {
 
 exports.monthlyRevenue = async (req, res) => {
   try {
+    const hasPaymentsTable = await tableExists("payments");
+    if (!hasPaymentsTable) {
+      return res.json([]);
+    }
+
+    const dateColumn = await getPaymentsDateColumn();
+    if (!dateColumn) {
+      return res.json([]);
+    }
+
     const [rows] = await db.query(`
-      SELECT DATE_FORMAT(created_at, '%Y-%m') AS month,
+      SELECT DATE_FORMAT(${dateColumn}, '%Y-%m') AS month,
              COALESCE(SUM(amount), 0) AS total
       FROM payments
       WHERE payment_status IN ('SUCCESS', 'PAID')
-      GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        AND ${dateColumn} IS NOT NULL
+      GROUP BY DATE_FORMAT(${dateColumn}, '%Y-%m')
       ORDER BY month ASC
     `);
 
@@ -659,5 +733,165 @@ exports.createPlayArea = async (req, res) => {
   } catch (err) {
     console.error("createPlayArea error:", err);
     res.status(500).json({ message: "Failed to create play area" });
+  }
+};
+
+exports.updatePlayArea = async (req, res) => {
+  try {
+    await ensurePlayAreasTable();
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Valid id is required" });
+    }
+
+    const { name, description, age_group, image_url, capacity, price, status } = req.body;
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ message: "name is required" });
+    }
+
+    if (!Number.isFinite(Number(capacity)) || Number(capacity) <= 0) {
+      return res.status(400).json({ message: "capacity must be a positive number" });
+    }
+
+    if (!Number.isFinite(Number(price)) || Number(price) < 0) {
+      return res.status(400).json({ message: "price must be 0 or more" });
+    }
+
+    const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
+
+    const [result] = await db.query(
+      `UPDATE play_areas
+       SET name = ?, description = ?, age_group = ?, image_url = ?, capacity = ?, price = ?, status = ?
+       WHERE id = ?`,
+      [
+        String(name).trim(),
+        description ? String(description).trim() : null,
+        age_group ? String(age_group).trim() : null,
+        image_url ? String(image_url).trim() : null,
+        Number(capacity),
+        Number(price),
+        safeStatus,
+        id,
+      ]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Play area not found" });
+    }
+
+    res.json({ message: "Play area updated successfully" });
+  } catch (err) {
+    console.error("updatePlayArea error:", err);
+    res.status(500).json({ message: "Failed to update play area" });
+  }
+};
+
+exports.updatePlayAreaStatus = async (req, res) => {
+  try {
+    await ensurePlayAreasTable();
+
+    const id = Number(req.params.id);
+    const { status } = req.body;
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Valid id is required" });
+    }
+
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+      return res.status(400).json({ message: "status must be ACTIVE or INACTIVE" });
+    }
+
+    const [result] = await db.query(
+      `UPDATE play_areas SET status = ? WHERE id = ?`,
+      [status, id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Play area not found" });
+    }
+
+    res.json({ message: `Play area marked as ${status}` });
+  } catch (err) {
+    console.error("updatePlayAreaStatus error:", err);
+    res.status(500).json({ message: "Failed to update play area status" });
+  }
+};
+
+exports.deletePlayArea = async (req, res) => {
+  try {
+    await ensurePlayAreasTable();
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Valid id is required" });
+    }
+
+    const [result] = await db.query(
+      `DELETE FROM play_areas WHERE id = ?`,
+      [id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Play area not found" });
+    }
+
+    res.json({ message: "Play area deleted successfully" });
+  } catch (err) {
+    console.error("deletePlayArea error:", err);
+    res.status(500).json({ message: "Failed to delete play area" });
+  }
+};
+
+
+exports.listReservations = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        b.id,
+        b.booking_type,
+        b.booking_date,
+        b.time_slot,
+        b.status,
+        b.notes,
+        b.created_at,
+        u.full_name AS customer_name,
+        u.phone AS customer_phone
+      FROM bookings b
+      LEFT JOIN users u ON u.id = b.user_id
+      ORDER BY b.created_at DESC
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("listReservations error:", err);
+    res.status(500).json({ message: "Failed to load reservations" });
+  }
+};
+
+exports.listPayments = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        p.id,
+        p.payment_no,
+        p.amount,
+        p.payment_method,
+        p.payment_status,
+        p.transaction_ref,
+        p.paid_at,
+        e.child_id,
+        u.full_name AS customer_name
+      FROM payments p
+      LEFT JOIN enrollments e ON e.id = p.enrollment_id
+      LEFT JOIN users u ON u.id = e.child_id
+      ORDER BY p.paid_at DESC, p.id DESC
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("listPayments error:", err);
+    res.status(500).json({ message: "Failed to load payments" });
   }
 };

@@ -26,5 +26,14 @@ router.delete("/events-classes/:id", ...adminOnly, adminController.deleteEventCl
 // play areas
 router.get("/play-areas", ...adminOnly, adminController.listPlayAreas);
 router.post("/play-areas", ...adminOnly, adminController.createPlayArea);
+router.put("/play-areas/:id", ...adminOnly, adminController.updatePlayArea);
+router.delete("/play-areas/:id", ...adminOnly, adminController.deletePlayArea);
+router.patch("/play-areas/:id/status", ...adminOnly, adminController.updatePlayAreaStatus);
+
+//manage reservation
+router.get("/reservations", ...adminOnly, adminController.listReservations);
+
+//manage payments
+router.get("/payments", ...adminOnly, adminController.listPayments);
 
 module.exports = router;
