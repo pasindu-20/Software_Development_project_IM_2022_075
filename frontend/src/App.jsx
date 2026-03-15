@@ -104,7 +104,7 @@ export default function App() {
             <Route path="/pay/cash" element={<PaymentCash />} />
             <Route path="/pay/bank-transfer" element={<PaymentBankTransfer />} />
 
-            {/* ✅ Parent routes inside PublicLayout to keep navbar */}
+            {/* Parent routes inside PublicLayout to keep navbar */}
             <Route
               path="/profile"
               element={
@@ -146,7 +146,7 @@ export default function App() {
           <Route path="/auth/signin" element={<SignIn />} />
           <Route path="/auth/signup" element={<SignUp />} />
           <Route path="/auth/forgot" element={<ForgotPassword />} />
-          <Route path="/auth/resetpassword" element={<ResetPassword />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
 
           {/* Change password (JWT required, any role) */}
           <Route

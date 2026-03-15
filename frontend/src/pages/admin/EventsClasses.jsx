@@ -155,6 +155,30 @@ export default function AdminEventsClasses() {
     }
   };
 
+  const deleteRow = async (row) => {
+    const ok = window.confirm(
+      `Are you sure you want to delete this ${row.item_type?.toLowerCase() || "item"}?\n\n${row.title}`
+    );
+
+    if (!ok) return;
+
+    setErr("");
+    setInfo("");
+
+    try {
+      await api.delete(`/api/admin/events-classes/${row.id}`);
+      setInfo("Class / Event deleted successfully");
+
+      if (editingId === row.id) {
+        resetForm();
+      }
+
+      await load();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to delete class / event");
+    }
+  };
+
   const cols = [
     { key: "id", header: "ID" },
     { key: "item_type", header: "Type" },
@@ -227,6 +251,18 @@ export default function AdminEventsClasses() {
             }}
           >
             {r.status === "ACTIVE" ? "Inactivate" : "Activate"}
+          </button>
+
+          <button
+            type="button"
+            className="kidBtn"
+            onClick={() => deleteRow(r)}
+            style={{
+              padding: "8px 12px",
+              background: "#7f1d1d",
+            }}
+          >
+            Delete
           </button>
         </div>
       ),

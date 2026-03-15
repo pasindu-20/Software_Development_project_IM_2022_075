@@ -569,6 +569,32 @@ exports.updateEventClassStatus = async (req, res) => {
   }
 };
 
+exports.deleteEventClass = async (req, res) => {
+  try {
+    await ensureClassesTableShape();
+
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Valid id is required" });
+    }
+
+    const [result] = await db.query(
+      `DELETE FROM classes WHERE id = ?`,
+      [id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Class / Event not found" });
+    }
+
+    res.json({ message: "Class / Event deleted successfully" });
+  } catch (err) {
+    console.error("deleteEventClass error:", err);
+    res.status(500).json({ message: "Failed to delete class / event" });
+  }
+};
+
 exports.listPlayAreas = async (req, res) => {
   try {
     await ensurePlayAreasTable();

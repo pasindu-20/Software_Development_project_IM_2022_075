@@ -21,6 +21,7 @@ router.get("/events-classes", ...adminOnly, adminController.listEventsClasses);
 router.post("/events-classes", ...adminOnly, adminController.createEventClass);
 router.put("/events-classes/:id", ...adminOnly, adminController.updateEventClass);
 router.patch("/events-classes/:id/status", ...adminOnly, adminController.updateEventClassStatus);
+router.delete("/events-classes/:id", ...adminOnly, adminController.deleteEventClass);
 
 // play areas
 router.get("/play-areas", ...adminOnly, adminController.listPlayAreas);
