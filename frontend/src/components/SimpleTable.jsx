@@ -1,6 +1,13 @@
 export default function SimpleTable({ columns = [], rows = [] }) {
   return (
-    <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #eee", borderRadius: 12 }}>
+    <div
+      style={{
+        overflowX: "auto",
+        background: "#fff",
+        border: "1px solid #eee",
+        borderRadius: 12,
+      }}
+    >
       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
         <thead>
           <tr style={{ background: "#f8fafc" }}>
@@ -33,8 +40,16 @@ export default function SimpleTable({ columns = [], rows = [] }) {
             rows.map((r, idx) => (
               <tr key={r.id || idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
                 {columns.map((c) => (
-                  <td key={c.key} style={{ padding: "12px 14px", fontSize: 14, color: "#0f172a" }}>
-                    {r?.[c.key] ?? "-"}
+                  <td
+                    key={c.key}
+                    style={{
+                      padding: "12px 14px",
+                      fontSize: 14,
+                      color: "#0f172a",
+                      verticalAlign: "top",
+                    }}
+                  >
+                    {typeof c.render === "function" ? c.render(r) : r?.[c.key] ?? "-"}
                   </td>
                 ))}
               </tr>

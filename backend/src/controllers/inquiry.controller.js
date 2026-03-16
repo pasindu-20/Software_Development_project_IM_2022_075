@@ -1,9 +1,58 @@
 const db = require("../config/db");
 const { audit } = require("../utils/audit");
 
+async function ensureInquiryTables() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS customer_inquiries (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      customer_name VARCHAR(150) NOT NULL,
+      phone VARCHAR(50) NOT NULL,
+      email VARCHAR(150) NULL,
+      inquiry_type VARCHAR(50) NOT NULL,
+      message TEXT NULL,
+      preferred_program_id INT NULL,
+      assigned_to INT NULL,
+      status ENUM('NEW','CONTACTED','FOLLOW_UP','CONVERTED','CLOSED') NOT NULL DEFAULT 'NEW',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  try {
+    await db.query(
+      `ALTER TABLE customer_inquiries ADD COLUMN assigned_to INT NULL AFTER preferred_program_id`
+    );
+  } catch (err) {}
+
+  try {
+    await db.query(
+      `ALTER TABLE customer_inquiries ADD COLUMN status ENUM('NEW','CONTACTED','FOLLOW_UP','CONVERTED','CLOSED') NOT NULL DEFAULT 'NEW' AFTER assigned_to`
+    );
+  } catch (err) {}
+
+  try {
+    await db.query(
+      `ALTER TABLE customer_inquiries ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+    );
+  } catch (err) {}
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS inquiry_followups (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      inquiry_id INT NOT NULL,
+      user_id INT NOT NULL,
+      note TEXT NOT NULL,
+      followup_date DATE NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+}
+
 // PUBLIC: Create inquiry
 exports.createInquiry = async (req, res) => {
   try {
+    await ensureInquiryTables();
+
     const {
       customer_name,
       phone,
@@ -21,9 +70,17 @@ exports.createInquiry = async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO customer_inquiries
-       (customer_name, phone, email, inquiry_type, message, preferred_program_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [customer_name, phone, email, inquiry_type, message, preferred_program_id]
+       (customer_name, phone, email, inquiry_type, message, preferred_program_id, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        customer_name,
+        phone,
+        email,
+        inquiry_type,
+        message,
+        preferred_program_id,
+        "NEW",
+      ]
     );
 
     await audit({
@@ -47,6 +104,8 @@ exports.createInquiry = async (req, res) => {
 // PROTECTED: List inquiries (Admin/Receptionist)
 exports.getAllInquiries = async (req, res) => {
   try {
+    await ensureInquiryTables();
+
     const { status, assigned_to } = req.query;
 
     let sql = `SELECT * FROM customer_inquiries WHERE 1=1`;
@@ -83,6 +142,8 @@ exports.getAllInquiries = async (req, res) => {
 // PROTECTED: Assign inquiry to staff
 exports.assignInquiry = async (req, res) => {
   try {
+    await ensureInquiryTables();
+
     const inquiryId = Number(req.params.id);
     const { assigned_to } = req.body;
 
@@ -113,6 +174,8 @@ exports.assignInquiry = async (req, res) => {
 // PROTECTED: Update inquiry status
 exports.updateInquiryStatus = async (req, res) => {
   try {
+    await ensureInquiryTables();
+
     const inquiryId = Number(req.params.id);
     const { status } = req.body;
 
@@ -144,6 +207,8 @@ exports.updateInquiryStatus = async (req, res) => {
 // PROTECTED: Add follow-up note
 exports.addFollowup = async (req, res) => {
   try {
+    await ensureInquiryTables();
+
     const inquiryId = Number(req.params.id);
     const { note, followup_date = null } = req.body;
 
@@ -175,6 +240,8 @@ exports.addFollowup = async (req, res) => {
 // PROTECTED: Get follow-ups for inquiry
 exports.getFollowups = async (req, res) => {
   try {
+    await ensureInquiryTables();
+
     const inquiryId = Number(req.params.id);
 
     const [rows] = await db.query(

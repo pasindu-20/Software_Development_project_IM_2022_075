@@ -1,8 +1,12 @@
-// frontend/src/pages/public/PlayArea.jsx
 import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { Clock, Users, Shield, Sparkles, ArrowRight } from "lucide-react";
+import { listPublicPlayAreasApi } from "../../api/publicApi";
 
 export default function PlayArea() {
+  const [zones, setZones] = useState([]);
+  const [err, setErr] = useState("");
+
   const features = [
     {
       icon: Shield,
@@ -26,36 +30,31 @@ export default function PlayArea() {
     },
   ];
 
-  const zones = [
-    {
-      name: "Toddler Zone",
-      age: "1-3 years",
-      description:
-        "Gentle play structures, soft play mats, and sensory toys.",
-      image:
-        "https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=400",
-    },
-    {
-      name: "Junior Zone",
-      age: "4-7 years",
-      description:
-        "Slides, climbing frames, ball pits, and interactive games.",
-      image:
-        "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400",
-    },
-    {
-      name: "Active Zone",
-      age: "8-12 years",
-      description:
-        "Challenging obstacles, sports activities, and team games.",
-      image:
-        "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400",
-    },
-  ];
+  useEffect(() => {
+    const run = async () => {
+      setErr("");
+      try {
+        const res = await listPublicPlayAreasApi();
+        setZones(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        console.error("Play area load error:", e);
+        setZones([]);
+        setErr(e?.response?.data?.message || "Failed to load play areas");
+      }
+    };
+
+    run();
+  }, []);
+
+  const heroImage = useMemo(() => {
+    return (
+      zones.find((zone) => zone.image_url)?.image_url ||
+      "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800"
+    );
+  }, [zones]);
 
   return (
     <div className="playAreaPage">
-      {/* Hero Section */}
       <section className="playAreaHero">
         <div className="playAreaContainer">
           <div className="playAreaHeroGrid">
@@ -64,8 +63,8 @@ export default function PlayArea() {
               <h1 className="playAreaHeroTitle">Indoor Adventure Awaits</h1>
               <p className="playAreaHeroDesc">
                 A world of fun and excitement where children can explore, climb,
-                slide, and play in a safe, climate-controlled environment
-                designed for endless entertainment.
+                slide, and play in a safe, climate-controlled environment designed
+                for endless entertainment.
               </p>
 
               <div className="playAreaBtnRow">
@@ -73,25 +72,16 @@ export default function PlayArea() {
                   Book Now
                   <ArrowRight size={18} />
                 </Link>
-
-                <a href="#pricing" className="playAreaBtnSecondary">
-                  View Pricing
-                </a>
               </div>
             </div>
 
             <div className="playAreaHeroImageWrap">
-              <img
-                src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800"
-                alt="Play area"
-                className="playAreaHeroImage"
-              />
+              <img src={heroImage} alt="Play area" className="playAreaHeroImage" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
       <section className="playAreaSection">
         <div className="playAreaContainer">
           <div className="playAreaFeaturesGrid">
@@ -111,7 +101,6 @@ export default function PlayArea() {
         </div>
       </section>
 
-      {/* Play Zones */}
       <section className="playAreaMutedSection">
         <div className="playAreaContainer">
           <div className="playAreaSectionHeader">
@@ -122,12 +111,17 @@ export default function PlayArea() {
             </p>
           </div>
 
+          {err ? <div className="classListError">{err}</div> : null}
+
           <div className="playAreaZonesGrid">
-            {zones.map((zone, index) => (
-              <div key={index} className="playAreaZoneCard">
+            {zones.map((zone) => (
+              <div key={zone.id} className="playAreaZoneCard">
                 <div className="playAreaZoneImageWrap">
                   <img
-                    src={zone.image}
+                    src={
+                      zone.image_url ||
+                      "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800"
+                    }
                     alt={zone.name}
                     className="playAreaZoneImage"
                   />
@@ -136,90 +130,66 @@ export default function PlayArea() {
                 <div className="playAreaZoneBody">
                   <div className="playAreaZoneHeader">
                     <h3 className="playAreaZoneTitle">{zone.name}</h3>
-                    <span className="playAreaZoneAge">{zone.age}</span>
+                    <span className="playAreaZoneAge">
+                      {zone.age_group || "All ages"}
+                    </span>
                   </div>
-                  <p className="playAreaZoneDesc">{zone.description}</p>
+
+                  <p className="playAreaZoneDesc">
+                    {zone.description || "Play area details coming soon."}
+                  </p>
+
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "12px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700 }}>
+                      Capacity: {Number(zone.capacity || 0)} kids
+                    </div>
+
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        fontSize: "18px",
+                        color: "#111827",
+                      }}
+                    >
+                      LKR {Number(zone.price || 0).toFixed(0)}
+                      <span
+                        style={{
+                          fontWeight: 500,
+                          fontSize: "13px",
+                          color: "#6b7280",
+                          marginLeft: "4px",
+                        }}
+                      >
+                        /visit
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: "16px" }}>
+                    <Link to="/profile/book" className="playAreaPriceBtnSecondary">
+                      Book This Zone
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {zones.length === 0 && !err ? (
+            <div className="classListBottomCard">No active play areas yet.</div>
+          ) : null}
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="playAreaSection">
-        <div className="playAreaContainer">
-          <div className="playAreaSectionHeader">
-            <h2 className="playAreaSectionTitle">Flexible Pricing</h2>
-            <p className="playAreaSectionDesc">
-              Choose the option that works best for your family's schedule.
-            </p>
-          </div>
-
-          <div className="playAreaPricingGrid">
-            {/* Hourly Pass */}
-            <div className="playAreaPriceCard">
-              <h3 className="playAreaPriceTitle">Hourly Pass</h3>
-              <div className="playAreaPriceWrap">
-                <span className="playAreaPrice">500</span>
-                <span className="playAreaPriceCurrency">LKR/hour</span>
-              </div>
-
-              <ul className="playAreaPriceList">
-                <li><span>✓</span> Access to all zones</li>
-                <li><span>✓</span> Unlimited play time</li>
-                <li><span>✓</span> Complimentary socks</li>
-              </ul>
-
-              <Link to="/profile/book" className="playAreaPriceBtnSecondary">
-                Select
-              </Link>
-            </div>
-
-            {/* Day Pass */}
-            <div className="playAreaPriceCardFeatured">
-              <div className="playAreaPopularBadge">Most Popular</div>
-
-              <h3 className="playAreaPriceTitleFeatured">Day Pass</h3>
-              <div className="playAreaPriceWrapFeatured">
-                <span className="playAreaPriceFeatured">1,200</span>
-                <span className="playAreaPriceCurrencyFeatured">LKR/day</span>
-              </div>
-
-              <ul className="playAreaPriceListFeatured">
-                <li><span>✓</span> All-day access</li>
-                <li><span>✓</span> Free snack voucher</li>
-                <li><span>✓</span> Priority entry</li>
-              </ul>
-
-              <Link to="/profile/book" className="playAreaPriceBtnFeatured">
-                Select
-              </Link>
-            </div>
-
-            {/* Monthly Pass */}
-            <div className="playAreaPriceCard">
-              <h3 className="playAreaPriceTitle">Monthly Pass</h3>
-              <div className="playAreaPriceWrap">
-                <span className="playAreaPrice">8,000</span>
-                <span className="playAreaPriceCurrency">LKR/month</span>
-              </div>
-
-              <ul className="playAreaPriceList">
-                <li><span>✓</span> Unlimited visits</li>
-                <li><span>✓</span> 10% off on parties</li>
-                <li><span>✓</span> Guest passes included</li>
-              </ul>
-
-              <Link to="/profile/book" className="playAreaPriceBtnSecondary">
-                Select
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
       <section className="playAreaCtaSection">
         <div className="playAreaContainer">
           <div className="playAreaCtaContent">

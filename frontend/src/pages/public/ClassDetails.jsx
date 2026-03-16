@@ -3,7 +3,40 @@ import { Link } from "react-router-dom";
 import { Calendar, Clock, Users, ArrowRight, Check } from "lucide-react";
 import { listPublicClassesApi } from "../../api/publicApi";
 
-export default function ClassDetails() {
+function formatDate(dateValue) {
+  if (!dateValue) return "Date will be announced";
+
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "Date will be announced";
+
+  return d.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatTime(value) {
+  if (!value) return "";
+
+  const parts = String(value).split(":");
+  const hour = Number(parts[0]);
+  const minute = Number(parts[1]);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return value;
+
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+function formatTimeRange(startTime, endTime) {
+  if (!startTime || !endTime) return "Time will be announced";
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+}
+
+export default function EventClasses() {
   const [classes, setClasses] = useState([]);
   const [err, setErr] = useState("");
 
@@ -31,10 +64,10 @@ export default function ClassDetails() {
       <section className="classListHero">
         <div className="classListContainer">
           <div className="classListHeroContent">
-            <span className="classListBadge">Our Classes</span>
-            <h1 className="classListTitle">Explore All Available Classes</h1>
+            <span className="classListBadge">Our Classes & Events</span>
+            <h1 className="classListTitle">Explore All Available Programs</h1>
             <p className="classListDesc">
-              Discover fun and enriching classes designed to help children learn and grow.
+              Discover fun and enriching programs for children.
             </p>
           </div>
         </div>
@@ -48,86 +81,174 @@ export default function ClassDetails() {
 
       <section className="classListSection">
         <div className="classListContainer">
-          <div className="classListGrid">
-            {classes.map((cls) => (
-              <div key={cls.id} className="classListCard">
-                <div className="classListImageWrap">
-                  <img
-                    src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800"
-                    alt={cls.title || "Class"}
-                    className="classListImage"
-                  />
-                  <div className="classListSpots">Available</div>
-                </div>
+          <div className="homeClassesGrid">
+            {classes.map((cls) => {
+              const imageSrc =
+                cls.image_url && String(cls.image_url).trim()
+                  ? cls.image_url
+                  : "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800";
 
-                <div className="classListBody">
-                  <div className="classListBadgeRow">
-                    <span className="classListMiniBadge">
-                      {cls.age || `${cls.age_min}-${cls.age_max} years`}
-                    </span>
+              const instructorName = cls.instructor_name || "Poddo Team";
+
+              const ageText =
+                cls.age_min != null && cls.age_max != null
+                  ? `${cls.age_min}-${cls.age_max} years`
+                  : cls.age_min != null
+                  ? `${cls.age_min}+ years`
+                  : "All age groups";
+
+              const dateText = formatDate(cls.event_date);
+              const timeText = formatTimeRange(cls.start_time, cls.end_time);
+              const typeText = cls.item_type === "EVENT" ? "Event" : "Class";
+
+              return (
+                <div key={cls.id} className="homeClassCard">
+                  <div className="homeClassImageWrap">
+                    <img
+                      src={imageSrc}
+                      alt={cls.title || "Class"}
+                      className="homeClassImage"
+                    />
+                    <div className="homeSpots">{typeText}</div>
                   </div>
 
-                  <h2 className="classListCardTitle">{cls.title}</h2>
-                  <p className="classListCardDesc">{cls.description || "Class details will appear here."}</p>
+                  <div className="homeClassBody">
+                    <div
+                      style={{
+                        display: "inline-block",
+                        background: "#fff1f2",
+                        color: "#db2777",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: "6px 12px",
+                        borderRadius: 999,
+                        marginBottom: 12,
+                      }}
+                    >
+                      {ageText}
+                    </div>
 
-                  <div className="classListInfo">
-                    <div className="classListInfoItem">
+                    <h3 className="homeClassTitle">{cls.title}</h3>
+                    <p className="homeInstructor">by {instructorName}</p>
+
+                    <div className="homeClassMeta">
                       <Calendar size={16} />
-                      <span>Kids Program</span>
+                      <span>{dateText}</span>
                     </div>
-                    <div className="classListInfoItem">
+
+                    <div className="homeClassMeta">
                       <Clock size={16} />
-                      <span>See details on enrollment</span>
+                      <span>{timeText}</span>
                     </div>
-                    <div className="classListInfoItem">
+
+                    <div className="homeClassMeta">
                       <Users size={16} />
-                      <span>Poddo Team</span>
-                    </div>
-                  </div>
-
-                  <div className="classListFooter">
-                    <div className="classListPrice">
-                      LKR {Number(cls.fee || 0).toFixed(2)}
+                      <span>
+                        {cls.description && String(cls.description).trim()
+                          ? cls.description
+                          : "Limited seats available"}
+                      </span>
                     </div>
 
-                    {isParent ? (
-                      <Link
-                        to={`/profile/enroll?class_id=${encodeURIComponent(cls.id)}`}
-                        className="classListBtnPrimary"
+                    <div
+                      style={{
+                        marginTop: 14,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 18,
+                          fontWeight: 800,
+                          color: "#111827",
+                        }}
                       >
-                        Enroll Now
-                        <ArrowRight size={16} />
-                      </Link>
-                    ) : (
-                      <Link to="/auth/signin" className="classListBtnPrimary">
-                        Sign in to Enroll
-                        <ArrowRight size={16} />
-                      </Link>
-                    )}
+                        LKR {Number(cls.fee || 0).toFixed(2)}
+                      </div>
+
+                      {isParent ? (
+                        <Link
+                          to={`/profile/enroll?class_id=${encodeURIComponent(cls.id)}`}
+                          className="homeEnrollBtn"
+                          style={{
+                            width: "auto",
+                            minWidth: 170,
+                            textAlign: "center",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            textDecoration: "none",
+                          }}
+                        >
+                          Enroll Now
+                          <ArrowRight size={16} />
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/auth/signin"
+                          className="homeEnrollBtn"
+                          style={{
+                            width: "auto",
+                            minWidth: 170,
+                            textAlign: "center",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            textDecoration: "none",
+                          }}
+                        >
+                          Sign in to Enroll
+                          <ArrowRight size={16} />
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {classes.length === 0 && !err ? (
             <div className="classListBottomCard">
-              No active classes yet.
+              No active classes or events yet.
             </div>
           ) : null}
 
           <div className="classListBottomCard">
-            <h3 className="classListBottomTitle">Why choose our classes?</h3>
+            <h3 className="classListBottomTitle">Why choose our programs?</h3>
+
             <div className="classListBenefits">
-              <div className="classListBenefitItem"><Check size={16} /><span>Friendly instructors</span></div>
-              <div className="classListBenefitItem"><Check size={16} /><span>Safe environment</span></div>
-              <div className="classListBenefitItem"><Check size={16} /><span>Age-appropriate learning</span></div>
-              <div className="classListBenefitItem"><Check size={16} /><span>Simple enrollment process</span></div>
+              <div className="classListBenefitItem">
+                <Check size={16} />
+                <span>Friendly instructors</span>
+              </div>
+              <div className="classListBenefitItem">
+                <Check size={16} />
+                <span>Safe environment</span>
+              </div>
+              <div className="classListBenefitItem">
+                <Check size={16} />
+                <span>Age-appropriate learning</span>
+              </div>
+              <div className="classListBenefitItem">
+                <Check size={16} />
+                <span>Simple enrollment process</span>
+              </div>
             </div>
 
             <div className="classListActions">
-              <Link to="/services" className="classListBtnSecondary">Back to Services</Link>
-              <Link to="/contact" className="classListBtnSecondary">Ask About Classes</Link>
+              <Link to="/services" className="classListBtnSecondary">
+                Back to Services
+              </Link>
+              <Link to="/contact" className="classListBtnSecondary">
+                Ask About Classes
+              </Link>
             </div>
           </div>
         </div>

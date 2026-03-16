@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
     setUser(data.user || null);
     setForcePasswordChange(!!data.force_password_change);
 
-    return data; // ✅ IMPORTANT: return data to SignIn page
+    return data; // IMPORTANT: return data to SignIn page
   };
 
   const logout = () => {

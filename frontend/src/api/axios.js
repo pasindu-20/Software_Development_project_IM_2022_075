@@ -1,4 +1,3 @@
-// frontend/src/api/axios.js
 import axios from "axios";
 
 // If you have VITE_API_URL in .env, it will use that.
@@ -8,7 +7,7 @@ const api = axios.create({
   withCredentials: false,
 });
 
-// ✅ Attach JWT token automatically for every request
+// Attach JWT token automatically for every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token"); // must match AuthContext key
@@ -20,7 +19,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ✅ Optional: if token expired / invalid, clear and redirect
+//  Optional: if token expired / invalid, clear and redirect
 api.interceptors.response.use(
   (res) => res,
   (error) => {

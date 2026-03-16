@@ -1,6 +1,6 @@
-// frontend/src/pages/public/Contact.jsx
 import { useState } from "react";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { createInquiryApi } from "../../api/publicApi";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -10,20 +10,48 @@ export default function Contact() {
     message: "",
   });
 
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [info, setInfo] = useState("");
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErr("");
+    setInfo("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Contact form submitted:", formData);
-    alert("Thank you for contacting us! We will get back to you soon.");
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      message: "",
-    });
+    setErr("");
+    setInfo("");
+
+    if (!formData.name.trim()) return setErr("Name is required");
+    if (!formData.phone.trim()) return setErr("Phone is required");
+    if (!formData.message.trim()) return setErr("Message is required");
+
+    setBusy(true);
+    try {
+      await createInquiryApi({
+  customer_name: formData.name.trim(),
+  email: formData.email.trim() || null,
+  phone: formData.phone.trim(),
+  inquiry_type: "WEBSITE",
+  message: formData.message.trim(),
+  preferred_program_id: null,
+});
+
+      setInfo("Thank you for contacting us! We will get back to you soon.");
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+      });
+    } catch (e2) {
+      setErr(e2?.response?.data?.message || "Failed to submit inquiry");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const faqs = [
@@ -51,7 +79,6 @@ export default function Contact() {
 
   return (
     <div className="contactPage">
-      {/* Hero Section */}
       <section className="contactHero">
         <div className="contactHeroContainer">
           <div className="contactHeroContent">
@@ -65,16 +92,13 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Contact Info + Form */}
       <section className="contactSection">
         <div className="contactGrid">
-          {/* Left */}
           <div className="contactInfoColumn">
             <div>
               <h2 className="contactSectionTitle">Contact Information</h2>
               <p className="contactSectionDesc">
-                Reach out to us through any of the following channels. We're
-                here to help.
+                Reach out to us through any of the following channels. We're here to help.
               </p>
             </div>
 
@@ -100,7 +124,6 @@ export default function Contact() {
                 <div>
                   <h3 className="contactInfoTitle">Phone</h3>
                   <p className="contactInfoText">0751179443</p>
-                  
                 </div>
               </div>
 
@@ -121,31 +144,38 @@ export default function Contact() {
                 </div>
                 <div>
                   <h3 className="contactInfoTitle">Operating Hours</h3>
-                  <p className="contactInfoText">
-                    Monday - Friday: 9:00 AM - 8:00 PM
-                  </p>
-                  <p className="contactInfoText">
-                    Saturday - Sunday: 10:00 AM - 7:00 PM
-                  </p>
+                  <p className="contactInfoText">Monday - Friday: 9:00 AM - 8:00 PM</p>
+                  <p className="contactInfoText">Saturday - Sunday: 10:00 AM - 7:00 PM</p>
                 </div>
               </div>
             </div>
 
             <div className="contactMapCard">
-  <iframe
-    src="https://www.google.com/maps?q=6.904469,79.909818&z=15&output=embed"
-    title="Poddo Play House Location"
-    className="contactMapFrame"
-    loading="lazy"
-    referrerPolicy="no-referrer-when-downgrade"
-  ></iframe>
-</div>
+              <iframe
+                src="https://www.google.com/maps?q=6.904469,79.909818&z=15&output=embed"
+                title="Poddo Play House Location"
+                className="contactMapFrame"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
           </div>
 
-          {/* Right */}
           <div className="contactFormColumn">
             <div className="contactFormCard">
               <h2 className="contactSectionTitle">Send Us a Message</h2>
+
+              {err ? (
+                <div className="kidCard" style={{ padding: 12, color: "#b00020", marginBottom: 12 }}>
+                  {err}
+                </div>
+              ) : null}
+
+              {info ? (
+                <div className="kidCard" style={{ padding: 12, color: "#0a6b2b", marginBottom: 12 }}>
+                  {info}
+                </div>
+              ) : null}
 
               <form onSubmit={handleSubmit} className="contactForm">
                 <div className="contactFieldGroup">
@@ -176,7 +206,6 @@ export default function Contact() {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="your@email.com"
-                      required
                       className="contactInput"
                     />
                   </div>
@@ -214,8 +243,8 @@ export default function Contact() {
                   />
                 </div>
 
-                <button type="submit" className="contactSubmitBtn">
-                  Send Message
+                <button type="submit" className="contactSubmitBtn" disabled={busy}>
+                  {busy ? "Sending..." : "Send Message"}
                 </button>
               </form>
             </div>
@@ -223,13 +252,10 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* FAQ Section */}
       <section className="contactFaqSection">
         <div className="contactFaqContainer">
           <div className="contactFaqHeader">
-            <h2 className="contactSectionTitle">
-              Frequently Asked Questions
-            </h2>
+            <h2 className="contactSectionTitle">Frequently Asked Questions</h2>
             <p className="contactSectionDesc">
               Quick answers to common questions about Poddo Play House.
             </p>

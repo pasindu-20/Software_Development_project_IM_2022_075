@@ -114,9 +114,7 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-/* ---------------- FORGOT PASSWORD (Public)
-   Sends OTP + a clickable reset link that pre-fills email.
------------------------------------------------------------ */
+/*  FORGOT PASSWORD (Public)*/
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;

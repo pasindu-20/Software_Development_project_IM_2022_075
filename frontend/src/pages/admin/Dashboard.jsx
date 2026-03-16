@@ -22,27 +22,48 @@ export default function AdminDashboard() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const run = async () => {
-      setErr("");
-      setLoading(true);
-      try {
-        const [cRes, sRes, rRes] = await Promise.all([
-          adminCardsApi(),
-          inquiryByStatusApi(),
-          monthlyRevenueApi(),
-        ]);
-        setCards(cRes.data);
-        setInqStatus(sRes.data || []);
-        setRevenue(rRes.data || []);
-      } catch (e) {
-        setErr(e?.response?.data?.message || "Failed to load dashboard");
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  const run = async () => {
+    setErr("");
+    setLoading(true);
+
+    try {
+      const results = await Promise.allSettled([
+        adminCardsApi(),
+        inquiryByStatusApi(),
+        monthlyRevenueApi(),
+      ]);
+
+      const [cardsRes, statusRes, revenueRes] = results;
+
+      if (cardsRes.status === "fulfilled") {
+        setCards(cardsRes.value.data);
+      } else {
+        console.error("Cards load failed:", cardsRes.reason);
       }
-    };
-    run();
-  }, []);
+
+      if (statusRes.status === "fulfilled") {
+        setInqStatus(statusRes.value.data || []);
+      } else {
+        console.error("Inquiry status load failed:", statusRes.reason);
+      }
+
+      if (revenueRes.status === "fulfilled") {
+        setRevenue(revenueRes.value.data || []);
+      } else {
+        console.error("Revenue load failed:", revenueRes.reason);
+        setErr(
+          revenueRes.reason?.response?.data?.message ||
+            "Failed to load monthly revenue"
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  run();
+}, []);
 
   const revenueTotal = useMemo(() => {
     const v = cards?.totalRevenue;
