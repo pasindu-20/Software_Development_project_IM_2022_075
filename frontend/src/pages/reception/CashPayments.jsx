@@ -1,47 +1,105 @@
-import { useEffect, useState } from "react";
-import { confirmCashPaymentApi, listCashPaymentsApi } from "../../api/receptionApi";
+import { useState } from "react";
+import {
+  getBookingPaymentDetailsApi,
+  saveBookingPaymentApi,
+} from "../../api/receptionApi";
+
+function extractAmountFromNotes(notes) {
+  if (!notes) return "";
+
+  const match = String(notes).match(/Price:\s*LKR\s*([\d,]+(?:\.\d{1,2})?)/i);
+  if (!match) return "";
+
+  return match[1].replace(/,/g, "");
+}
 
 export default function RecCashPayments() {
-  const [rows, setRows] = useState([]);
-  const [note, setNote] = useState("");
+  const [bookingId, setBookingId] = useState("");
+  const [booking, setBooking] = useState(null);
+  const [existingPayment, setExistingPayment] = useState(null);
+
+  const [amount, setAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentStatus, setPaymentStatus] = useState("SUCCESS");
+  const [transactionRef, setTransactionRef] = useState("");
+
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    load();
-  }, []);
+  const isPlayArea = booking?.booking_type === "PLAY_AREA";
 
-  const load = async () => {
+  const loadBooking = async () => {
     setErr("");
     setInfo("");
+    setBooking(null);
+    setExistingPayment(null);
+
+    if (!bookingId || Number(bookingId) <= 0) {
+      return setErr("Please enter a valid booking ID.");
+    }
+
     setLoading(true);
     try {
-      const res = await listCashPaymentsApi();
-      setRows(res.data || []);
-    } catch {
-      setRows([]);
-      setErr("API not ready: GET /api/reception/payments/cash");
+      const res = await getBookingPaymentDetailsApi(bookingId);
+      const bookingData = res.data?.booking || null;
+      const paymentData = res.data?.payment || null;
+
+      setBooking(bookingData);
+      setExistingPayment(paymentData);
+
+      if (paymentData) {
+        setAmount(paymentData.amount ?? "");
+        setPaymentMethod(paymentData.payment_method || "CASH");
+        setPaymentStatus(paymentData.payment_status || "SUCCESS");
+        setTransactionRef(paymentData.transaction_ref || "");
+      } else {
+        const autoAmount =
+          bookingData?.booking_type !== "PLAY_AREA"
+            ? extractAmountFromNotes(bookingData?.notes)
+            : "";
+
+        setAmount(autoAmount);
+        setPaymentMethod("CASH");
+        setPaymentStatus("SUCCESS");
+        setTransactionRef("");
+      }
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to load booking details");
     } finally {
       setLoading(false);
     }
   };
 
-  const confirm = async (payment_id) => {
+  const savePayment = async (e) => {
+    e.preventDefault();
     setErr("");
     setInfo("");
-    setBusyId(payment_id);
 
+    if (!booking) {
+      return setErr("Load a booking first.");
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      return setErr("Please enter a valid amount.");
+    }
+
+    setSaving(true);
     try {
-      await confirmCashPaymentApi(payment_id, note);
-      setInfo("Cash payment confirmed.");
-      setNote("");
-      await load();
-    } catch {
-      setErr("API not ready: POST /api/reception/payments/cash/:id/confirm");
+      await saveBookingPaymentApi(booking.id, {
+        amount: Number(amount),
+        payment_method: paymentMethod,
+        payment_status: paymentStatus,
+        transaction_ref: transactionRef || null,
+      });
+
+      setInfo("Payment updated successfully.");
+      await loadBooking();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to update payment");
     } finally {
-      setBusyId(null);
+      setSaving(false);
     }
   };
 
@@ -49,47 +107,114 @@ export default function RecCashPayments() {
     <div style={{ display: "grid", gap: 16 }}>
       <h2>Update Cash Payments</h2>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 10 }}>
-        <div style={{ color: "#666" }}>
-          Confirm cash received at the counter. (Admin can audit later.)
-        </div>
+      <div
+        style={{
+          background: "white",
+          padding: 16,
+          borderRadius: 12,
+          display: "grid",
+          gap: 12,
+          maxWidth: 800,
+        }}
+      >
+        <div style={{ fontWeight: 600 }}>Enter Booking ID</div>
 
-        <textarea rows={3} placeholder="Optional note (receipt no / remark)" value={note} onChange={(e) => setNote(e.target.value)} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
+          <input
+            placeholder="Booking ID"
+            value={bookingId}
+            onChange={(e) => setBookingId(e.target.value.replace(/\D/g, ""))}
+          />
+          <button type="button" onClick={loadBooking} disabled={loading}>
+            {loading ? "Loading..." : "Load Booking"}
+          </button>
+        </div>
 
         {err && <div style={{ color: "crimson" }}>{err}</div>}
         {info && <div style={{ color: "green" }}>{info}</div>}
 
-        {loading ? (
-          <div>Loading…</div>
-        ) : rows.length === 0 ? (
-          <div style={{ color: "#666" }}>No cash payments pending.</div>
-        ) : (
-          <table width="100%" cellPadding="8" border="1">
-            <thead>
-              <tr>
-                <th>Payment ID</th>
-                <th>Customer</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>{p.customer_name || p.full_name || "—"}</td>
-                  <td>{p.amount ?? "—"}</td>
-                  <td>{p.status || "PENDING"}</td>
-                  <td>
-                    <button onClick={() => confirm(p.id)} disabled={busyId === p.id}>
-                      {busyId === p.id ? "Confirming…" : "Confirm Cash"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {booking && (
+          <div
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              padding: 14,
+              background: "#fafafa",
+              display: "grid",
+              gap: 6,
+            }}
+          >
+            <div><strong>Booking ID:</strong> {booking.id}</div>
+            <div><strong>Customer:</strong> {booking.customer_name || "—"}</div>
+            <div><strong>Phone:</strong> {booking.customer_phone || "—"}</div>
+            <div><strong>Type:</strong> {booking.booking_type || "—"}</div>
+            <div><strong>Date:</strong> {booking.booking_date || "—"}</div>
+            <div><strong>Time Slot:</strong> {booking.time_slot || "—"}</div>
+            <div><strong>Status:</strong> {booking.status || "—"}</div>
+            <div><strong>Notes:</strong> {booking.notes || "—"}</div>
+          </div>
+        )}
+
+        {booking && (
+          <form
+            onSubmit={savePayment}
+            style={{
+              display: "grid",
+              gap: 10,
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              padding: 14,
+              background: "#fff",
+            }}
+          >
+            <div style={{ fontWeight: 600 }}>
+              {existingPayment ? "Update Payment" : "Create Payment"}
+            </div>
+
+            {existingPayment && (
+              <div style={{ color: "#555" }}>
+                Existing Payment No: {existingPayment.payment_no || "—"}
+              </div>
+            )}
+
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Amount"
+              value={amount}
+              readOnly={!isPlayArea}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            >
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+              <option value="ONLINE">Online</option>
+            </select>
+
+            <select
+              value={paymentStatus}
+              onChange={(e) => setPaymentStatus(e.target.value)}
+            >
+              <option value="SUCCESS">Success</option>
+              <option value="PENDING">Pending</option>
+              <option value="FAILED">Failed</option>
+            </select>
+
+            <input
+              placeholder="Transaction Reference (optional)"
+              value={transactionRef}
+              onChange={(e) => setTransactionRef(e.target.value)}
+            />
+
+            <button type="submit" disabled={saving}>
+              {saving ? "Saving..." : existingPayment ? "Update Payment" : "Save Payment"}
+            </button>
+          </form>
         )}
       </div>
     </div>
