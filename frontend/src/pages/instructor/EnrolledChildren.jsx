@@ -12,7 +12,7 @@ export default function InsEnrolledChildren() {
     (async () => {
       try {
         const res = await getMyAssignedClassesApi();
-        const list = res.data || [];
+        const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
         setClasses(list);
         if (list[0]?.id) setClassId(String(list[0].id));
       } catch {
@@ -31,10 +31,10 @@ export default function InsEnrolledChildren() {
     setErr("");
     try {
       const res = await getEnrolledChildrenApi(id);
-      setChildren(res.data || []);
-    } catch {
+      setChildren(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
       setChildren([]);
-      setErr("API not ready: /api/instructor/classes/:id/children");
+      setErr(e?.response?.data?.message || "Failed to load enrolled children");
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export default function InsEnrolledChildren() {
             {classes.length === 0 && <option value="">No classes</option>}
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.title || c.name || `Class #${c.id}`}
+                {c.title || `Class #${c.id}`}
               </option>
             ))}
           </select>
@@ -70,14 +70,16 @@ export default function InsEnrolledChildren() {
                 <th>Child Name</th>
                 <th>Guardian</th>
                 <th>Contact</th>
+                <th>Enrollment Status</th>
               </tr>
             </thead>
             <tbody>
               {children.map((ch) => (
                 <tr key={ch.id}>
-                  <td>{ch.child_name || ch.name || `Child #${ch.id}`}</td>
+                  <td>{ch.child_name || `Child #${ch.id}`}</td>
                   <td>{ch.guardian_name || "—"}</td>
-                  <td>{ch.guardian_phone || ch.phone || "—"}</td>
+                  <td>{ch.guardian_phone || "—"}</td>
+                  <td>{ch.enrollment_status || "—"}</td>
                 </tr>
               ))}
             </tbody>

@@ -10,7 +10,7 @@ export default function InsMarkAttendance() {
   const [classId, setClassId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [children, setChildren] = useState([]);
-  const [records, setRecords] = useState({}); // child_id -> "PRESENT"/"ABSENT"
+  const [records, setRecords] = useState({});
 
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
@@ -21,7 +21,7 @@ export default function InsMarkAttendance() {
     (async () => {
       try {
         const res = await getMyAssignedClassesApi();
-        const list = res.data || [];
+        const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
         setClasses(list);
         if (list[0]?.id) setClassId(String(list[0].id));
       } catch {
@@ -31,28 +31,27 @@ export default function InsMarkAttendance() {
   }, []);
 
   useEffect(() => {
-    if (!classId) return;
-    loadChildren(classId);
-  }, [classId]);
+    if (!classId || !date) return;
+    loadChildren(classId, date);
+  }, [classId, date]);
 
-  const loadChildren = async (id) => {
+  const loadChildren = async (id, selectedDate) => {
     setLoading(true);
     setErr("");
     setInfo("");
     try {
-      const res = await getEnrolledChildrenApi(id);
-      const list = res.data || [];
+      const res = await getEnrolledChildrenApi(id, selectedDate);
+      const list = Array.isArray(res.data) ? res.data : [];
       setChildren(list);
 
-      // default all PRESENT
       const map = {};
       list.forEach((c) => {
-        map[c.id] = "PRESENT";
+        map[c.id] = c.attendance_status || "PRESENT";
       });
       setRecords(map);
-    } catch {
+    } catch (e) {
       setChildren([]);
-      setErr("API not ready: /api/instructor/classes/:id/children");
+      setErr(e?.response?.data?.message || "Failed to load children for attendance");
     } finally {
       setLoading(false);
     }
@@ -78,8 +77,9 @@ export default function InsMarkAttendance() {
     try {
       await markAttendanceApi(classId, date, payload);
       setInfo("Attendance saved successfully");
-    } catch {
-      setErr("API not ready: /api/instructor/classes/:id/attendance");
+      await loadChildren(classId, date);
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to save attendance");
     } finally {
       setSaving(false);
     }
@@ -97,7 +97,7 @@ export default function InsMarkAttendance() {
               {classes.length === 0 && <option value="">No classes</option>}
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.title || c.name || `Class #${c.id}`}
+                  {c.title || `Class #${c.id}`}
                 </option>
               ))}
             </select>
@@ -108,7 +108,7 @@ export default function InsMarkAttendance() {
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
 
-          <button onClick={save} disabled={saving || loading}>
+          <button onClick={save} disabled={saving || loading || children.length === 0}>
             {saving ? "Saving…" : "Save Attendance"}
           </button>
         </div>
@@ -125,6 +125,7 @@ export default function InsMarkAttendance() {
             <thead>
               <tr>
                 <th>Child</th>
+                <th>Guardian</th>
                 <th>Present</th>
                 <th>Absent</th>
               </tr>
@@ -132,7 +133,8 @@ export default function InsMarkAttendance() {
             <tbody>
               {children.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.child_name || c.name || `Child #${c.id}`}</td>
+                  <td>{c.child_name || `Child #${c.id}`}</td>
+                  <td>{c.guardian_name || "—"}</td>
                   <td style={{ textAlign: "center" }}>
                     <input
                       type="radio"

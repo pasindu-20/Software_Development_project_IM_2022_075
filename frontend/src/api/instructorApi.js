@@ -1,20 +1,20 @@
 import api from "./axios";
 
-// Assigned classes for logged-in instructor
+export const getInstructorDashboardApi = () => api.get("/api/instructor/dashboard");
+
 export const getMyAssignedClassesApi = () => api.get("/api/instructor/classes");
 
-// Enrolled children for a class
-export const getEnrolledChildrenApi = (classId) =>
-  api.get(`/api/instructor/classes/${classId}/children`);
+export const getEnrolledChildrenApi = (classId, date) =>
+  api.get(`/api/instructor/classes/${classId}/children`, {
+    params: date ? { date } : undefined,
+  });
 
-// Mark attendance (bulk)
 export const markAttendanceApi = (classId, date, records) =>
   api.post(`/api/instructor/classes/${classId}/attendance`, {
     date,
-    records, // [{ child_id, status: "PRESENT"|"ABSENT" }]
+    records,
   });
 
-// Attendance history for a class
 export const getAttendanceRecordsApi = (classId, from, to) =>
   api.get(`/api/instructor/classes/${classId}/attendance`, {
     params: { from, to },
