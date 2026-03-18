@@ -19,9 +19,9 @@ export default function RecInquiries() {
     try {
       const res = await listInquiriesApi();
       setRows(res.data || []);
-    } catch {
+    } catch (e) {
       setRows([]);
-      setErr("API not ready: GET /api/inquiry");
+      setErr(e?.response?.data?.message || "Failed to load inquiries");
     } finally {
       setLoading(false);
     }
@@ -36,8 +36,8 @@ export default function RecInquiries() {
       await updateInquiryStatusApi(id, status);
       setInfo("Inquiry updated.");
       await load();
-    } catch {
-      setErr("API not ready: PATCH /api/inquiry/:id");
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to update inquiry");
     } finally {
       setBusyId(null);
     }
@@ -76,13 +76,31 @@ export default function RecInquiries() {
                   <td>{q.inquiry_type || "—"}</td>
                   <td>{q.status || "NEW"}</td>
                   <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button onClick={() => updateStatus(q.id, "IN_PROGRESS")} disabled={busyId === q.id}>
-                      {busyId === q.id ? "Updating…" : "In Progress"}
+                    <button
+                      onClick={() => updateStatus(q.id, "CONTACTED")}
+                      disabled={busyId === q.id}
+                    >
+                      {busyId === q.id ? "Updating…" : "Contacted"}
                     </button>
-                    <button onClick={() => updateStatus(q.id, "RESOLVED")} disabled={busyId === q.id}>
-                      Resolve
+
+                    <button
+                      onClick={() => updateStatus(q.id, "FOLLOW_UP")}
+                      disabled={busyId === q.id}
+                    >
+                      Follow Up
                     </button>
-                    <button onClick={() => updateStatus(q.id, "CLOSED")} disabled={busyId === q.id}>
+
+                    <button
+                      onClick={() => updateStatus(q.id, "CONVERTED")}
+                      disabled={busyId === q.id}
+                    >
+                      Converted
+                    </button>
+
+                    <button
+                      onClick={() => updateStatus(q.id, "CLOSED")}
+                      disabled={busyId === q.id}
+                    >
                       Close
                     </button>
                   </td>

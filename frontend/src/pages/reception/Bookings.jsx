@@ -16,9 +16,9 @@ export default function RecBookings() {
     try {
       const res = await listBookingsApi();
       setRows(res.data || []);
-    } catch {
+    } catch (e) {
       setRows([]);
-      setErr("API not ready: GET /api/reception/bookings");
+      setErr(e?.response?.data?.message || "Failed to load bookings");
     } finally {
       setLoading(false);
     }
@@ -41,8 +41,10 @@ export default function RecBookings() {
               <tr>
                 <th>Booking ID</th>
                 <th>Customer</th>
+                <th>Phone</th>
                 <th>Type</th>
                 <th>Date</th>
+                <th>Time Slot</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -50,9 +52,11 @@ export default function RecBookings() {
               {rows.map((b) => (
                 <tr key={b.id}>
                   <td>{b.id}</td>
-                  <td>{b.customer_name || b.full_name || "—"}</td>
+                  <td>{b.customer_name || "—"}</td>
+                  <td>{b.customer_phone || "—"}</td>
                   <td>{b.booking_type || "—"}</td>
-                  <td>{b.booking_date || b.date || "—"}</td>
+                  <td>{b.booking_date || "—"}</td>
+                  <td>{b.time_slot || "—"}</td>
                   <td>{b.status || "—"}</td>
                 </tr>
               ))}

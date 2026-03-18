@@ -3,6 +3,7 @@ const cors = require("cors");
 
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
+const receptionRoutes = require("./routes/reception.routes");
 const inquiryRoutes = require("./routes/inquiry.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const parentRoutes = require("./routes/parent.routes");
@@ -20,10 +21,10 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/reception", receptionRoutes);
 app.use("/api/inquiry", inquiryRoutes);
 app.use("/api/public", publicRoutes);
 
-// fixed payment mounting
 app.use("/api/parent", paymentRoutes);
 app.use("/api/parent", parentRoutes);
 app.use("/api/parent", parentBookingsRoutes);

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { createEnrollmentApi, listEnrollmentsApi } from "../../api/receptionApi";
+import { listPublicClassesApi } from "../../api/publicApi";
 
 export default function RecEnrollment() {
   const [rows, setRows] = useState([]);
-  const [child_name, setChildName] = useState("");
-  const [guardian_name, setGuardianName] = useState("");
-  const [guardian_phone, setGuardianPhone] = useState("");
+  const [classes, setClasses] = useState([]);
+  const [child_id, setChildId] = useState("");
   const [class_id, setClassId] = useState("");
 
   const [err, setErr] = useState("");
@@ -15,6 +15,7 @@ export default function RecEnrollment() {
 
   useEffect(() => {
     load();
+    loadClasses();
   }, []);
 
   const load = async () => {
@@ -23,11 +24,20 @@ export default function RecEnrollment() {
     try {
       const res = await listEnrollmentsApi();
       setRows(res.data || []);
-    } catch {
+    } catch (e) {
       setRows([]);
-      setErr("API not ready: GET /api/reception/enrollments");
+      setErr(e?.response?.data?.message || "Failed to load enrollments");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadClasses = async () => {
+    try {
+      const res = await listPublicClassesApi();
+      setClasses(res.data || []);
+    } catch {
+      setClasses([]);
     }
   };
 
@@ -36,21 +46,23 @@ export default function RecEnrollment() {
     setErr("");
     setInfo("");
 
-    if (!child_name || !guardian_name || !guardian_phone || !class_id) {
-      return setErr("All fields are required (child, guardian, phone, class id).");
+    if (!child_id || !class_id) {
+      return setErr("child_id and class_id are required.");
     }
 
     setBusy(true);
     try {
-      await createEnrollmentApi({ child_name, guardian_name, guardian_phone, class_id });
+      await createEnrollmentApi({
+        child_id: Number(child_id),
+        class_id: Number(class_id),
+      });
+
       setInfo("Enrollment created.");
-      setChildName("");
-      setGuardianName("");
-      setGuardianPhone("");
+      setChildId("");
       setClassId("");
       await load();
-    } catch {
-      setErr("API not ready: POST /api/reception/enrollments");
+    } catch (e2) {
+      setErr(e2?.response?.data?.message || "Failed to create enrollment");
     } finally {
       setBusy(false);
     }
@@ -60,13 +72,37 @@ export default function RecEnrollment() {
     <div style={{ display: "grid", gap: 16 }}>
       <h2>Manage Enrollment</h2>
 
-      <form onSubmit={submit} style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 10, maxWidth: 680 }}>
+      <form
+        onSubmit={submit}
+        style={{
+          background: "white",
+          padding: 16,
+          borderRadius: 12,
+          display: "grid",
+          gap: 10,
+          maxWidth: 680,
+        }}
+      >
         <div style={{ fontWeight: 700 }}>Create Enrollment</div>
 
-        <input placeholder="Child name" value={child_name} onChange={(e) => setChildName(e.target.value)} />
-        <input placeholder="Guardian name" value={guardian_name} onChange={(e) => setGuardianName(e.target.value)} />
-        <input placeholder="Guardian phone" value={guardian_phone} onChange={(e) => setGuardianPhone(e.target.value)} />
-        <input placeholder="Class ID (for now)" value={class_id} onChange={(e) => setClassId(e.target.value)} />
+        <input
+          placeholder="Child ID"
+          value={child_id}
+          onChange={(e) => setChildId(e.target.value)}
+        />
+
+        <select value={class_id} onChange={(e) => setClassId(e.target.value)}>
+          <option value="">Select Class</option>
+          {classes.map((cls) => (
+            <option key={cls.id} value={cls.id}>
+              {cls.id} - {cls.title}
+            </option>
+          ))}
+        </select>
+
+        <div style={{ fontSize: 13, color: "#666" }}>
+          Use an existing child ID. This flow currently enrolls already-registered children.
+        </div>
 
         {err && <div style={{ color: "crimson" }}>{err}</div>}
         {info && <div style={{ color: "green" }}>{info}</div>}
@@ -102,8 +138,8 @@ export default function RecEnrollment() {
                   <td>{r.child_name || "—"}</td>
                   <td>{r.guardian_name || "—"}</td>
                   <td>{r.guardian_phone || "—"}</td>
-                  <td>{r.class_id || "—"}</td>
-                  <td>{r.status || "ACTIVE"}</td>
+                  <td>{r.class_title || r.class_id || "—"}</td>
+                  <td>{r.status || "PENDING"}</td>
                 </tr>
               ))}
             </tbody>
