@@ -16,7 +16,7 @@ export default function InsAttendanceRecords() {
     (async () => {
       try {
         const res = await getMyAssignedClassesApi();
-        const list = res.data || [];
+        const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
         setClasses(list);
         if (list[0]?.id) setClassId(String(list[0].id));
       } catch {
@@ -30,10 +30,10 @@ export default function InsAttendanceRecords() {
     setLoading(true);
     try {
       const res = await getAttendanceRecordsApi(classId, from, to);
-      setRows(res.data || []);
-    } catch {
+      setRows(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
       setRows([]);
-      setErr("API not ready: /api/instructor/classes/:id/attendance");
+      setErr(e?.response?.data?.message || "Failed to load attendance records");
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export default function InsAttendanceRecords() {
               {classes.length === 0 && <option value="">No classes</option>}
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.title || c.name || `Class #${c.id}`}
+                  {c.title || `Class #${c.id}`}
                 </option>
               ))}
             </select>
@@ -82,14 +82,18 @@ export default function InsAttendanceRecords() {
               <tr>
                 <th>Date</th>
                 <th>Child</th>
+                <th>Guardian</th>
+                <th>Phone</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, idx) => (
                 <tr key={r.id || idx}>
-                  <td>{r.date || "—"}</td>
-                  <td>{r.child_name || r.name || "—"}</td>
+                  <td>{r.date ? String(r.date).slice(0, 10) : "—"}</td>
+                  <td>{r.child_name || "—"}</td>
+                  <td>{r.guardian_name || "—"}</td>
+                  <td>{r.guardian_phone || "—"}</td>
                   <td>{r.status || "—"}</td>
                 </tr>
               ))}
