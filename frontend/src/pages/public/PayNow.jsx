@@ -10,11 +10,60 @@ export default function PayNow() {
   const [method, setMethod] = useState("CARD");
   const [reference_no, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [bankSlipFile, setBankSlipFile] = useState(null);
+  const [bankSlipData, setBankSlipData] = useState("");
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
 
   const enrollment_id = useMemo(() => Number(enrollmentId), [enrollmentId]);
+
+  const readFileAsBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+
+  const handleSlipChange = async (e) => {
+    const file = e.target.files?.[0] || null;
+    setBankSlipFile(file);
+    setBankSlipData("");
+    setErr("");
+    setInfo("");
+
+    if (!file) return;
+
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "application/pdf",
+    ];
+
+    if (!allowed.includes(file.type)) {
+      setErr("Please upload JPG, PNG, or PDF bank slip.");
+      e.target.value = "";
+      setBankSlipFile(null);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErr("Bank slip must be 5MB or smaller.");
+      e.target.value = "";
+      setBankSlipFile(null);
+      return;
+    }
+
+    try {
+      const base64 = await readFileAsBase64(file);
+      setBankSlipData(base64);
+    } catch {
+      setErr("Failed to read bank slip file.");
+      setBankSlipFile(null);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -23,8 +72,14 @@ export default function PayNow() {
 
     if (!enrollment_id) return setErr("Invalid enrollment id");
 
-    if (method === "BANK_TRANSFER" && !reference_no.trim()) {
-      return setErr("Reference number is required for bank transfer.");
+    if (method === "BANK_TRANSFER") {
+      if (!reference_no.trim()) {
+        return setErr("Reference number is required for bank transfer.");
+      }
+
+      if (!bankSlipFile || !bankSlipData) {
+        return setErr("Please upload the bank slip.");
+      }
     }
 
     setBusy(true);
@@ -34,17 +89,21 @@ export default function PayNow() {
         payment_method: method,
         reference_no: method === "BANK_TRANSFER" ? reference_no.trim() : null,
         notes: notes || null,
+        bank_slip_name: method === "BANK_TRANSFER" ? bankSlipFile?.name || null : null,
+        bank_slip_data: method === "BANK_TRANSFER" ? bankSlipData : null,
       });
 
       const pay = res.data?.payment;
 
       if (method === "CARD") {
         setInfo(`✅ Card payment successful. Receipt: ${pay?.payment_no || ""}`);
+      } else if (method === "BANK_TRANSFER") {
+        setInfo(`✅ Bank transfer submitted. Status is PENDING until receptionist approval. Receipt: ${pay?.payment_no || ""}`);
       } else {
         setInfo(`✅ Payment submitted as PENDING. Receipt: ${pay?.payment_no || ""}`);
       }
 
-      setTimeout(() => navigate("/profile"), 900);
+      setTimeout(() => navigate("/profile"), 1000);
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Payment failed");
     } finally {
@@ -83,6 +142,20 @@ export default function PayNow() {
                 value={reference_no}
                 onChange={(e) => setReference(e.target.value)}
               />
+
+              <label style={{ fontWeight: 900 }}>Upload Bank Slip</label>
+              <input
+                className="kidInput"
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={handleSlipChange}
+              />
+
+              {bankSlipFile ? (
+                <div style={{ fontSize: 13, opacity: 0.8 }}>
+                  Selected file: <b>{bankSlipFile.name}</b>
+                </div>
+              ) : null}
             </>
           ) : null}
 
@@ -103,7 +176,7 @@ export default function PayNow() {
           </button>
 
           <div style={{ opacity: 0.7, fontSize: 13 }}>
-            Card payments are marked <b>PAID</b> instantly. Cash/Bank Transfer are <b>PENDING</b> until confirmed by admin.
+            Card payments are marked <b>PAID</b> instantly. Cash payments stay <b>PENDING</b> until confirmation. Bank transfer stays <b>PENDING</b> until the receptionist approves the uploaded slip.
           </div>
         </form>
       </div>

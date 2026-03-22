@@ -237,9 +237,13 @@ async function ensurePaymentsTableShape() {
       booking_id INT NULL,
       amount DECIMAL(10,2) NOT NULL DEFAULT 0,
       payment_method ENUM('CARD','CASH','BANK_TRANSFER') NOT NULL,
-      payment_status ENUM('PENDING','PAID','FAILED','CANCELLED') NOT NULL DEFAULT 'PENDING',
+      payment_status ENUM('PENDING','PAID','SUCCESS','FAILED','CANCELLED') NOT NULL DEFAULT 'PENDING',
       reference_no VARCHAR(100) NULL,
       notes TEXT NULL,
+      confirmed_by INT NULL,
+      confirmed_at DATETIME NULL,
+      bank_slip_name VARCHAR(255) NULL,
+      bank_slip_data LONGTEXT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -264,13 +268,32 @@ async function ensurePaymentsTableShape() {
     await db.query(`ALTER TABLE payments ADD COLUMN payment_method ENUM('CARD','CASH','BANK_TRANSFER') NOT NULL AFTER amount`);
   } catch (err) {}
   try {
-    await db.query(`ALTER TABLE payments ADD COLUMN payment_status ENUM('PENDING','PAID','FAILED','CANCELLED') NOT NULL DEFAULT 'PENDING' AFTER payment_method`);
+    await db.query(`
+      ALTER TABLE payments
+      MODIFY COLUMN payment_status ENUM('PENDING','PAID','SUCCESS','FAILED','CANCELLED')
+      NOT NULL DEFAULT 'PENDING'
+    `);
+  } catch (err) {}
+  try {
+    await db.query(`ALTER TABLE payments ADD COLUMN payment_status ENUM('PENDING','PAID','SUCCESS','FAILED','CANCELLED') NOT NULL DEFAULT 'PENDING' AFTER payment_method`);
   } catch (err) {}
   try {
     await db.query(`ALTER TABLE payments ADD COLUMN reference_no VARCHAR(100) NULL AFTER payment_status`);
   } catch (err) {}
   try {
     await db.query(`ALTER TABLE payments ADD COLUMN notes TEXT NULL AFTER reference_no`);
+  } catch (err) {}
+  try {
+    await db.query(`ALTER TABLE payments ADD COLUMN confirmed_by INT NULL AFTER notes`);
+  } catch (err) {}
+  try {
+    await db.query(`ALTER TABLE payments ADD COLUMN confirmed_at DATETIME NULL AFTER confirmed_by`);
+  } catch (err) {}
+  try {
+    await db.query(`ALTER TABLE payments ADD COLUMN bank_slip_name VARCHAR(255) NULL AFTER confirmed_at`);
+  } catch (err) {}
+  try {
+    await db.query(`ALTER TABLE payments ADD COLUMN bank_slip_data LONGTEXT NULL AFTER bank_slip_name`);
   } catch (err) {}
   try {
     await db.query(`ALTER TABLE payments ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`);
@@ -608,6 +631,10 @@ exports.myPayments = async (req, res) => {
          p.payment_status,
          p.reference_no,
          p.notes,
+         p.bank_slip_name,
+         p.bank_slip_data,
+         p.confirmed_by,
+         p.confirmed_at,
          p.created_at,
          c.full_name AS child_name,
          cl.title AS class_title
