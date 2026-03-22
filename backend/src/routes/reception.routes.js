@@ -39,6 +39,20 @@ router.post(
 );
 
 router.get(
+  "/payments/bank-transfer",
+  authenticate,
+  authorize("RECEPTIONIST"),
+  controller.listBankTransferPayments
+);
+
+router.post(
+  "/payments/bank-transfer/:id/confirm",
+  authenticate,
+  authorize("RECEPTIONIST"),
+  controller.confirmBankTransferPayment
+);
+
+router.get(
   "/payments/booking/:bookingId",
   authenticate,
   authorize("RECEPTIONIST"),
@@ -65,5 +79,7 @@ router.post(
   authorize("RECEPTIONIST"),
   controller.createEnrollment
 );
+
+
 
 module.exports = router;

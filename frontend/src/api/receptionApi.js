@@ -14,6 +14,12 @@ export const listCashPaymentsApi = () =>
 export const confirmCashPaymentApi = (payment_id, note) =>
   api.post(`/api/reception/payments/cash/${payment_id}/confirm`, { note });
 
+export const listBankTransferPaymentsApi = () =>
+  api.get("/api/reception/payments/bank-transfer");
+
+export const confirmBankTransferPaymentApi = (payment_id, note) =>
+  api.post(`/api/reception/payments/bank-transfer/${payment_id}/confirm`, note);
+
 export const listEnrollmentsApi = () =>
   api.get("/api/reception/enrollments");
 
@@ -30,4 +36,3 @@ export const getBookingPaymentDetailsApi = (bookingId) =>
 
 export const saveBookingPaymentApi = (bookingId, payload) =>
   api.post(`/api/reception/payments/booking/${bookingId}`, payload);
-

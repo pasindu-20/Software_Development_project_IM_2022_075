@@ -48,6 +48,7 @@ import RecManualBooking from "./pages/reception/ManualBooking";
 import RecCashPayments from "./pages/reception/CashPayments";
 import RecEnrollment from "./pages/reception/Enrollment";
 import RecInquiries from "./pages/reception/Inquiries";
+import RecBankTransfers from "./pages/reception/BankTransfers";
 
 // Instructor
 import InsDashboard from "./pages/instructor/Dashboard";
@@ -71,6 +72,7 @@ const receptionMenu = [
   { to: "/reception/bookings", label: "View Bookings" },
   { to: "/reception/manual-booking", label: "Add Manual Booking" },
   { to: "/reception/cash-payments", label: "Update Cash Payments" },
+  { to: "/reception/bank-transfers", label: "Approve Bank Transfers" },
   { to: "/reception/enrollment", label: "Manage Enrollment" },
   { to: "/reception/inquiries", label: "Customer Inquiry" },
 ];
@@ -88,7 +90,7 @@ export default function App() {
     <HashRouter>
       <AuthProvider>
         <Routes>
-          {/* ✅ Public website layout */}
+          {/* Public website layout */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
@@ -97,7 +99,6 @@ export default function App() {
             <Route path="/party-packages" element={<PartyPackages />} />
             <Route path="/classes" element={<ClassDetails />} />
             <Route path="/play-area" element={<PlayArea />} />
-          
 
             {/* Payment screens (UI only) */}
             <Route path="/pay/card" element={<PaymentCard />} />
@@ -148,7 +149,6 @@ export default function App() {
           <Route path="/auth/forgot" element={<ForgotPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-
           {/* Change password (JWT required, any role) */}
           <Route
             path="/auth/change-password"
@@ -191,6 +191,7 @@ export default function App() {
             <Route path="/reception/bookings" element={<RecBookings />} />
             <Route path="/reception/manual-booking" element={<RecManualBooking />} />
             <Route path="/reception/cash-payments" element={<RecCashPayments />} />
+            <Route path="/reception/bank-transfers" element={<RecBankTransfers />} />
             <Route path="/reception/enrollment" element={<RecEnrollment />} />
             <Route path="/reception/inquiries" element={<RecInquiries />} />
           </Route>

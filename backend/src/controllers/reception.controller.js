@@ -42,7 +42,7 @@ async function getEnumValues(tableName, columnName) {
 
   if (!rows.length || !rows[0].COLUMN_TYPE) return [];
 
-  const columnType = rows[0].COLUMN_TYPE; // enum('PENDING','SUCCESS',...)
+  const columnType = rows[0].COLUMN_TYPE;
   const matches = [...columnType.matchAll(/'([^']+)'/g)];
   return matches.map((m) => m[1]);
 }
@@ -53,12 +53,24 @@ async function resolvePaidStatusValue() {
   if (values.includes("PAID")) return "PAID";
   if (values.includes("SUCCESS")) return "SUCCESS";
 
-  // fallback to first sensible completed-like value
   const fallback = values.find((v) =>
     ["PAID", "SUCCESS", "COMPLETED", "CONFIRMED"].includes(v)
   );
 
   return fallback || "PAID";
+}
+
+async function resolveSuccessStatusValue() {
+  const values = await getEnumValues("payments", "payment_status");
+
+  if (values.includes("SUCCESS")) return "SUCCESS";
+  if (values.includes("PAID")) return "PAID";
+
+  const fallback = values.find((v) =>
+    ["SUCCESS", "PAID", "COMPLETED", "CONFIRMED"].includes(v)
+  );
+
+  return fallback || "SUCCESS";
 }
 
 async function ensureReceptionShape() {
@@ -85,6 +97,14 @@ async function ensureReceptionShape() {
   if (await tableExists("payments")) {
     try {
       await db.query(
+        `ALTER TABLE payments
+         MODIFY COLUMN payment_status ENUM('PENDING','PAID','SUCCESS','FAILED','CANCELLED')
+         NOT NULL DEFAULT 'PENDING'`
+      );
+    } catch (err) {}
+
+    try {
+      await db.query(
         `ALTER TABLE payments ADD COLUMN confirmed_by INT NULL AFTER notes`
       );
     } catch (err) {}
@@ -92,6 +112,18 @@ async function ensureReceptionShape() {
     try {
       await db.query(
         `ALTER TABLE payments ADD COLUMN confirmed_at DATETIME NULL AFTER confirmed_by`
+      );
+    } catch (err) {}
+
+    try {
+      await db.query(
+        `ALTER TABLE payments ADD COLUMN bank_slip_name VARCHAR(255) NULL AFTER confirmed_at`
+      );
+    } catch (err) {}
+
+    try {
+      await db.query(
+        `ALTER TABLE payments ADD COLUMN bank_slip_data LONGTEXT NULL AFTER bank_slip_name`
       );
     } catch (err) {}
   }
@@ -401,6 +433,169 @@ exports.confirmCashPayment = async (req, res) => {
   }
 };
 
+exports.listBankTransferPayments = async (req, res) => {
+  try {
+    await ensureReceptionShape();
+
+    const [rows] = await db.query(`
+      SELECT
+        p.id,
+        p.payment_no,
+        p.amount,
+        p.payment_method,
+        p.payment_status AS status,
+        p.reference_no,
+        p.notes,
+        p.created_at,
+        p.booking_id,
+        p.enrollment_id,
+        p.bank_slip_name,
+        p.bank_slip_data,
+
+        CASE
+          WHEN p.enrollment_id IS NOT NULL THEN 'ENROLLMENT'
+          WHEN p.booking_id IS NOT NULL THEN 'BOOKING'
+          ELSE 'OTHER'
+        END AS payment_for,
+
+        COALESCE(parent_user.full_name, walkin_booking.walk_in_customer_name, guardian.full_name) AS customer_name,
+        COALESCE(parent_user.phone, walkin_booking.walk_in_phone, guardian.phone) AS customer_phone,
+
+        walkin_booking.booking_type,
+        walkin_booking.booking_date,
+        walkin_booking.time_slot,
+
+        c.full_name AS child_name,
+        cl.title AS class_title,
+        e.status AS enrollment_status
+      FROM payments p
+      LEFT JOIN users parent_user ON parent_user.id = p.parent_user_id
+      LEFT JOIN bookings walkin_booking ON walkin_booking.id = p.booking_id
+      LEFT JOIN enrollments e ON e.id = p.enrollment_id
+      LEFT JOIN children c ON c.id = e.child_id
+      LEFT JOIN classes cl ON cl.id = e.class_id
+      LEFT JOIN users guardian ON guardian.id = c.parent_id
+      WHERE p.payment_method = 'BANK_TRANSFER'
+        AND p.payment_status = 'PENDING'
+      ORDER BY p.created_at DESC, p.id DESC
+    `);
+
+    res.json(
+      rows.map((row) => ({
+        ...row,
+        amount: Number(row.amount || 0),
+      }))
+    );
+  } catch (err) {
+    console.error("listBankTransferPayments error:", err);
+    res.status(500).json({ message: "Failed to load bank transfer payments" });
+  }
+};
+
+exports.confirmBankTransferPayment = async (req, res) => {
+  try {
+    await ensureReceptionShape();
+
+    const paymentId = Number(req.params.id);
+    const successStatusValue = await resolveSuccessStatusValue();
+
+    let noteText = null;
+    if (typeof req.body?.note === "string") {
+      noteText = req.body.note.trim() || null;
+    } else if (typeof req.body?.notes === "string") {
+      noteText = req.body.notes.trim() || null;
+    }
+
+    if (!Number.isInteger(paymentId) || paymentId <= 0) {
+      return res.status(400).json({ message: "Valid payment id is required" });
+    }
+
+    await db.query("START TRANSACTION");
+
+    const [payments] = await db.query(
+      `
+      SELECT id, payment_method, payment_status, enrollment_id, booking_id
+      FROM payments
+      WHERE id = ?
+      FOR UPDATE
+      `,
+      [paymentId]
+    );
+
+    if (!payments.length) {
+      await db.query("ROLLBACK");
+      return res.status(404).json({ message: "Payment not found" });
+    }
+
+    const payment = payments[0];
+
+    if (payment.payment_method !== "BANK_TRANSFER") {
+      await db.query("ROLLBACK");
+      return res.status(400).json({ message: "Only BANK_TRANSFER payments can be approved here" });
+    }
+
+    if (payment.payment_status === successStatusValue) {
+      await db.query("ROLLBACK");
+      return res.status(409).json({ message: "Payment is already approved" });
+    }
+
+    const hasConfirmedBy = await columnExists("payments", "confirmed_by");
+    const hasConfirmedAt = await columnExists("payments", "confirmed_at");
+
+    let updateSql = `UPDATE payments SET payment_status = ?`;
+    const params = [successStatusValue];
+
+    if (noteText) {
+      updateSql += `
+        , notes = CONCAT(
+            COALESCE(notes, ''),
+            CASE WHEN notes IS NULL OR notes = '' THEN '' ELSE '\\n' END,
+            ?
+          )
+      `;
+      params.push(noteText);
+    }
+
+    if (hasConfirmedBy) {
+      updateSql += `, confirmed_by = ?`;
+      params.push(req.user.id);
+    }
+
+    if (hasConfirmedAt) {
+      updateSql += `, confirmed_at = NOW()`;
+    }
+
+    updateSql += ` WHERE id = ?`;
+    params.push(paymentId);
+
+    await db.query(updateSql, params);
+
+    if (payment.enrollment_id) {
+      await db.query(
+        `UPDATE enrollments SET status = 'ACTIVE' WHERE id = ?`,
+        [payment.enrollment_id]
+      );
+    }
+
+    if (payment.booking_id) {
+      await db.query(
+        `UPDATE bookings SET status = 'CONFIRMED' WHERE id = ?`,
+        [payment.booking_id]
+      );
+    }
+
+    await db.query("COMMIT");
+
+    res.json({ message: "Bank transfer approved successfully" });
+  } catch (err) {
+    try {
+      await db.query("ROLLBACK");
+    } catch {}
+    console.error("confirmBankTransferPayment error:", err);
+    res.status(500).json({ message: err?.sqlMessage || "Failed to approve bank transfer payment" });
+  }
+};
+
 exports.listEnrollments = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -536,6 +731,9 @@ exports.getBookingPaymentDetails = async (req, res) => {
       });
     }
 
+    const hasTransactionRef = await columnExists("payments", "transaction_ref");
+    const referenceField = hasTransactionRef ? "transaction_ref" : "reference_no";
+
     const [payments] = await db.query(
       `
       SELECT
@@ -544,7 +742,7 @@ exports.getBookingPaymentDetails = async (req, res) => {
         amount,
         payment_method,
         payment_status,
-        transaction_ref,
+        ${referenceField} AS transaction_ref,
         paid_at,
         updated_at
       FROM payments
@@ -606,6 +804,9 @@ exports.saveBookingPayment = async (req, res) => {
       });
     }
 
+    const hasTransactionRef = await columnExists("payments", "transaction_ref");
+    const refColumn = hasTransactionRef ? "transaction_ref" : "reference_no";
+
     const [bookings] = await db.query(
       `
       SELECT
@@ -625,11 +826,6 @@ exports.saveBookingPayment = async (req, res) => {
     }
 
     const booking = bookings[0];
-
-    // Important fix:
-    // payments.parent_user_id cannot be NULL in your DB.
-    // For registered user bookings -> use booking.user_id
-    // For walk-in/manual bookings -> use logged-in receptionist id as fallback
     const parentUserId = booking.user_id || req.user.id;
 
     const [existing] = await db.query(
@@ -652,7 +848,7 @@ exports.saveBookingPayment = async (req, res) => {
           amount = ?,
           payment_method = ?,
           payment_status = ?,
-          transaction_ref = ?,
+          ${refColumn} = ?,
           paid_at = CASE WHEN ? = ? THEN NOW() ELSE paid_at END,
           updated_at = NOW()
         WHERE id = ?
@@ -680,7 +876,7 @@ exports.saveBookingPayment = async (req, res) => {
           amount,
           payment_method,
           payment_status,
-          transaction_ref,
+          ${refColumn},
           paid_at
         )
         VALUES
