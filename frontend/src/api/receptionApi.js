@@ -30,3 +30,4 @@ export const getBookingPaymentDetailsApi = (bookingId) =>
 
 export const saveBookingPaymentApi = (bookingId, payload) =>
   api.post(`/api/reception/payments/booking/${bookingId}`, payload);
+

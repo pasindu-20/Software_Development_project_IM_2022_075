@@ -17,28 +17,53 @@ export default function Profile() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const loadAll = async () => {
-    try {
-      setBusy(true);
-      setErr("");
+ const loadAll = async () => {
+  try {
+    setBusy(true);
+    setErr("");
 
-      const [meRes, bRes, eRes, pRes] = await Promise.all([
-        api.get("/api/parent/me"),
-        api.get("/api/parent/bookings"),
-        api.get("/api/parent/enrollments"),
-        api.get("/api/parent/payments"),
-      ]);
+    const results = await Promise.allSettled([
+      api.get("/api/parent/me"),
+      api.get("/api/parent/bookings"),
+      api.get("/api/parent/enrollments"),
+      api.get("/api/parent/payments"),
+    ]);
 
-      setMe(meRes.data);
-      setBookings(bRes.data || []);
-      setEnrollments(eRes.data || []);
-      setPayments(pRes.data || []);
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Unable to load profile data");
-    } finally {
-      setBusy(false);
+    const [meRes, bRes, eRes, pRes] = results;
+
+    if (meRes.status === "fulfilled") {
+      setMe(meRes.value.data || null);
     }
-  };
+
+    if (bRes.status === "fulfilled") {
+      setBookings(bRes.value.data || []);
+    } else {
+      console.error("Failed to load bookings:", bRes.reason);
+    }
+
+    if (eRes.status === "fulfilled") {
+      setEnrollments(eRes.value.data || []);
+    } else {
+      console.error("Failed to load enrollments:", eRes.reason);
+    }
+
+    if (pRes.status === "fulfilled") {
+      setPayments(pRes.value.data || []);
+    } else {
+      console.error("Failed to load payments:", pRes.reason);
+    }
+
+    const messages = [];
+    if (bRes.status === "rejected") messages.push("Failed to load bookings");
+    if (eRes.status === "rejected") messages.push("Failed to load enrollments");
+    if (pRes.status === "rejected") messages.push("Failed to load payments");
+    if (meRes.status === "rejected") messages.push("Failed to load profile");
+
+    setErr(messages.join(" • "));
+  } finally {
+    setBusy(false);
+  }
+};
 
   useEffect(() => {
     loadAll();
@@ -55,7 +80,7 @@ export default function Profile() {
     { key: "status", header: "Status" },
   ];
 
-  // ✅ Pay Now action column
+  //  Pay Now action column
   const enrollCols = [
     { key: "id", header: "ID" },
     { key: "child_name", header: "Child" },
@@ -75,7 +100,7 @@ export default function Profile() {
     },
   ];
 
-  // ✅ show receipt + date
+  //  show receipt + date
   const payCols = [
     { key: "payment_no", header: "Receipt" },
     { key: "class_title", header: "Class" },
@@ -94,7 +119,7 @@ export default function Profile() {
     },
   ];
 
-  // ---------- Summary cards (UI only) ----------
+  // Summary cards (UI only) 
   const pendingEnrollments = useMemo(
     () => enrollments.filter((e) => String(e.status || "").toUpperCase() === "PENDING").length,
     [enrollments]
@@ -360,9 +385,9 @@ export default function Profile() {
           subtitle="Receipts appear here after payments."
           right={
             pendingEnrollments > 0 ? (
-              <span className="badgeSoft">⚠️ Pending: {pendingEnrollments}</span>
+              <span className="badgeSoft"> Pending: {pendingEnrollments}</span>
             ) : (
-              <span className="badgeSoft">✅ All paid</span>
+              <span className="badgeSoft"> All paid</span>
             )
           }
         />
