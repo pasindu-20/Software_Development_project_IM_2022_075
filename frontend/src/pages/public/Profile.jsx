@@ -5,8 +5,6 @@ import SimpleTable from "../../components/SimpleTable";
 import api from "../../api/axios";
 import { useAuth } from "../../auth/useAuth";
 
-
-
 export default function Profile() {
   const { logout } = useAuth();
 
@@ -17,53 +15,53 @@ export default function Profile() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
- const loadAll = async () => {
-  try {
-    setBusy(true);
-    setErr("");
+  const loadAll = async () => {
+    try {
+      setBusy(true);
+      setErr("");
 
-    const results = await Promise.allSettled([
-      api.get("/api/parent/me"),
-      api.get("/api/parent/bookings"),
-      api.get("/api/parent/enrollments"),
-      api.get("/api/parent/payments"),
-    ]);
+      const results = await Promise.allSettled([
+        api.get("/api/parent/me"),
+        api.get("/api/parent/bookings"),
+        api.get("/api/parent/enrollments"),
+        api.get("/api/parent/payments"),
+      ]);
 
-    const [meRes, bRes, eRes, pRes] = results;
+      const [meRes, bRes, eRes, pRes] = results;
 
-    if (meRes.status === "fulfilled") {
-      setMe(meRes.value.data || null);
+      if (meRes.status === "fulfilled") {
+        setMe(meRes.value.data || null);
+      }
+
+      if (bRes.status === "fulfilled") {
+        setBookings(bRes.value.data || []);
+      } else {
+        console.error("Failed to load bookings:", bRes.reason);
+      }
+
+      if (eRes.status === "fulfilled") {
+        setEnrollments(eRes.value.data || []);
+      } else {
+        console.error("Failed to load enrollments:", eRes.reason);
+      }
+
+      if (pRes.status === "fulfilled") {
+        setPayments(pRes.value.data || []);
+      } else {
+        console.error("Failed to load payments:", pRes.reason);
+      }
+
+      const messages = [];
+      if (bRes.status === "rejected") messages.push("Failed to load bookings");
+      if (eRes.status === "rejected") messages.push("Failed to load enrollments");
+      if (pRes.status === "rejected") messages.push("Failed to load payments");
+      if (meRes.status === "rejected") messages.push("Failed to load profile");
+
+      setErr(messages.join(" • "));
+    } finally {
+      setBusy(false);
     }
-
-    if (bRes.status === "fulfilled") {
-      setBookings(bRes.value.data || []);
-    } else {
-      console.error("Failed to load bookings:", bRes.reason);
-    }
-
-    if (eRes.status === "fulfilled") {
-      setEnrollments(eRes.value.data || []);
-    } else {
-      console.error("Failed to load enrollments:", eRes.reason);
-    }
-
-    if (pRes.status === "fulfilled") {
-      setPayments(pRes.value.data || []);
-    } else {
-      console.error("Failed to load payments:", pRes.reason);
-    }
-
-    const messages = [];
-    if (bRes.status === "rejected") messages.push("Failed to load bookings");
-    if (eRes.status === "rejected") messages.push("Failed to load enrollments");
-    if (pRes.status === "rejected") messages.push("Failed to load payments");
-    if (meRes.status === "rejected") messages.push("Failed to load profile");
-
-    setErr(messages.join(" • "));
-  } finally {
-    setBusy(false);
-  }
-};
+  };
 
   useEffect(() => {
     loadAll();
@@ -80,7 +78,11 @@ export default function Profile() {
     { key: "status", header: "Status" },
   ];
 
-  //  Pay Now action column
+  const childrenCols = [
+    { key: "id", header: "Child ID" },
+    { key: "child_name", header: "Child Name" },
+  ];
+
   const enrollCols = [
     { key: "id", header: "ID" },
     { key: "child_name", header: "Child" },
@@ -100,7 +102,6 @@ export default function Profile() {
     },
   ];
 
-  //  show receipt + date
   const payCols = [
     { key: "payment_no", header: "Receipt" },
     { key: "class_title", header: "Class" },
@@ -119,7 +120,6 @@ export default function Profile() {
     },
   ];
 
-  // Summary cards (UI only) 
   const pendingEnrollments = useMemo(
     () => enrollments.filter((e) => String(e.status || "").toUpperCase() === "PENDING").length,
     [enrollments]
@@ -127,7 +127,6 @@ export default function Profile() {
 
   const lastPayment = useMemo(() => {
     if (!payments || payments.length === 0) return null;
-    // try most recent by created_at if available
     const sorted = [...payments].sort((a, b) => {
       const ta = a?.created_at ? new Date(a.created_at).getTime() : 0;
       const tb = b?.created_at ? new Date(b.created_at).getTime() : 0;
@@ -135,6 +134,14 @@ export default function Profile() {
     });
     return sorted[0];
   }, [payments]);
+
+  const children = useMemo(() => {
+    if (!me?.children || !Array.isArray(me.children)) return [];
+    return me.children.map((child) => ({
+      ...child,
+      child_name: child.child_name || child.full_name || "-",
+    }));
+  }, [me]);
 
   const StatCard = ({ icon, title, value, hint, accent = "soft" }) => (
     <div
@@ -199,7 +206,6 @@ export default function Profile() {
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
-      {/* Top card */}
       <motion.div {...cardAnim} className="kidCard" style={{ padding: 18 }}>
         <div
           style={{
@@ -230,7 +236,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Info mini cards */}
         <div
           style={{
             marginTop: 14,
@@ -253,7 +258,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Summary row */}
         <div
           style={{
             marginTop: 12,
@@ -292,7 +296,35 @@ export default function Profile() {
         ) : null}
       </motion.div>
 
-      {/* Bookings */}
+      <motion.div {...cardAnim} transition={{ delay: 0.03 }} className="kidCard" style={{ padding: 18 }}>
+        <SectionHeader
+          icon="🧒"
+          title="My Children"
+          subtitle="Children registered under this parent account."
+        />
+
+        <div style={{ marginTop: 10 }}>
+          {children.length === 0 ? (
+            <div
+              className="kidCard"
+              style={{
+                padding: 14,
+                boxShadow: "none",
+                border: "1px dashed rgba(0,0,0,0.18)",
+                opacity: 0.95,
+              }}
+            >
+              <div style={{ fontWeight: 900 }}>No children registered yet</div>
+              <div style={{ opacity: 0.78, marginTop: 4 }}>
+                Add or register a child to see them here.
+              </div>
+            </div>
+          ) : (
+            <SimpleTable columns={childrenCols} rows={children} />
+          )}
+        </div>
+      </motion.div>
+
       <motion.div {...cardAnim} transition={{ delay: 0.05 }} className="kidCard" style={{ padding: 18 }}>
         <SectionHeader
           icon="📅"
@@ -329,7 +361,6 @@ export default function Profile() {
         </div>
       </motion.div>
 
-      {/* Enrollments */}
       <motion.div {...cardAnim} transition={{ delay: 0.10 }} className="kidCard" style={{ padding: 18 }}>
         <SectionHeader
           icon="🎓"
@@ -337,7 +368,7 @@ export default function Profile() {
           subtitle="Enroll children into classes. Pay for pending enrollments."
           right={
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Link className="kidBtnGhost" to="/services">
+              <Link className="kidBtnGhost" to="/classes">
                 View Classes
               </Link>
               <Link className="kidBtn" to="/profile/enroll">
@@ -377,7 +408,6 @@ export default function Profile() {
         </div>
       </motion.div>
 
-      {/* Payments */}
       <motion.div {...cardAnim} transition={{ delay: 0.15 }} className="kidCard" style={{ padding: 18 }}>
         <SectionHeader
           icon="💳"

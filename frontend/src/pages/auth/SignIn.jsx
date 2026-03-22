@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import AuthLayout from "../../components/AuthLayout";
 import { useAuth } from "../../auth/useAuth";
 
 export default function SignIn() {
   const { login } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,20 +19,20 @@ export default function SignIn() {
     setBusy(true);
 
     try {
-      const data = await login({ email, password }); // ✅ now returns backend data
+      const data = await login({ email, password });
 
-      // Force password change (staff first login)
       if (data.force_password_change) {
         return nav("/auth/change-password");
       }
 
-      // Parents go to Profile (acts as parent dashboard)
       if (data.role === "PARENT") {
-        return nav("/profile");
+        const redirectTo = location.state?.from?.pathname
+          ? `${location.state.from.pathname}${location.state.from.search || ""}`
+          : "/profile";
+
+        return nav(redirectTo, { replace: true });
       }
 
-      // Staff should use staff portal login
-      // IMPORTANT: don't clear token if role is staff (optional) - but per your rule, we block here:
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("user");
