@@ -27,11 +27,45 @@ async function columnExists(tableName, columnName) {
   return Number(rows[0]?.count || 0) > 0;
 }
 
+async function getEnumValues(tableName, columnName) {
+  const [rows] = await db.query(
+    `
+    SELECT COLUMN_TYPE
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = ?
+      AND column_name = ?
+    LIMIT 1
+    `,
+    [tableName, columnName]
+  );
+
+  if (!rows.length || !rows[0].COLUMN_TYPE) return [];
+
+  const columnType = rows[0].COLUMN_TYPE; // enum('PENDING','SUCCESS',...)
+  const matches = [...columnType.matchAll(/'([^']+)'/g)];
+  return matches.map((m) => m[1]);
+}
+
+async function resolvePaidStatusValue() {
+  const values = await getEnumValues("payments", "payment_status");
+
+  if (values.includes("PAID")) return "PAID";
+  if (values.includes("SUCCESS")) return "SUCCESS";
+
+  // fallback to first sensible completed-like value
+  const fallback = values.find((v) =>
+    ["PAID", "SUCCESS", "COMPLETED", "CONFIRMED"].includes(v)
+  );
+
+  return fallback || "PAID";
+}
+
 async function ensureReceptionShape() {
   if (await tableExists("bookings")) {
     try {
       await db.query(
-        `ALTER TABLE bookings ADD COLUMN walk_in_customer_name VARCHAR(150) NULL AFTER parent_user_id`
+        `ALTER TABLE bookings ADD COLUMN walk_in_customer_name VARCHAR(150) NULL AFTER user_id`
       );
     } catch (err) {}
 
@@ -222,18 +256,41 @@ exports.listCashPayments = async (req, res) => {
         p.created_at,
         p.booking_id,
         p.enrollment_id,
-        COALESCE(parent_user.full_name, walkin_booking.walk_in_customer_name, guardian.full_name) AS customer_name
+
+        CASE
+          WHEN p.enrollment_id IS NOT NULL THEN 'ENROLLMENT'
+          WHEN p.booking_id IS NOT NULL THEN 'BOOKING'
+          ELSE 'OTHER'
+        END AS payment_for,
+
+        COALESCE(parent_user.full_name, walkin_booking.walk_in_customer_name, guardian.full_name) AS customer_name,
+        COALESCE(parent_user.phone, walkin_booking.walk_in_phone, guardian.phone) AS customer_phone,
+
+        walkin_booking.booking_type,
+        walkin_booking.booking_date,
+        walkin_booking.time_slot,
+
+        c.full_name AS child_name,
+        cl.title AS class_title,
+        e.status AS enrollment_status
       FROM payments p
       LEFT JOIN users parent_user ON parent_user.id = p.parent_user_id
       LEFT JOIN bookings walkin_booking ON walkin_booking.id = p.booking_id
       LEFT JOIN enrollments e ON e.id = p.enrollment_id
       LEFT JOIN children c ON c.id = e.child_id
+      LEFT JOIN classes cl ON cl.id = e.class_id
       LEFT JOIN users guardian ON guardian.id = c.parent_id
-      WHERE p.payment_method = 'CASH' AND p.payment_status = 'PENDING'
+      WHERE p.payment_method = 'CASH'
+        AND p.payment_status = 'PENDING'
       ORDER BY p.created_at DESC, p.id DESC
     `);
 
-    res.json(rows);
+    res.json(
+      rows.map((row) => ({
+        ...row,
+        amount: Number(row.amount || 0),
+      }))
+    );
   } catch (err) {
     console.error("listCashPayments error:", err);
     res.status(500).json({ message: "Failed to load cash payments" });
@@ -245,7 +302,14 @@ exports.confirmCashPayment = async (req, res) => {
     await ensureReceptionShape();
 
     const paymentId = Number(req.params.id);
-    const { note = null } = req.body;
+    const paidStatusValue = await resolvePaidStatusValue();
+
+    let noteText = null;
+    if (typeof req.body?.note === "string") {
+      noteText = req.body.note.trim() || null;
+    } else if (typeof req.body?.notes === "string") {
+      noteText = req.body.notes.trim() || null;
+    }
 
     if (!Number.isInteger(paymentId) || paymentId <= 0) {
       return res.status(400).json({ message: "Valid payment id is required" });
@@ -255,7 +319,7 @@ exports.confirmCashPayment = async (req, res) => {
 
     const [payments] = await db.query(
       `
-      SELECT id, payment_method, payment_status, enrollment_id
+      SELECT id, payment_method, payment_status, enrollment_id, booking_id
       FROM payments
       WHERE id = ?
       FOR UPDATE
@@ -275,7 +339,7 @@ exports.confirmCashPayment = async (req, res) => {
       return res.status(400).json({ message: "Only CASH payments can be confirmed here" });
     }
 
-    if (payment.payment_status === "PAID") {
+    if (payment.payment_status === paidStatusValue) {
       await db.query("ROLLBACK");
       return res.status(409).json({ message: "Payment is already confirmed" });
     }
@@ -283,12 +347,18 @@ exports.confirmCashPayment = async (req, res) => {
     const hasConfirmedBy = await columnExists("payments", "confirmed_by");
     const hasConfirmedAt = await columnExists("payments", "confirmed_at");
 
-    let updateSql = `UPDATE payments SET payment_status='PAID'`;
-    const params = [];
+    let updateSql = `UPDATE payments SET payment_status = ?`;
+    const params = [paidStatusValue];
 
-    if (note) {
-      updateSql += `, notes = CONCAT(COALESCE(notes, ''), CASE WHEN notes IS NULL OR notes='' THEN '' ELSE '\n' END, ?)`;
-      params.push(note);
+    if (noteText) {
+      updateSql += `
+        , notes = CONCAT(
+            COALESCE(notes, ''),
+            CASE WHEN notes IS NULL OR notes = '' THEN '' ELSE '\\n' END,
+            ?
+          )
+      `;
+      params.push(noteText);
     }
 
     if (hasConfirmedBy) {
@@ -307,8 +377,15 @@ exports.confirmCashPayment = async (req, res) => {
 
     if (payment.enrollment_id) {
       await db.query(
-        `UPDATE enrollments SET status='ACTIVE' WHERE id=?`,
+        `UPDATE enrollments SET status = 'ACTIVE' WHERE id = ?`,
         [payment.enrollment_id]
+      );
+    }
+
+    if (payment.booking_id) {
+      await db.query(
+        `UPDATE bookings SET status = 'CONFIRMED' WHERE id = ?`,
+        [payment.booking_id]
       );
     }
 
@@ -320,7 +397,7 @@ exports.confirmCashPayment = async (req, res) => {
       await db.query("ROLLBACK");
     } catch {}
     console.error("confirmCashPayment error:", err);
-    res.status(500).json({ message: "Failed to confirm cash payment" });
+    res.status(500).json({ message: err?.sqlMessage || "Failed to confirm cash payment" });
   }
 };
 
@@ -332,7 +409,7 @@ exports.listEnrollments = async (req, res) => {
         e.child_id,
         e.class_id,
         e.status,
-        e.enrolled_at,
+        e.created_at,
         c.full_name AS child_name,
         parent_user.full_name AS guardian_name,
         parent_user.phone AS guardian_phone,
@@ -341,7 +418,7 @@ exports.listEnrollments = async (req, res) => {
       JOIN children c ON c.id = e.child_id
       JOIN users parent_user ON parent_user.id = c.parent_id
       JOIN classes cl ON cl.id = e.class_id
-      ORDER BY e.enrolled_at DESC, e.id DESC
+      ORDER BY e.created_at DESC, e.id DESC
     `);
 
     res.json(rows);
@@ -360,7 +437,7 @@ exports.createEnrollment = async (req, res) => {
     }
 
     const [childRows] = await db.query(
-      `SELECT id, full_name FROM children WHERE id=?`,
+      `SELECT id, full_name FROM children WHERE id = ?`,
       [Number(child_id)]
     );
     if (!childRows.length) {
@@ -368,7 +445,7 @@ exports.createEnrollment = async (req, res) => {
     }
 
     const [classRows] = await db.query(
-      `SELECT id, title, item_type, status FROM classes WHERE id=?`,
+      `SELECT id, title, item_type, status FROM classes WHERE id = ?`,
       [Number(class_id)]
     );
     if (!classRows.length) {
@@ -384,7 +461,7 @@ exports.createEnrollment = async (req, res) => {
     }
 
     const [existing] = await db.query(
-      `SELECT id FROM enrollments WHERE child_id=? AND class_id=? LIMIT 1`,
+      `SELECT id FROM enrollments WHERE child_id = ? AND class_id = ? LIMIT 1`,
       [Number(child_id), Number(class_id)]
     );
     if (existing.length) {
@@ -496,9 +573,11 @@ exports.saveBookingPayment = async (req, res) => {
     const {
       amount,
       payment_method = "CASH",
-      payment_status = "SUCCESS",
+      payment_status = null,
       transaction_ref = null,
     } = req.body;
+
+    const paidStatusValue = await resolvePaidStatusValue();
 
     if (!Number.isInteger(bookingId) || bookingId <= 0) {
       return res.status(400).json({ message: "Valid booking id is required" });
@@ -509,15 +588,16 @@ exports.saveBookingPayment = async (req, res) => {
       return res.status(400).json({ message: "Valid amount is required" });
     }
 
-    const allowedMethods = ["CASH", "CARD", "ONLINE"];
+    const allowedMethods = ["CASH", "CARD", "BANK_TRANSFER"];
     if (!allowedMethods.includes(payment_method)) {
       return res.status(400).json({ message: "Invalid payment method" });
     }
 
-    const allowedStatuses = ["PENDING", "SUCCESS", "FAILED"];
-    if (!allowedStatuses.includes(payment_status)) {
-      return res.status(400).json({ message: "Invalid payment status" });
-    }
+    const statusEnumValues = await getEnumValues("payments", "payment_status");
+    const finalPaymentStatus =
+      payment_status && statusEnumValues.includes(payment_status)
+        ? payment_status
+        : paidStatusValue;
 
     const hasBookingId = await columnExists("payments", "booking_id");
     if (!hasBookingId) {
@@ -527,13 +607,30 @@ exports.saveBookingPayment = async (req, res) => {
     }
 
     const [bookings] = await db.query(
-      `SELECT id FROM bookings WHERE id = ? LIMIT 1`,
+      `
+      SELECT
+        id,
+        user_id,
+        walk_in_customer_name,
+        walk_in_phone
+      FROM bookings
+      WHERE id = ?
+      LIMIT 1
+      `,
       [bookingId]
     );
 
     if (!bookings.length) {
       return res.status(404).json({ message: "Booking not found" });
     }
+
+    const booking = bookings[0];
+
+    // Important fix:
+    // payments.parent_user_id cannot be NULL in your DB.
+    // For registered user bookings -> use booking.user_id
+    // For walk-in/manual bookings -> use logged-in receptionist id as fallback
+    const parentUserId = booking.user_id || req.user.id;
 
     const [existing] = await db.query(
       `
@@ -551,19 +648,23 @@ exports.saveBookingPayment = async (req, res) => {
         `
         UPDATE payments
         SET
+          parent_user_id = ?,
           amount = ?,
           payment_method = ?,
           payment_status = ?,
           transaction_ref = ?,
-          paid_at = CASE WHEN ? = 'SUCCESS' THEN NOW() ELSE paid_at END
+          paid_at = CASE WHEN ? = ? THEN NOW() ELSE paid_at END,
+          updated_at = NOW()
         WHERE id = ?
         `,
         [
+          parentUserId,
           parsedAmount,
           payment_method,
-          payment_status,
+          finalPaymentStatus,
           transaction_ref,
-          payment_status,
+          finalPaymentStatus,
+          paidStatusValue,
           existing[0].id,
         ]
       );
@@ -571,22 +672,45 @@ exports.saveBookingPayment = async (req, res) => {
       await db.query(
         `
         INSERT INTO payments
-        (payment_no, enrollment_id, booking_id, amount, payment_method, payment_status, transaction_ref, paid_at)
-        VALUES (?, NULL, ?, ?, ?, ?, ?, CASE WHEN ? = 'SUCCESS' THEN NOW() ELSE NULL END)
-        `,
-        [
-          makePaymentNo(),
-          bookingId,
-          parsedAmount,
+        (
+          payment_no,
+          parent_user_id,
+          enrollment_id,
+          booking_id,
+          amount,
           payment_method,
           payment_status,
           transaction_ref,
-          payment_status,
+          paid_at
+        )
+        VALUES
+        (
+          ?,
+          ?,
+          NULL,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          CASE WHEN ? = ? THEN NOW() ELSE NULL END
+        )
+        `,
+        [
+          makePaymentNo(),
+          parentUserId,
+          bookingId,
+          parsedAmount,
+          payment_method,
+          finalPaymentStatus,
+          transaction_ref,
+          finalPaymentStatus,
+          paidStatusValue,
         ]
       );
     }
 
-    if (payment_status === "SUCCESS") {
+    if (finalPaymentStatus === paidStatusValue) {
       await db.query(
         `UPDATE bookings SET status = 'CONFIRMED' WHERE id = ?`,
         [bookingId]

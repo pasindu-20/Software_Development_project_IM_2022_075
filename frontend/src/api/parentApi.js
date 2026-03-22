@@ -12,7 +12,7 @@ export const addChildApi = (payload) => api.post("/api/parent/children", payload
 export const listChildrenApi = () => api.get("/api/parent/children");
 
 // classes
-export const listClassesApi = () => api.get("/api/parent/classes");
+export const listClassesApi = () => api.get("/api/public/classes");
 
 // enrollments
 export const enrollApi = (payload) => api.post("/api/parent/enroll", payload);

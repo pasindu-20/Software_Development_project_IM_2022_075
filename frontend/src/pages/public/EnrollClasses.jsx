@@ -15,7 +15,7 @@ export default function EnrollClasses() {
   const [children, setChildren] = useState([]);
   const [classes, setClasses] = useState([]);
 
-  const [child_id, setChildId] = useState("");
+  const [selectedChildren, setSelectedChildren] = useState([]);
   const [class_id, setClassId] = useState("");
 
   const [newChildName, setNewChildName] = useState("");
@@ -23,24 +23,40 @@ export default function EnrollClasses() {
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
 
-  const load = async () => {
-    setErr("");
+  const loadChildren = async () => {
     try {
-      const [kidsRes, clsRes] = await Promise.all([
-        listChildrenApi(),
-        listClassesApi(),
-      ]);
+      const kidsRes = await listChildrenApi();
       setChildren(kidsRes.data || []);
+    } catch (e) {
+      console.error("Failed to load children:", e);
+    }
+  };
+
+  const toggleChildSelection = (id) => {
+    setSelectedChildren((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const loadClasses = async () => {
+    try {
+      const clsRes = await listClassesApi();
       setClasses(clsRes.data || []);
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to load data");
+      console.error("Failed to load classes:", e);
+      setErr(e?.response?.data?.message || "Failed to load classes");
     }
+  };
+
+  const load = async () => {
+    setErr("");
+    await loadChildren();
+    await loadClasses();
   };
 
   useEffect(() => {
     load();
 
-    // ✅ If class_id exists in URL, preselect it
     const preClassId = searchParams.get("class_id");
     if (preClassId) setClassId(String(preClassId));
 
@@ -52,14 +68,17 @@ export default function EnrollClasses() {
     setErr("");
     setInfo("");
 
-    if (!newChildName.trim()) return setErr("Child name is required");
+    if (!newChildName.trim()) {
+      setErr("Child name is required");
+      return;
+    }
 
     setBusy(true);
     try {
       await addChildApi({ child_name: newChildName.trim() });
-      setInfo("✅ Child added");
+      setInfo("Child added");
       setNewChildName("");
-      await load();
+      await loadChildren(); // only reload children
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Failed to add child");
     } finally {
@@ -72,13 +91,36 @@ export default function EnrollClasses() {
     setErr("");
     setInfo("");
 
-    if (!child_id || !class_id) return setErr("Select child and class");
+    if (!selectedChildren.length || !class_id) {
+      setErr("Select at least one child and a class");
+      return;
+    }
 
     setBusy(true);
     try {
-      await enrollApi({ child_id: Number(child_id), class_id: Number(class_id) });
-      setInfo("✅ Enrollment created (PENDING). Now you can pay from your profile.");
-      setTimeout(() => navigate("/profile"), 800);
+      const res = await enrollApi({
+        child_ids: selectedChildren,
+        class_id: Number(class_id),
+      });
+
+      const data = res.data || {};
+      const enrolledCount = data.enrolled?.length || 0;
+      const alreadyCount = data.already_enrolled?.length || 0;
+
+      if (enrolledCount > 0 && alreadyCount > 0) {
+        setInfo(
+          `${enrolledCount} child(ren) enrolled. ${alreadyCount} already enrolled before.`
+        );
+      } else if (enrolledCount > 0) {
+        setInfo(`${enrolledCount} child(ren) enrolled successfully.`);
+      } else if (alreadyCount > 0) {
+        setErr("Selected child(ren) are already enrolled in this class.");
+      } else {
+        setErr("No enrollments were created.");
+      }
+
+      setSelectedChildren([]);
+      setTimeout(() => navigate("/profile"), 1000);
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Failed to enroll");
     } finally {
@@ -114,7 +156,6 @@ export default function EnrollClasses() {
         {info ? <div style={{ color: "#0a6b2b", fontWeight: 800 }}>{info}</div> : null}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          {/* Add Child */}
           <div className="kidCard" style={{ padding: 14, boxShadow: "none" }}>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>👶 Add Child</div>
 
@@ -136,23 +177,50 @@ export default function EnrollClasses() {
             </div>
           </div>
 
-          {/* Enroll */}
           <div className="kidCard" style={{ padding: 14, boxShadow: "none" }}>
-            <div style={{ fontWeight: 900, marginBottom: 10 }}>✅ Enroll</div>
+            <div style={{ fontWeight: 900, marginBottom: 10 }}>
+               Enroll Child / Children
+            </div>
 
             <form onSubmit={enroll} style={{ display: "grid", gap: 10 }}>
-              <select
-                className="kidInput"
-                value={child_id}
-                onChange={(e) => setChildId(e.target.value)}
+              <div
+                style={{
+                  border: "1px solid #ccc",
+                  borderRadius: 8,
+                  padding: 10,
+                  display: "grid",
+                  gap: 8,
+                  maxHeight: 180,
+                  overflowY: "auto",
+                  background: "#fff",
+                }}
               >
-                <option value="">Select Child</option>
-                {children.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.child_name}
-                  </option>
-                ))}
-              </select>
+                {children.length === 0 ? (
+                  <div style={{ fontSize: 14, opacity: 0.7 }}>No children added yet</div>
+                ) : (
+                  children.map((c) => {
+                    const childIdNum = Number(c.id);
+                    return (
+                      <label
+                        key={c.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedChildren.includes(childIdNum)}
+                          onChange={() => toggleChildSelection(childIdNum)}
+                        />
+                        <span>{c.child_name || c.full_name}</span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
 
               <select
                 className="kidInput"
@@ -162,7 +230,7 @@ export default function EnrollClasses() {
                 <option value="">Select Class</option>
                 {classes.map((cl) => (
                   <option key={cl.id} value={cl.id}>
-                    {cl.title} (LKR {Number(cl.fee).toFixed(2)})
+                    {cl.title} (LKR {Number(cl.fee || 0).toFixed(2)})
                   </option>
                 ))}
               </select>
@@ -173,7 +241,8 @@ export default function EnrollClasses() {
             </form>
 
             <div style={{ marginTop: 10, opacity: 0.75, fontSize: 13 }}>
-              After enrolling, go back to <b>My Profile</b> and click <b>Pay Now</b> for pending enrollments.
+              After enrolling, go back to <b>My Profile</b> and click <b>Pay Now</b> for
+              pending enrollments.
             </div>
           </div>
         </div>

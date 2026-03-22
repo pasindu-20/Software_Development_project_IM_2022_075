@@ -16,11 +16,6 @@ function makePaymentNo(id) {
  *  - payment_method: "CARD" | "CASH" | "BANK_TRANSFER"
  *  - reference_no (optional, for bank transfer)
  *  - notes (optional)
- *
- * Rules:
- *  - Parent can only pay for their own enrollment/booking
- *  - If CARD: mark PAID immediately + set enrollment ACTIVE (ACID transaction)
- *  - If CASH/BANK_TRANSFER: create PENDING payment; enrollment stays PENDING (admin confirms later)
  */
 exports.createPayment = async (req, res) => {
   const parentId = req.user.id;
@@ -38,21 +33,23 @@ exports.createPayment = async (req, res) => {
     await db.query("START TRANSACTION");
 
     let amount = null;
-    let enrollmentId = enrollment_id ? Number(enrollment_id) : null;
-    let bookingId = booking_id ? Number(booking_id) : null;
+    const enrollmentId = enrollment_id ? Number(enrollment_id) : null;
+    const bookingId = booking_id ? Number(booking_id) : null;
 
     // ---- PAY FOR ENROLLMENT ----
     if (enrollmentId) {
-      // Verify enrollment belongs to this parent + lock row
       const [rows] = await db.query(
-        `SELECT e.id, e.status,
-                cl.fee
+        `SELECT
+           e.id,
+           e.status,
+           cl.fee
          FROM enrollments e
          JOIN children ch ON ch.id = e.child_id
          JOIN classes cl ON cl.id = e.class_id
-         WHERE e.id=? AND ch.parent_user_id=?
+         WHERE e.id = ?
+           AND (ch.parent_user_id = ? OR ch.parent_id = ?)
          FOR UPDATE`,
-        [enrollmentId, parentId]
+        [enrollmentId, parentId, parentId]
       );
 
       if (!rows.length) {
@@ -68,39 +65,45 @@ exports.createPayment = async (req, res) => {
         return res.status(400).json({ message: "Class fee is not set" });
       }
 
-      // Prevent double paid
       const [paidAlready] = await db.query(
-        `SELECT id FROM payments
-         WHERE parent_user_id=? AND enrollment_id=? AND payment_status='PAID'
+        `SELECT id
+         FROM payments
+         WHERE parent_user_id = ?
+           AND enrollment_id = ?
+           AND payment_status = 'PAID'
          LIMIT 1`,
         [parentId, enrollmentId]
       );
+
       if (paidAlready.length) {
         await db.query("ROLLBACK");
         return res.status(409).json({ message: "This enrollment is already paid" });
       }
     }
 
-    // ---- PAY FOR BOOKING (optional) ----
-    // For now, keep amount fixed or later calculate from booking type/package table.
+    // ---- PAY FOR BOOKING ----
     if (bookingId) {
-      const [b] = await db.query(
-        `SELECT id FROM bookings WHERE id=? AND parent_user_id=? FOR UPDATE`,
-        [bookingId, parentId]
+      const [bookingRows] = await db.query(
+        `SELECT id
+         FROM bookings
+         WHERE id = ?
+           AND (parent_user_id = ? OR user_id = ?)
+         FOR UPDATE`,
+        [bookingId, parentId, parentId]
       );
-      if (!b.length) {
+
+      if (!bookingRows.length) {
         await db.query("ROLLBACK");
         return res.status(403).json({ message: "Invalid booking" });
       }
 
-      // TEMP: booking payment amount (later you can link packages/pricing)
-      if (amount === null) amount = 2500; // default booking payment for now
+      if (amount === null) {
+        amount = 2500;
+      }
     }
 
-    // Decide initial status
     const status = payment_method === "CARD" ? "PAID" : "PENDING";
 
-    // Create payment row
     const [ins] = await db.query(
       `INSERT INTO payments
        (parent_user_id, enrollment_id, booking_id, amount, payment_method, payment_status, reference_no, notes)
@@ -120,11 +123,10 @@ exports.createPayment = async (req, res) => {
     const paymentId = ins.insertId;
     const paymentNo = makePaymentNo(paymentId);
 
-    await db.query("UPDATE payments SET payment_no=? WHERE id=?", [paymentNo, paymentId]);
+    await db.query(`UPDATE payments SET payment_no = ? WHERE id = ?`, [paymentNo, paymentId]);
 
-    // If CARD, activate enrollment immediately
     if (payment_method === "CARD" && enrollmentId) {
-      await db.query("UPDATE enrollments SET status='ACTIVE' WHERE id=?", [enrollmentId]);
+      await db.query(`UPDATE enrollments SET status = 'ACTIVE' WHERE id = ?`, [enrollmentId]);
     }
 
     await db.query("COMMIT");
@@ -142,8 +144,12 @@ exports.createPayment = async (req, res) => {
   } catch (err) {
     try {
       await db.query("ROLLBACK");
-    } catch {}
+    } catch (_) {}
+
     console.error("createPayment error:", err);
-    return res.status(500).json({ message: "Failed to create payment" });
+    return res.status(500).json({
+      message: "Failed to create payment",
+      error: err.message,
+    });
   }
 };
