@@ -285,6 +285,8 @@ async function ensurePaymentsTableShape() {
 // GET /api/parent/me
 exports.me = async (req, res) => {
   try {
+    await ensureChildrenTableShape();
+
     const userId = req.user.id;
 
     const [rows] = await db.query(
@@ -299,7 +301,20 @@ exports.me = async (req, res) => {
       return res.status(404).json({ message: "Parent not found" });
     }
 
-    return res.json(rows[0]);
+    const [childrenRows] = await db.query(
+      `SELECT
+         id,
+         COALESCE(NULLIF(child_name, ''), full_name) AS child_name
+       FROM children
+       WHERE parent_user_id = ? OR parent_id = ?
+       ORDER BY created_at DESC, id DESC`,
+      [userId, userId]
+    );
+
+    return res.json({
+      ...rows[0],
+      children: childrenRows,
+    });
   } catch (err) {
     console.error("parent me error:", err);
     return res.status(500).json({ message: "Failed to load profile", error: err.message });

@@ -1,4 +1,3 @@
-// frontend/src/pages/public/PartyPackages.jsx
 import { Link } from "react-router-dom";
 import { Check, ArrowRight, PartyPopper, Users, Cake, Gift } from "lucide-react";
 
@@ -18,7 +17,6 @@ export default function PartyPackages() {
 
   return (
     <div className="partyPage">
-      {/* Hero Section */}
       <section className="partyHero">
         <div className="partyHeroContainer">
           <div className="partyHeroGrid">
@@ -32,7 +30,10 @@ export default function PartyPackages() {
               </p>
 
               <div className="partyBtnRow">
-                <Link to="/contact" className="partyBtnPrimary">
+                <Link
+                  to="/profile/book?booking_type=PARTY&package=General%20Party%20Booking"
+                  className="partyBtnPrimary"
+                >
                   Book a Party
                   <ArrowRight size={18} />
                 </Link>
@@ -54,7 +55,6 @@ export default function PartyPackages() {
         </div>
       </section>
 
-      {/* What's Included */}
       <section className="partySection">
         <div className="partySectionHeader">
           <h2 className="partySectionTitle">What's Included</h2>
@@ -98,7 +98,6 @@ export default function PartyPackages() {
         </div>
       </section>
 
-      {/* Packages */}
       <section id="packages" className="partyMutedSection">
         <div className="partySectionContainer">
           <div className="partySectionHeader">
@@ -109,7 +108,6 @@ export default function PartyPackages() {
           </div>
 
           <div className="partyPackagesGrid">
-            {/* Package 01 */}
             <div className="partyPackageCard">
               <div className="partyPackageBadgeWrap">
                 <span className="partyPackageBadge">Package 01</span>
@@ -132,12 +130,14 @@ export default function PartyPackages() {
                 <li><Check size={18} /> Complimentary invitations (15)</li>
               </ul>
 
-              <Link to="/contact" className="partyPackageBtn">
+              <Link
+                to="/profile/book?booking_type=PARTY&package=Classic%20Party&price=25000"
+                className="partyPackageBtn"
+              >
                 Book Package 01
               </Link>
             </div>
 
-            {/* Package 02 */}
             <div className="partyPackageCardFeatured">
               <div className="partyPremiumBadge">Premium</div>
 
@@ -164,7 +164,10 @@ export default function PartyPackages() {
                 <li><Check size={18} /> Food & beverages included</li>
               </ul>
 
-              <Link to="/contact" className="partyPackageBtnFeatured">
+              <Link
+                to="/profile/book?booking_type=PARTY&package=Deluxe%20Party&price=50000"
+                className="partyPackageBtnFeatured"
+              >
                 Book Package 02
               </Link>
             </div>
@@ -172,7 +175,6 @@ export default function PartyPackages() {
         </div>
       </section>
 
-      {/* Themes */}
       <section className="partySection">
         <div className="partySectionHeader">
           <h2 className="partySectionTitle">Popular Themes</h2>
@@ -196,7 +198,6 @@ export default function PartyPackages() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="partyCtaSection">
         <div className="partyCtaContainer">
           <div className="partyCtaContent">
@@ -205,7 +206,10 @@ export default function PartyPackages() {
               Our team is here to help you create a memorable celebration your child will treasure forever.
             </p>
 
-            <Link to="/contact" className="partyBtnPrimary">
+            <Link
+              to="/profile/book?booking_type=PARTY&package=General%20Party%20Booking"
+              className="partyBtnPrimary"
+            >
               Book Your Party
               <ArrowRight size={18} />
             </Link>
