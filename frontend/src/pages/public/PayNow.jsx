@@ -72,6 +72,12 @@ export default function PayNow() {
 
     if (!enrollment_id) return setErr("Invalid enrollment id");
 
+    // CARD -> go to Stripe page only
+    if (method === "CARD") {
+      navigate(`/pay/card?enrollmentId=${enrollment_id}`);
+      return;
+    }
+
     if (method === "BANK_TRANSFER") {
       if (!reference_no.trim()) {
         return setErr("Reference number is required for bank transfer.");
@@ -95,9 +101,7 @@ export default function PayNow() {
 
       const pay = res.data?.payment;
 
-      if (method === "CARD") {
-        setInfo(`✅ Card payment successful. Receipt: ${pay?.payment_no || ""}`);
-      } else if (method === "BANK_TRANSFER") {
+      if (method === "BANK_TRANSFER") {
         setInfo(`✅ Bank transfer submitted. Status is PENDING until receptionist approval. Receipt: ${pay?.payment_no || ""}`);
       } else {
         setInfo(`✅ Payment submitted as PENDING. Receipt: ${pay?.payment_no || ""}`);
@@ -172,11 +176,11 @@ export default function PayNow() {
           {info ? <div style={{ color: "#0a6b2b", fontWeight: 800 }}>{info}</div> : null}
 
           <button disabled={busy} className="kidBtn" type="submit">
-            {busy ? "Processing..." : "Pay Now"}
+            {method === "CARD" ? "Continue to Card Payment" : busy ? "Processing..." : "Pay Now"}
           </button>
 
           <div style={{ opacity: 0.7, fontSize: 13 }}>
-            Card payments are marked <b>PAID</b> instantly. Cash payments stay <b>PENDING</b> until confirmation. Bank transfer stays <b>PENDING</b> until the receptionist approves the uploaded slip.
+            Card payments go through Stripe and are marked <b>PAID</b> only after successful card confirmation. Cash payments stay <b>PENDING</b> until confirmation. Bank transfer stays <b>PENDING</b> until the receptionist approves the uploaded slip.
           </div>
         </form>
       </div>

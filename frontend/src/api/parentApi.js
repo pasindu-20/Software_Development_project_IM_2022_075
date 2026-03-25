@@ -21,3 +21,10 @@ export const listMyEnrollmentsApi = () => api.get("/api/parent/enrollments");
 // payments
 export const listMyPaymentsApi = () => api.get("/api/parent/payments");
 export const createPaymentApi = (payload) => api.post("/api/parent/payments", payload);
+
+// stripe card payments
+export const createStripePaymentIntentApi = (payload) =>
+  api.post("/api/parent/payments/stripe/create-intent", payload);
+
+export const finalizeStripePaymentApi = (payload) =>
+  api.post("/api/parent/payments/stripe/finalize", payload);

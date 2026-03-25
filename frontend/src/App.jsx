@@ -101,7 +101,14 @@ export default function App() {
             <Route path="/play-area" element={<PlayArea />} />
 
             {/* Payment screens (UI only) */}
-            <Route path="/pay/card" element={<PaymentCard />} />
+            <Route
+              path="/pay/card"
+              element={
+                <ProtectedRoute allowedRoles={["PARENT"]}>
+                  <PaymentCard />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/pay/cash" element={<PaymentCash />} />
             <Route path="/pay/bank-transfer" element={<PaymentBankTransfer />} />
 
