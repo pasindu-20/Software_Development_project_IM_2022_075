@@ -28,6 +28,7 @@ export default function CreateBooking() {
 
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CARD");
 
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
@@ -102,7 +103,19 @@ export default function CreateBooking() {
 
     setBusy(true);
     try {
-      await createBookingApi(form);
+      const res = await createBookingApi(form);
+      const bookingId = res?.data?.bookingId || res?.data?.id || res?.data?.booking?.id;
+
+      if (form.booking_type === "PLAY_AREA" && bookingId) {
+        if (paymentMethod === "CARD") {
+          navigate(`/pay/card?bookingId=${bookingId}`);
+          return;
+        }
+
+        navigate(`/profile/pay-booking/${bookingId}?method=${paymentMethod}`);
+        return;
+      }
+
       setInfo("✅ Booking created! Our team will confirm soon.");
       setTimeout(() => navigate("/profile"), 700);
     } catch (e2) {
@@ -113,6 +126,7 @@ export default function CreateBooking() {
   };
 
   const isPartyBooking = form.booking_type === "PARTY";
+  const isPlayAreaBooking = form.booking_type === "PLAY_AREA";
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -142,13 +156,7 @@ export default function CreateBooking() {
             onChange={(e) => set("booking_date", e.target.value)}
           />
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 12,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ fontWeight: 800, display: "block", marginBottom: 6 }}>
                 Start Time
@@ -182,6 +190,21 @@ export default function CreateBooking() {
             placeholder="Time slot will be generated automatically"
           />
 
+          {isPlayAreaBooking && (
+            <>
+              <label style={{ fontWeight: 800 }}>Payment Method</label>
+              <select
+                className="kidInput"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="CARD">Card</option>
+                <option value="CASH">Cash</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+              </select>
+            </>
+          )}
+
           <label style={{ fontWeight: 800 }}>Notes</label>
           <textarea
             className="kidInput"
@@ -204,7 +227,13 @@ export default function CreateBooking() {
             </button>
 
             <button disabled={busy} className="kidBtn" type="submit">
-              {busy ? "Creating..." : "Create Booking"}
+              {isPlayAreaBooking
+                ? busy
+                  ? "Please wait..."
+                  : "Continue"
+                : busy
+                ? "Creating..."
+                : "Create Booking"}
             </button>
           </div>
         </form>

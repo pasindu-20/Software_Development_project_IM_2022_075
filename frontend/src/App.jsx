@@ -148,6 +148,15 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/profile/pay-booking/:bookingId"
+              element={
+                <ProtectedRoute allowedRoles={["PARENT"]}>
+                  <PayNow />
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           {/* Auth */}

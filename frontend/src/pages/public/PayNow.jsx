@@ -1,22 +1,38 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import { createPaymentApi } from "../../api/parentApi";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
+import {
+  createPaymentApi,
+  createStripePaymentIntentApi,
+  finalizeStripePaymentApi,
+} from "../../api/parentApi";
 
 export default function PayNow() {
-  const { enrollmentId } = useParams();
+  const { enrollmentId, bookingId: bookingIdParam } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [method, setMethod] = useState("CARD");
   const [reference_no, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [bankSlipFile, setBankSlipFile] = useState(null);
   const [bankSlipData, setBankSlipData] = useState("");
+  const [amount, setAmount] = useState("");
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const enrollment_id = useMemo(() => Number(enrollmentId), [enrollmentId]);
+  const enrollment_id = useMemo(() => (enrollmentId ? Number(enrollmentId) : null), [enrollmentId]);
+  const booking_id = useMemo(() => (bookingIdParam ? Number(bookingIdParam) : null), [bookingIdParam]);
+  const paymentTargetLabel = booking_id ? "Booking" : "Enrollment";
+  const paymentTargetId = booking_id || enrollment_id;
+
+  useEffect(() => {
+    const methodFromQuery = searchParams.get("method");
+    if (["CARD", "CASH", "BANK_TRANSFER"].includes(methodFromQuery)) {
+      setMethod(methodFromQuery);
+    }
+  }, [searchParams]);
 
   const readFileAsBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -35,12 +51,7 @@ export default function PayNow() {
 
     if (!file) return;
 
-    const allowed = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "application/pdf",
-    ];
+    const allowed = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
 
     if (!allowed.includes(file.type)) {
       setErr("Please upload JPG, PNG, or PDF bank slip.");
@@ -70,11 +81,41 @@ export default function PayNow() {
     setErr("");
     setInfo("");
 
-    if (!enrollment_id) return setErr("Invalid enrollment id");
+    if (!paymentTargetId) {
+      return setErr("Invalid payment target.");
+    }
 
-    // CARD -> go to Stripe page only
     if (method === "CARD") {
-      navigate(`/pay/card?enrollmentId=${enrollment_id}`);
+      try {
+        setBusy(true);
+
+        const payload = {
+          enrollment_id: enrollment_id || null,
+          booking_id: booking_id || null,
+        };
+
+        const res = await createStripePaymentIntentApi(payload);
+        const clientSecret = res?.data?.clientSecret;
+
+        if (!clientSecret) {
+          throw new Error("Missing Stripe client secret");
+        }
+
+        const finalizeRes = await finalizeStripePaymentApi({
+          enrollment_id: enrollment_id || null,
+          booking_id: booking_id || null,
+          payment_intent_id: res?.data?.paymentIntentId || null,
+        });
+
+        if (finalizeRes?.data) {
+          setInfo("✅ Card payment completed successfully.");
+          setTimeout(() => navigate("/profile"), 1000);
+        }
+      } catch (e2) {
+        setErr(e2?.response?.data?.message || e2?.message || "Card payment failed");
+      } finally {
+        setBusy(false);
+      }
       return;
     }
 
@@ -91,7 +132,9 @@ export default function PayNow() {
     setBusy(true);
     try {
       const res = await createPaymentApi({
-        enrollment_id,
+        enrollment_id: enrollment_id || null,
+        booking_id: booking_id || null,
+        amount: amount || null,
         payment_method: method,
         reference_no: method === "BANK_TRANSFER" ? reference_no.trim() : null,
         notes: notes || null,
@@ -102,9 +145,13 @@ export default function PayNow() {
       const pay = res.data?.payment;
 
       if (method === "BANK_TRANSFER") {
-        setInfo(`✅ Bank transfer submitted. Status is PENDING until receptionist approval. Receipt: ${pay?.payment_no || ""}`);
+        setInfo(
+          `✅ Bank transfer submitted. Status is PENDING until receptionist approval. Receipt: ${
+            pay?.payment_no || ""
+          }`
+        );
       } else {
-        setInfo(`✅ Payment submitted as PENDING. Receipt: ${pay?.payment_no || ""}`);
+        setInfo(`✅ Payment submitted successfully. Receipt: ${pay?.payment_no || ""}`);
       }
 
       setTimeout(() => navigate("/profile"), 1000);
@@ -118,26 +165,39 @@ export default function PayNow() {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <div className="kidCard" style={{ padding: 16, maxWidth: 650 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <div
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}
+        >
           <div>
             <div className="badgeSoft">💳 Pay Now</div>
             <h1 style={{ margin: "10px 0 0", fontSize: 26 }}>Complete Payment</h1>
             <div style={{ opacity: 0.75, marginTop: 6 }}>
-              Enrollment ID: <b>#{enrollment_id}</b>
+              {paymentTargetLabel} ID: <b>#{paymentTargetId}</b>
             </div>
           </div>
-          <Link className="kidBtnGhost" to="/profile">Back</Link>
+          <Link className="kidBtnGhost" to="/profile">
+            Back
+          </Link>
         </div>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 10, marginTop: 14 }}>
           <label style={{ fontWeight: 900 }}>Payment Method</label>
           <select className="kidInput" value={method} onChange={(e) => setMethod(e.target.value)}>
             <option value="CARD">Card</option>
-            <option value="CASH">Cash (pay at counter)</option>
+            <option value="CASH">Cash</option>
             <option value="BANK_TRANSFER">Bank Transfer</option>
           </select>
 
-          {method === "BANK_TRANSFER" ? (
+          <label style={{ fontWeight: 900 }}>Amount</label>
+          <input
+            className="kidInput"
+            type="number"
+            placeholder="Enter amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+
+          {method === "BANK_TRANSFER" && (
             <>
               <label style={{ fontWeight: 900 }}>Bank Reference No</label>
               <input
@@ -161,7 +221,7 @@ export default function PayNow() {
                 </div>
               ) : null}
             </>
-          ) : null}
+          )}
 
           <label style={{ fontWeight: 900 }}>Notes (optional)</label>
           <textarea
@@ -176,12 +236,8 @@ export default function PayNow() {
           {info ? <div style={{ color: "#0a6b2b", fontWeight: 800 }}>{info}</div> : null}
 
           <button disabled={busy} className="kidBtn" type="submit">
-            {method === "CARD" ? "Continue to Card Payment" : busy ? "Processing..." : "Pay Now"}
+            {busy ? "Processing..." : method === "CARD" ? "Continue to Card Payment" : "Pay Now"}
           </button>
-
-          <div style={{ opacity: 0.7, fontSize: 13 }}>
-            Card payments go through Stripe and are marked <b>PAID</b> only after successful card confirmation. Cash payments stay <b>PENDING</b> until confirmation. Bank transfer stays <b>PENDING</b> until the receptionist approves the uploaded slip.
-          </div>
         </form>
       </div>
     </motion.div>
