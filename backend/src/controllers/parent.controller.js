@@ -683,7 +683,7 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ message: "Invalid booking_type" });
     }
 
-    await db.query(
+    const [result] = await db.query(
       `
       INSERT INTO bookings
         (user_id, booking_type, booking_date, time_slot, notes, status)
@@ -693,7 +693,10 @@ exports.createBooking = async (req, res) => {
       [userId, booking_type, booking_date, time_slot || null, notes || null]
     );
 
-    return res.status(201).json({ message: "Booking created successfully" });
+    return res.status(201).json({
+      message: "Booking created successfully",
+      bookingId: result.insertId,
+    });
   } catch (err) {
     console.error("createBooking error:", err);
     return res.status(500).json({

@@ -63,7 +63,7 @@ async function ensurePaymentsTableShape() {
   for (const sql of alterStatements) {
     try {
       await db.query(sql);
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -74,6 +74,18 @@ function isValidSlipData(data) {
     data.startsWith("data:image/") ||
     data.startsWith("data:application/pdf")
   );
+}
+
+function extractAmountFromText(text) {
+  const value = String(text || "");
+  const match = value.match(/LKR\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
+
+  if (!match) return null;
+
+  const amount = Number(String(match[1]).replace(/,/g, ""));
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  return amount;
 }
 
 async function resolvePaymentContext({ parentId, enrollmentId, bookingId }) {
@@ -124,12 +136,12 @@ async function resolvePaymentContext({ parentId, enrollmentId, bookingId }) {
 
   if (bookingId) {
     const [bookingRows] = await db.query(
-      `SELECT id
+      `SELECT id, booking_type, notes
        FROM bookings
        WHERE id = ?
-         AND (user_id = ? OR parent_user_id = ?)
+         AND user_id = ?
        FOR UPDATE`,
-      [bookingId, parentId, parentId]
+      [bookingId, parentId]
     );
 
     if (!bookingRows.length) {
@@ -139,7 +151,11 @@ async function resolvePaymentContext({ parentId, enrollmentId, bookingId }) {
     booking = bookingRows[0];
 
     if (amount === null) {
-      amount = 2500;
+      amount = extractAmountFromText(booking.notes);
+
+      if (amount === null) {
+        amount = 2500;
+      }
     }
 
     const [paidBooking] = await db.query(
@@ -266,7 +282,7 @@ exports.createPayment = async (req, res) => {
   } catch (err) {
     try {
       await db.query("ROLLBACK");
-    } catch (_) {}
+    } catch (_) { }
 
     console.error("createPayment error:", err);
     return res.status(err.statusCode || 500).json({
@@ -319,7 +335,7 @@ exports.createStripePaymentIntent = async (req, res) => {
   } catch (err) {
     try {
       await db.query("ROLLBACK");
-    } catch (_) {}
+    } catch (_) { }
 
     console.error("createStripePaymentIntent error:", err);
     return res.status(err.statusCode || 500).json({
@@ -443,7 +459,7 @@ exports.finalizeStripePayment = async (req, res) => {
   } catch (err) {
     try {
       await db.query("ROLLBACK");
-    } catch (_) {}
+    } catch (_) { }
 
     console.error("finalizeStripePayment error:", err);
     return res.status(err.statusCode || 500).json({
