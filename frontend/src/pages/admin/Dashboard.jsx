@@ -27,6 +27,13 @@ export default function AdminDashboard() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
   const revenueBarColors = ["#c9abd9", "#a78bfa", "#7c3aed"];
+  const inquiryStatusColors = {
+    NEW: "#a78bfa",
+    FOLLOW_UP: "#f59e0b",
+    CONTACTED: "#10b981",
+    CONVERTED: "#3b82f6",
+    CLOSED: "#ef4444",
+  };
 
   useEffect(() => {
     const run = async () => {
@@ -145,7 +152,14 @@ export default function AdminDashboard() {
                   dataKey="count"
                   nameKey="status"
                   outerRadius={90}
-                />
+                >
+                  {inqStatus.map((entry, index) => (
+                    <Cell
+                      key={`pie-cell-${entry.status}-${index}`}
+                      fill={inquiryStatusColors[entry.status] || "#c9abd9"}
+                    />
+                  ))}
+                </Pie>
                 <Tooltip />
                 <Legend />
               </PieChart>
