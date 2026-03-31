@@ -8,3 +8,5 @@ export const listPublicPlayAreasApi = () => api.get("/api/public/play-areas");
 
 export const getPlayAreaAvailabilityApi = (params) =>
   api.get("/api/public/play-areas/availability", { params });
+
+export const listPublicPartyPackagesApi = () => api.get("/api/public/party-packages");

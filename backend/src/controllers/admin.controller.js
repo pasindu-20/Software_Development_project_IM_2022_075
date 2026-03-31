@@ -33,6 +33,135 @@ async function ensurePlayAreasTable() {
   } catch (err) { }
 }
 
+async function ensurePartyPackagesTable() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS party_packages (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      package_code VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      description TEXT NULL,
+      price DECIMAL(10,2) NOT NULL DEFAULT 0,
+      max_children INT NOT NULL DEFAULT 0,
+      duration_text VARCHAR(150) NULL,
+      badge_text VARCHAR(100) NULL,
+      is_featured TINYINT(1) NOT NULL DEFAULT 0,
+      sort_order INT NOT NULL DEFAULT 0,
+      features_json LONGTEXT NULL,
+      status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN description TEXT NULL AFTER name`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN price DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER description`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN max_children INT NOT NULL DEFAULT 0 AFTER price`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN duration_text VARCHAR(150) NULL AFTER max_children`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN badge_text VARCHAR(100) NULL AFTER duration_text`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN is_featured TINYINT(1) NOT NULL DEFAULT 0 AFTER badge_text`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN sort_order INT NOT NULL DEFAULT 0 AFTER is_featured`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN features_json LONGTEXT NULL AFTER sort_order`);
+  } catch (err) { }
+  try {
+    await db.query(`ALTER TABLE party_packages ADD COLUMN status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE' AFTER features_json`);
+  } catch (err) { }
+
+  const [countRows] = await db.query(`SELECT COUNT(*) AS count FROM party_packages`);
+  const count = Number(countRows[0]?.count || 0);
+
+  if (count === 0) {
+    await db.query(
+      `INSERT INTO party_packages
+        (package_code, name, description, price, max_children, duration_text, badge_text, is_featured, sort_order, features_json, status)
+       VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "Package 01",
+        "Classic Party",
+        "Perfect for intimate birthday celebrations.",
+        25000,
+        15,
+        "2-hour party room access",
+        null,
+        0,
+        1,
+        JSON.stringify([
+          "Up to 15 children",
+          "2-hour party room access",
+          "Basic themed decorations",
+          "Birthday cake (1kg)",
+          "Party host included",
+          "Simple goodie bags",
+          "Complimentary invitations (15)",
+        ]),
+        "ACTIVE",
+        "Package 02",
+        "Deluxe Party",
+        "Ideal for a larger premium celebration.",
+        50000,
+        25,
+        "3-hour party room access",
+        "Premium",
+        1,
+        2,
+        JSON.stringify([
+          "Up to 25 children",
+          "3-hour party room access",
+          "Premium themed decorations",
+          "Birthday cake (2kg)",
+          "Party host & assistant",
+          "Premium goodie bags",
+          "Professional photography",
+          "Custom invitations (25)",
+          "Food & beverages included",
+        ]),
+        "ACTIVE",
+      ]
+    );
+  }
+}
+
+function normalizePartyPackageFeatures(featuresInput, maxChildren, durationText) {
+  let features = [];
+
+  if (Array.isArray(featuresInput)) {
+    features = featuresInput;
+  } else if (typeof featuresInput === "string") {
+    features = featuresInput.split(/\r?\n|\|/g);
+  }
+
+  const cleaned = features
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  if (!cleaned.length) {
+    if (Number(maxChildren) > 0) {
+      cleaned.push(`Up to ${Number(maxChildren)} children`);
+    }
+    if (durationText && String(durationText).trim()) {
+      cleaned.push(String(durationText).trim());
+    }
+  }
+
+  return cleaned;
+}
+
 async function ensureClassesTableShape() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS classes (
@@ -884,6 +1013,232 @@ exports.deletePlayArea = async (req, res) => {
   } catch (err) {
     console.error("deletePlayArea error:", err);
     res.status(500).json({ message: "Failed to delete play area" });
+  }
+};
+
+exports.listPartyPackages = async (req, res) => {
+  try {
+    await ensurePartyPackagesTable();
+
+    const [rows] = await db.query(`
+      SELECT id, package_code, name, description, price, max_children, duration_text, badge_text,
+             is_featured, sort_order, features_json, status, created_at, updated_at
+      FROM party_packages
+      ORDER BY sort_order ASC, created_at ASC, id ASC
+    `);
+
+    res.json(
+      rows.map((row) => ({
+        ...row,
+        price: Number(row.price || 0),
+        max_children: Number(row.max_children || 0),
+        is_featured: Boolean(row.is_featured),
+        features: (() => {
+          try {
+            const parsed = JSON.parse(row.features_json || "[]");
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (err) {
+            return [];
+          }
+        })(),
+      }))
+    );
+  } catch (err) {
+    console.error("listPartyPackages error:", err);
+    res.status(500).json({ message: "Failed to load party packages" });
+  }
+};
+
+exports.createPartyPackage = async (req, res) => {
+  try {
+    await ensurePartyPackagesTable();
+
+    const {
+      package_code,
+      name,
+      description,
+      price,
+      max_children,
+      duration_text,
+      badge_text,
+      is_featured,
+      sort_order,
+      features,
+      status,
+    } = req.body;
+
+    if (!package_code || !String(package_code).trim()) {
+      return res.status(400).json({ message: "package_code is required" });
+    }
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ message: "name is required" });
+    }
+
+    if (!Number.isFinite(Number(price)) || Number(price) < 0) {
+      return res.status(400).json({ message: "price must be 0 or more" });
+    }
+
+    if (!Number.isFinite(Number(max_children)) || Number(max_children) <= 0) {
+      return res.status(400).json({ message: "max_children must be a positive number" });
+    }
+
+    const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
+    const safeFeatures = normalizePartyPackageFeatures(features, max_children, duration_text);
+
+    const [result] = await db.query(
+      `INSERT INTO party_packages
+        (package_code, name, description, price, max_children, duration_text, badge_text, is_featured, sort_order, features_json, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        String(package_code).trim(),
+        String(name).trim(),
+        description ? String(description).trim() : null,
+        Number(price),
+        Number(max_children),
+        duration_text ? String(duration_text).trim() : null,
+        badge_text ? String(badge_text).trim() : null,
+        Number(is_featured) ? 1 : 0,
+        Number.isFinite(Number(sort_order)) ? Number(sort_order) : 0,
+        JSON.stringify(safeFeatures),
+        safeStatus,
+      ]
+    );
+
+    res.status(201).json({
+      message: "Party package created successfully",
+      id: result.insertId,
+    });
+  } catch (err) {
+    console.error("createPartyPackage error:", err);
+    res.status(500).json({ message: "Failed to create party package" });
+  }
+};
+
+exports.updatePartyPackage = async (req, res) => {
+  try {
+    await ensurePartyPackagesTable();
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Valid id is required" });
+    }
+
+    const {
+      package_code,
+      name,
+      description,
+      price,
+      max_children,
+      duration_text,
+      badge_text,
+      is_featured,
+      sort_order,
+      features,
+      status,
+    } = req.body;
+
+    if (!package_code || !String(package_code).trim()) {
+      return res.status(400).json({ message: "package_code is required" });
+    }
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ message: "name is required" });
+    }
+
+    if (!Number.isFinite(Number(price)) || Number(price) < 0) {
+      return res.status(400).json({ message: "price must be 0 or more" });
+    }
+
+    if (!Number.isFinite(Number(max_children)) || Number(max_children) <= 0) {
+      return res.status(400).json({ message: "max_children must be a positive number" });
+    }
+
+    const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
+    const safeFeatures = normalizePartyPackageFeatures(features, max_children, duration_text);
+
+    const [result] = await db.query(
+      `UPDATE party_packages
+       SET package_code = ?, name = ?, description = ?, price = ?, max_children = ?, duration_text = ?,
+           badge_text = ?, is_featured = ?, sort_order = ?, features_json = ?, status = ?
+       WHERE id = ?`,
+      [
+        String(package_code).trim(),
+        String(name).trim(),
+        description ? String(description).trim() : null,
+        Number(price),
+        Number(max_children),
+        duration_text ? String(duration_text).trim() : null,
+        badge_text ? String(badge_text).trim() : null,
+        Number(is_featured) ? 1 : 0,
+        Number.isFinite(Number(sort_order)) ? Number(sort_order) : 0,
+        JSON.stringify(safeFeatures),
+        safeStatus,
+        id,
+      ]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Party package not found" });
+    }
+
+    res.json({ message: "Party package updated successfully" });
+  } catch (err) {
+    console.error("updatePartyPackage error:", err);
+    res.status(500).json({ message: "Failed to update party package" });
+  }
+};
+
+exports.updatePartyPackageStatus = async (req, res) => {
+  try {
+    await ensurePartyPackagesTable();
+
+    const id = Number(req.params.id);
+    const { status } = req.body;
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Valid id is required" });
+    }
+
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+      return res.status(400).json({ message: "status must be ACTIVE or INACTIVE" });
+    }
+
+    const [result] = await db.query(
+      `UPDATE party_packages SET status = ? WHERE id = ?`,
+      [status, id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Party package not found" });
+    }
+
+    res.json({ message: `Party package marked as ${status}` });
+  } catch (err) {
+    console.error("updatePartyPackageStatus error:", err);
+    res.status(500).json({ message: "Failed to update party package status" });
+  }
+};
+
+exports.deletePartyPackage = async (req, res) => {
+  try {
+    await ensurePartyPackagesTable();
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Valid id is required" });
+    }
+
+    const [result] = await db.query(`DELETE FROM party_packages WHERE id = ?`, [id]);
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Party package not found" });
+    }
+
+    res.json({ message: "Party package deleted successfully" });
+  } catch (err) {
+    console.error("deletePartyPackage error:", err);
+    res.status(500).json({ message: "Failed to delete party package" });
   }
 };
 

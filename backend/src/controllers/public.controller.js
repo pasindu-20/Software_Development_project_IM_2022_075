@@ -81,6 +81,82 @@ async function ensurePlayAreasTable() {
   } catch (err) {}
 }
 
+async function ensurePartyPackagesTable() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS party_packages (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      package_code VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      description TEXT NULL,
+      price DECIMAL(10,2) NOT NULL DEFAULT 0,
+      max_children INT NOT NULL DEFAULT 0,
+      duration_text VARCHAR(150) NULL,
+      badge_text VARCHAR(100) NULL,
+      is_featured TINYINT(1) NOT NULL DEFAULT 0,
+      sort_order INT NOT NULL DEFAULT 0,
+      features_json LONGTEXT NULL,
+      status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  const [countRows] = await db.query(`SELECT COUNT(*) AS count FROM party_packages`);
+  const count = Number(countRows[0]?.count || 0);
+
+  if (count === 0) {
+    await db.query(
+      `INSERT INTO party_packages
+        (package_code, name, description, price, max_children, duration_text, badge_text, is_featured, sort_order, features_json, status)
+       VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "Package 01",
+        "Classic Party",
+        "Perfect for intimate birthday celebrations.",
+        25000,
+        15,
+        "2-hour party room access",
+        null,
+        0,
+        1,
+        JSON.stringify([
+          "Up to 15 children",
+          "2-hour party room access",
+          "Basic themed decorations",
+          "Birthday cake (1kg)",
+          "Party host included",
+          "Simple goodie bags",
+          "Complimentary invitations (15)",
+        ]),
+        "ACTIVE",
+        "Package 02",
+        "Deluxe Party",
+        "Ideal for a larger premium celebration.",
+        50000,
+        25,
+        "3-hour party room access",
+        "Premium",
+        1,
+        2,
+        JSON.stringify([
+          "Up to 25 children",
+          "3-hour party room access",
+          "Premium themed decorations",
+          "Birthday cake (2kg)",
+          "Party host & assistant",
+          "Premium goodie bags",
+          "Professional photography",
+          "Custom invitations (25)",
+          "Food & beverages included",
+        ]),
+        "ACTIVE",
+      ]
+    );
+  }
+}
+
 function convert24HourToMinutes(time24) {
   const value = String(time24 || "").trim();
   const match = value.match(/^(\d{2}):(\d{2})$/);
@@ -209,6 +285,40 @@ exports.listPublicPlayAreas = async (req, res) => {
   } catch (e) {
     console.error("listPublicPlayAreas error:", e);
     res.status(500).json({ message: "Failed to load play areas" });
+  }
+};
+
+exports.listPublicPartyPackages = async (req, res) => {
+  try {
+    await ensurePartyPackagesTable();
+
+    const [rows] = await db.query(`
+      SELECT id, package_code, name, description, price, max_children, duration_text, badge_text,
+             is_featured, sort_order, features_json, status, created_at
+      FROM party_packages
+      WHERE status='ACTIVE'
+      ORDER BY sort_order ASC, created_at ASC, id ASC
+    `);
+
+    res.json(
+      rows.map((row) => ({
+        ...row,
+        price: Number(row.price || 0),
+        max_children: Number(row.max_children || 0),
+        is_featured: Boolean(row.is_featured),
+        features: (() => {
+          try {
+            const parsed = JSON.parse(row.features_json || "[]");
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (err) {
+            return [];
+          }
+        })(),
+      }))
+    );
+  } catch (e) {
+    console.error("listPublicPartyPackages error:", e);
+    res.status(500).json({ message: "Failed to load party packages" });
   }
 };
 
