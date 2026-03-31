@@ -79,19 +79,19 @@ async function ensureReceptionShape() {
       await db.query(
         `ALTER TABLE bookings ADD COLUMN walk_in_customer_name VARCHAR(150) NULL AFTER user_id`
       );
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await db.query(
         `ALTER TABLE bookings ADD COLUMN walk_in_phone VARCHAR(50) NULL AFTER walk_in_customer_name`
       );
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await db.query(
         `ALTER TABLE bookings ADD COLUMN created_by INT NULL AFTER notes`
       );
-    } catch (err) {}
+    } catch (err) { }
   }
 
   if (await tableExists("payments")) {
@@ -101,31 +101,31 @@ async function ensureReceptionShape() {
          MODIFY COLUMN payment_status ENUM('PENDING','PAID','SUCCESS','FAILED','CANCELLED')
          NOT NULL DEFAULT 'PENDING'`
       );
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await db.query(
         `ALTER TABLE payments ADD COLUMN confirmed_by INT NULL AFTER notes`
       );
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await db.query(
         `ALTER TABLE payments ADD COLUMN confirmed_at DATETIME NULL AFTER confirmed_by`
       );
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await db.query(
         `ALTER TABLE payments ADD COLUMN bank_slip_name VARCHAR(255) NULL AFTER confirmed_at`
       );
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await db.query(
         `ALTER TABLE payments ADD COLUMN bank_slip_data LONGTEXT NULL AFTER bank_slip_name`
       );
-    } catch (err) {}
+    } catch (err) { }
   }
 }
 
@@ -427,7 +427,7 @@ exports.confirmCashPayment = async (req, res) => {
   } catch (err) {
     try {
       await db.query("ROLLBACK");
-    } catch {}
+    } catch { }
     console.error("confirmCashPayment error:", err);
     res.status(500).json({ message: err?.sqlMessage || "Failed to confirm cash payment" });
   }
@@ -590,7 +590,7 @@ exports.confirmBankTransferPayment = async (req, res) => {
   } catch (err) {
     try {
       await db.query("ROLLBACK");
-    } catch {}
+    } catch { }
     console.error("confirmBankTransferPayment error:", err);
     res.status(500).json({ message: err?.sqlMessage || "Failed to approve bank transfer payment" });
   }
@@ -906,7 +906,7 @@ exports.saveBookingPayment = async (req, res) => {
       );
     }
 
-    if (finalPaymentStatus === paidStatusValue) {
+    if (["PAID", "SUCCESS"].includes(String(finalPaymentStatus || "").toUpperCase())) {
       await db.query(
         `UPDATE bookings SET status = 'CONFIRMED' WHERE id = ?`,
         [bookingId]
