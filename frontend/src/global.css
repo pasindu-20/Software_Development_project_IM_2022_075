@@ -3159,3 +3159,202 @@
     transform: none;
   }
 }
+
+/*reception - dashboard*/
+.rec-dashboard-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.rec-dashboard-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.rec-dashboard-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rec-dashboard-panel-header h3 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1f2a44;
+}
+
+.rec-dashboard-panel-header p {
+  margin: 0;
+  color: #777;
+  font-size: 14px;
+}
+
+.rec-dashboard-refresh-btn {
+  border: none;
+  background: #e8d0ea;
+  color: #5b2d63;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rec-dashboard-refresh-btn:hover {
+  background: #ddc0e0;
+}
+
+.rec-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rec-action-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #f0e5f2;
+  border-radius: 12px;
+  background: #fcf8fc;
+}
+
+.rec-action-left h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: #222;
+}
+
+.rec-action-left p {
+  margin: 0;
+  font-size: 13px;
+  color: #777;
+}
+
+.rec-action-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.rec-action-badge {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.rec-action-badge.active {
+  background: #edd2f0;
+  color: #7a2c86;
+}
+
+.rec-action-badge.zero {
+  background: #efefef;
+  color: #888;
+}
+
+.rec-action-btn {
+  border: none;
+  background: #d8b7dd;
+  color: #4e2456;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rec-action-btn:hover {
+  background: #cfa9d5;
+}
+
+.rec-bookings-table-wrap {
+  overflow-x: auto;
+}
+
+.rec-bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rec-bookings-table th,
+.rec-bookings-table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid #f1f1f1;
+  font-size: 14px;
+}
+
+.rec-bookings-table th {
+  background: #fafafa;
+  color: #555;
+  font-weight: 700;
+}
+
+.rec-status-pill {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.rec-status-pill.pending {
+  background: #fff3cd;
+  color: #8a6d1d;
+}
+
+.rec-status-pill.confirmed,
+.rec-status-pill.paid,
+.rec-status-pill.success {
+  background: #dff3e8;
+  color: #1f7a4d;
+}
+
+.rec-status-pill.cancelled,
+.rec-status-pill.failed {
+  background: #fde2e2;
+  color: #b23b3b;
+}
+
+.rec-no-data {
+  text-align: center;
+  color: #888;
+  padding: 24px 0;
+}
+
+@media (max-width: 1100px) {
+  .rec-dashboard-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .rec-action-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rec-action-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+} 
+
+/* end of reception dashboard CSS */
