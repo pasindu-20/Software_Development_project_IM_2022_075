@@ -53,6 +53,22 @@ export default function PlayArea() {
     );
   }, [zones]);
 
+  const buildBookingLink = (zone) => {
+    if (!zone) return "/profile/book?booking_type=PLAY_AREA";
+
+    return `/profile/book?booking_type=PLAY_AREA&play_area_id=${encodeURIComponent(
+      zone.id
+    )}&play_area_name=${encodeURIComponent(
+      zone.name || ""
+    )}&price=${encodeURIComponent(zone.price || 0)}&capacity=${encodeURIComponent(
+      zone.capacity || 0
+    )}`;
+  };
+
+  const primaryBookingLink = useMemo(() => {
+    return buildBookingLink(zones[0]);
+  }, [zones]);
+
   return (
     <div className="playAreaPage">
       <section className="playAreaHero">
@@ -68,7 +84,7 @@ export default function PlayArea() {
               </p>
 
               <div className="playAreaBtnRow">
-                <Link to="/profile/book" className="playAreaBtnPrimary">
+                <Link to={primaryBookingLink} className="playAreaBtnPrimary">
                   Book Now
                   <ArrowRight size={18} />
                 </Link>
@@ -175,7 +191,10 @@ export default function PlayArea() {
                   </div>
 
                   <div style={{ marginTop: "16px" }}>
-                    <Link to="/profile/book" className="playAreaPriceBtnSecondary">
+                    <Link
+                      to={buildBookingLink(zone)}
+                      className="playAreaPriceBtnSecondary"
+                    >
                       Book This Zone
                     </Link>
                   </div>
@@ -199,7 +218,7 @@ export default function PlayArea() {
               safe, engaging play.
             </p>
 
-            <Link to="/profile/book" className="playAreaBtnPrimary">
+            <Link to={primaryBookingLink} className="playAreaBtnPrimary">
               Book Your Visit
               <ArrowRight size={18} />
             </Link>

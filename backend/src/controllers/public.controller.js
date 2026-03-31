@@ -81,6 +81,58 @@ async function ensurePlayAreasTable() {
   } catch (err) {}
 }
 
+function convert24HourToMinutes(time24) {
+  const value = String(time24 || "").trim();
+  const match = value.match(/^(\d{2}):(\d{2})$/);
+
+  if (!match) return null;
+
+  const hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2], 10);
+
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+
+  return hour * 60 + minute;
+}
+
+function convert12HourToMinutes(time12h) {
+  const value = String(time12h || "").trim();
+  const match = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (!match) return null;
+
+  let hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+
+  if (hour < 1 || hour > 12 || minute < 0 || minute > 59) return null;
+
+  if (period === "AM") {
+    if (hour === 12) hour = 0;
+  } else {
+    if (hour !== 12) hour += 12;
+  }
+
+  return hour * 60 + minute;
+}
+
+function parseTimeSlotToRange(timeSlot) {
+  const parts = String(timeSlot || "").split(" - ");
+  if (parts.length !== 2) return null;
+
+  const startMinutes = convert12HourToMinutes(parts[0]);
+  const endMinutes = convert12HourToMinutes(parts[1]);
+
+  if (startMinutes === null || endMinutes === null) return null;
+  if (endMinutes <= startMinutes) return null;
+
+  return { startMinutes, endMinutes };
+}
+
+function isTimeOverlap(startA, endA, startB, endB) {
+  return startA < endB && endA > startB;
+}
+
 function formatAge(row) {
   if (row.age_min == null && row.age_max == null) return null;
   if (row.age_min != null && row.age_max != null) return `${row.age_min}-${row.age_max} years`;
@@ -157,5 +209,90 @@ exports.listPublicPlayAreas = async (req, res) => {
   } catch (e) {
     console.error("listPublicPlayAreas error:", e);
     res.status(500).json({ message: "Failed to load play areas" });
+  }
+};
+
+exports.getPlayAreaAvailability = async (req, res) => {
+  try {
+    await ensurePlayAreasTable();
+
+    const playAreaId = Number(req.query.play_area_id);
+    const bookingDate = String(req.query.booking_date || "").trim();
+    const startTime = String(req.query.start_time || "").trim();
+    const endTime = String(req.query.end_time || "").trim();
+
+    if (!Number.isInteger(playAreaId) || playAreaId <= 0) {
+      return res.status(400).json({ message: "Valid play_area_id is required" });
+    }
+
+    if (!bookingDate || !startTime || !endTime) {
+      return res.status(400).json({
+        message: "booking_date, start_time and end_time are required",
+      });
+    }
+
+    const startMinutes = convert24HourToMinutes(startTime);
+    const endMinutes = convert24HourToMinutes(endTime);
+
+    if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+      return res.status(400).json({ message: "Invalid time range" });
+    }
+
+    const [playAreaRows] = await db.query(
+      `SELECT id, name, capacity, price, status
+       FROM play_areas
+       WHERE id = ?
+       LIMIT 1`,
+      [playAreaId]
+    );
+
+    if (!playAreaRows.length) {
+      return res.status(404).json({ message: "Play area not found" });
+    }
+
+    const playArea = playAreaRows[0];
+    const maxSlots = Number(playArea.capacity || 0);
+
+    const [bookingRows] = await db.query(
+      `SELECT id, time_slot, children_count
+       FROM bookings
+       WHERE booking_type = 'PLAY_AREA'
+         AND play_area_id = ?
+         AND booking_date = ?
+         AND status IN ('PENDING', 'CONFIRMED')`,
+      [playAreaId, bookingDate]
+    );
+
+    let bookedSlots = 0;
+
+    for (const row of bookingRows) {
+      const range = parseTimeSlotToRange(row.time_slot);
+      if (!range) continue;
+
+      const overlaps = isTimeOverlap(
+        startMinutes,
+        endMinutes,
+        range.startMinutes,
+        range.endMinutes
+      );
+
+      if (overlaps) {
+        bookedSlots += Number(row.children_count || 1);
+      }
+    }
+
+    const remainingSlots = Math.max(0, maxSlots - bookedSlots);
+
+    return res.json({
+      play_area_id: playAreaId,
+      play_area_name: playArea.name,
+      max_slots: maxSlots,
+      booked_slots: bookedSlots,
+      remaining_slots: remainingSlots,
+      price_per_child: Number(playArea.price || 0),
+    });
+  } catch (e) {
+    console.error("getPlayAreaAvailability error:", e);
+    res.status(500).json({ message: "Failed to load play area availability" });
   }
 };

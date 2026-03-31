@@ -42,7 +42,14 @@ function isTimeOverlap(startA, endA, startB, endB) {
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { booking_type, booking_date, time_slot, notes } = req.body;
+    const {
+      booking_type,
+      booking_date,
+      time_slot,
+      notes,
+      play_area_id,
+      children_count,
+    } = req.body;
 
     if (!booking_type || !booking_date || !time_slot) {
       return res.status(400).json({
@@ -89,7 +96,6 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // Block overlapping PARTY bookings only
     if (booking_type === "PARTY") {
       const [existingBookings] = await db.query(
         `SELECT id, time_slot
@@ -119,10 +125,119 @@ exports.createBooking = async (req, res) => {
       }
     }
 
+    let safePlayAreaId = null;
+    let safeChildrenCount = null;
+    let finalNotes = notes || null;
+
+    if (booking_type === "PLAY_AREA") {
+      const playAreaIdNum = Number(play_area_id);
+      const childrenCountNum = Number(children_count);
+
+      if (!Number.isInteger(playAreaIdNum) || playAreaIdNum <= 0) {
+        return res.status(400).json({
+          message: "Valid play_area_id is required for play area booking",
+        });
+      }
+
+      if (!Number.isInteger(childrenCountNum) || childrenCountNum <= 0) {
+        return res.status(400).json({
+          message: "Valid children_count is required for play area booking",
+        });
+      }
+
+      const [playAreaRows] = await db.query(
+        `SELECT id, name, capacity, price, status
+         FROM play_areas
+         WHERE id = ?
+         LIMIT 1`,
+        [playAreaIdNum]
+      );
+
+      if (!playAreaRows.length) {
+        return res.status(404).json({
+          message: "Selected play area was not found",
+        });
+      }
+
+      const playArea = playAreaRows[0];
+
+      if (playArea.status !== "ACTIVE") {
+        return res.status(400).json({
+          message: "Selected play area is not active",
+        });
+      }
+
+      const maxSlots = Number(playArea.capacity || 0);
+
+      const [rows] = await db.query(
+        `SELECT id, time_slot, children_count
+         FROM bookings
+         WHERE booking_type = 'PLAY_AREA'
+           AND play_area_id = ?
+           AND booking_date = ?
+           AND status IN ('PENDING', 'CONFIRMED')`,
+        [playAreaIdNum, booking_date]
+      );
+
+      let bookedChildren = 0;
+
+      for (const row of rows) {
+        const range = parseTimeSlotToRange(row.time_slot);
+        if (!range) continue;
+
+        const overlaps = isTimeOverlap(
+          requestedRange.startMinutes,
+          requestedRange.endMinutes,
+          range.startMinutes,
+          range.endMinutes
+        );
+
+        if (overlaps) {
+          bookedChildren += Number(row.children_count || 1);
+        }
+      }
+
+      const remainingSlots = Math.max(0, maxSlots - bookedChildren);
+
+      if (childrenCountNum > remainingSlots) {
+        return res.status(409).json({
+          message: `Only ${remainingSlots} slots remaining for this play area at the selected time.`,
+          max_slots: maxSlots,
+          booked_slots: bookedChildren,
+          remaining_slots: remainingSlots,
+        });
+      }
+
+      const totalAmount = Number(playArea.price || 0) * childrenCountNum;
+
+      const noteParts = [
+        `Play Area: ${playArea.name}`,
+        `Children Count: ${childrenCountNum}`,
+        `Total Price: LKR ${totalAmount}`,
+      ];
+
+      if (notes && String(notes).trim()) {
+        noteParts.push(`Customer Note: ${String(notes).trim()}`);
+      }
+
+      finalNotes = noteParts.join(" | ");
+      safePlayAreaId = playAreaIdNum;
+      safeChildrenCount = childrenCountNum;
+    }
+
     const [result] = await db.query(
-      `INSERT INTO bookings (user_id, booking_type, booking_date, time_slot, notes, status)
-       VALUES (?, ?, ?, ?, ?, 'PENDING')`,
-      [userId, booking_type, booking_date, trimmedTimeSlot, notes || null]
+      `INSERT INTO bookings
+       (user_id, play_area_id, children_count, booking_type, booking_date, time_slot, notes, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')`,
+      [
+        userId,
+        safePlayAreaId,
+        safeChildrenCount,
+        booking_type,
+        booking_date,
+        trimmedTimeSlot,
+        finalNotes,
+      ]
     );
 
     return res.status(201).json({
