@@ -443,6 +443,10 @@ exports.finalizeStripePayment = async (req, res) => {
       await db.query(`UPDATE enrollments SET status = 'ACTIVE' WHERE id = ?`, [enrollmentId]);
     }
 
+    if (bookingId) {
+      await db.query(`UPDATE bookings SET status = 'CONFIRMED' WHERE id = ?`, [bookingId]);
+    }
+
     await db.query("COMMIT");
 
     return res.status(201).json({

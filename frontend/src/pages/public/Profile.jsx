@@ -15,6 +15,16 @@ export default function Profile() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
+  function displayConfirmedStatus(status) {
+    const value = String(status || "").toUpperCase();
+
+    if (value === "PAID" || value === "SUCCESS") {
+      return "CONFIRMED";
+    }
+
+    return value || "—";
+  }
+
   const loadAll = async () => {
     try {
       setBusy(true);
@@ -75,7 +85,11 @@ export default function Profile() {
     { key: "booking_type", header: "Type" },
     { key: "booking_date", header: "Date" },
     { key: "time_slot", header: "Time" },
-    { key: "status", header: "Status" },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => displayConfirmedStatus(r.status),
+    },
   ];
 
   const childrenCols = [
@@ -112,7 +126,11 @@ export default function Profile() {
       render: (r) => `LKR ${Number(r.amount || 0).toFixed(2)}`,
     },
     { key: "payment_method", header: "Method" },
-    { key: "payment_status", header: "Status" },
+    {
+      key: "payment_status",
+      header: "Status",
+      render: (r) => displayConfirmedStatus(r.payment_status),
+    },
     {
       key: "created_at",
       header: "Date",
@@ -154,8 +172,8 @@ export default function Profile() {
           accent === "warm"
             ? "linear-gradient(180deg, rgba(255, 245, 214, 0.65), rgba(255, 255, 255, 0.9))"
             : accent === "pink"
-            ? "linear-gradient(180deg, rgba(255, 220, 220, 0.55), rgba(255, 255, 255, 0.9))"
-            : "linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))",
+              ? "linear-gradient(180deg, rgba(255, 220, 220, 0.55), rgba(255, 255, 255, 0.9))"
+              : "linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))",
       }}
     >
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
