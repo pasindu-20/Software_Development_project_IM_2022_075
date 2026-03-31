@@ -40,6 +40,7 @@ import AdminReservations from "./pages/admin/Reservations";
 import AdminEventsClasses from "./pages/admin/EventsClasses";
 import AdminPlayArea from "./pages/admin/PlayArea";
 import AdminInquiries from "./pages/admin/Inquiries";
+import AdminPartyPackages from "./pages/admin/PartyPackages";
 
 // Receptionist
 import RecDashboard from "./pages/reception/Dashboard";
@@ -64,7 +65,9 @@ const adminMenu = [
   { to: "/admin/reservations", label: "Manage Reservation" },
   { to: "/admin/events", label: "Manage Events/Classes" },
   { to: "/admin/play-area", label: "Manage Play Area" },
+  { to: "/admin/party-packages", label: "Manage Party Packages" },
   { to: "/admin/inquiries", label: "Customer Inquiry" },
+  
 ];
 
 const receptionMenu = [
@@ -183,6 +186,7 @@ export default function App() {
             <Route path="/admin/reservations" element={<AdminReservations />} />
             <Route path="/admin/events" element={<AdminEventsClasses />} />
             <Route path="/admin/play-area" element={<AdminPlayArea />} />
+            <Route path="/admin/party-packages" element={<AdminPartyPackages />} />
             <Route path="/admin/inquiries" element={<AdminInquiries />} />
           </Route>
 

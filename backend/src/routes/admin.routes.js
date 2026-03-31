@@ -30,6 +30,13 @@ router.put("/play-areas/:id", ...adminOnly, adminController.updatePlayArea);
 router.delete("/play-areas/:id", ...adminOnly, adminController.deletePlayArea);
 router.patch("/play-areas/:id/status", ...adminOnly, adminController.updatePlayAreaStatus);
 
+// party packages
+router.get("/party-packages", ...adminOnly, adminController.listPartyPackages);
+router.post("/party-packages", ...adminOnly, adminController.createPartyPackage);
+router.put("/party-packages/:id", ...adminOnly, adminController.updatePartyPackage);
+router.delete("/party-packages/:id", ...adminOnly, adminController.deletePartyPackage);
+router.patch("/party-packages/:id/status", ...adminOnly, adminController.updatePartyPackageStatus);
+
 //manage reservation
 router.get("/reservations", ...adminOnly, adminController.listReservations);
 

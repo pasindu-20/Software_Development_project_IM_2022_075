@@ -1,7 +1,22 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, ArrowRight, PartyPopper, Users, Cake, Gift } from "lucide-react";
+import { listPublicPartyPackagesApi } from "../../api/publicApi";
+
+function formatMoney(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function buildBookingLink(pkg) {
+  return `/profile/book?booking_type=PARTY&package=${encodeURIComponent(
+    pkg.name || "Party Package"
+  )}&price=${encodeURIComponent(Number(pkg.price || 0))}`;
+}
 
 export default function PartyPackages() {
+  const [packages, setPackages] = useState([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+
   const features = [
     "Private party room",
     "Dedicated party host",
@@ -14,6 +29,28 @@ export default function PartyPackages() {
   ];
 
   const themes = ["Princess Party", "Superhero Adventure", "Unicorn Magic", "Jungle Safari"];
+
+  useEffect(() => {
+    const loadPackages = async () => {
+      setLoadingPackages(true);
+      try {
+        const res = await listPublicPartyPackagesApi();
+        setPackages(Array.isArray(res.data) ? res.data : []);
+      } catch (error) {
+        console.error("Failed to load party packages:", error);
+        setPackages([]);
+      } finally {
+        setLoadingPackages(false);
+      }
+    };
+
+    loadPackages();
+  }, []);
+
+  const featuredPackageId = useMemo(() => {
+    const featured = packages.find((pkg) => pkg.is_featured);
+    return featured?.id || null;
+  }, [packages]);
 
   return (
     <div className="partyPage">
@@ -107,71 +144,77 @@ export default function PartyPackages() {
             </p>
           </div>
 
-          <div className="partyPackagesGrid">
-            <div className="partyPackageCard">
-              <div className="partyPackageBadgeWrap">
-                <span className="partyPackageBadge">Package 01</span>
-              </div>
-
-              <h3 className="partyPackageTitle">Classic Party</h3>
-
-              <div className="partyPriceWrap">
-                <span className="partyPrice">25,000</span>
-                <span className="partyCurrency">LKR</span>
-              </div>
-
-              <ul className="partyPackageList">
-                <li><Check size={18} /> Up to 15 children</li>
-                <li><Check size={18} /> 2-hour party room access</li>
-                <li><Check size={18} /> Basic themed decorations</li>
-                <li><Check size={18} /> Birthday cake (1kg)</li>
-                <li><Check size={18} /> Party host included</li>
-                <li><Check size={18} /> Simple goodie bags</li>
-                <li><Check size={18} /> Complimentary invitations (15)</li>
-              </ul>
-
-              <Link
-                to="/profile/book?booking_type=PARTY&package=Classic%20Party&price=25000"
-                className="partyPackageBtn"
-              >
-                Book Package 01
-              </Link>
+          {loadingPackages ? (
+            <div className="partySectionDesc" style={{ textAlign: "center" }}>Loading packages...</div>
+          ) : packages.length === 0 ? (
+            <div className="partySectionDesc" style={{ textAlign: "center" }}>
+              No active party packages available right now.
             </div>
+          ) : (
+            <div className="partyPackagesGrid">
+              {packages.map((pkg, index) => {
+                const isFeatured = pkg.id === featuredPackageId;
+                const itemList = Array.isArray(pkg.features) ? pkg.features : [];
 
-            <div className="partyPackageCardFeatured">
-              <div className="partyPremiumBadge">Premium</div>
+                return (
+                  <div
+                    key={pkg.id || index}
+                    className={isFeatured ? "partyPackageCardFeatured" : "partyPackageCard"}
+                  >
+                    {isFeatured && pkg.badge_text ? (
+                      <div className="partyPremiumBadge">{pkg.badge_text}</div>
+                    ) : null}
 
-              <div className="partyPackageBadgeWrap">
-                <span className="partyPackageBadgeFeatured">Package 02</span>
-              </div>
+                    <div className="partyPackageBadgeWrap">
+                      <span
+                        className={
+                          isFeatured
+                            ? "partyPackageBadgeFeatured"
+                            : "partyPackageBadge"
+                        }
+                      >
+                        {pkg.package_code || `Package ${String(index + 1).padStart(2, "0")}`}
+                      </span>
+                    </div>
 
-              <h3 className="partyPackageTitleFeatured">Deluxe Party</h3>
+                    <h3
+                      className={
+                        isFeatured
+                          ? "partyPackageTitleFeatured"
+                          : "partyPackageTitle"
+                      }
+                    >
+                      {pkg.name}
+                    </h3>
 
-              <div className="partyPriceWrapFeatured">
-                <span className="partyPriceFeatured">50,000</span>
-                <span className="partyCurrencyFeatured">LKR</span>
-              </div>
+                    <div className={isFeatured ? "partyPriceWrapFeatured" : "partyPriceWrap"}>
+                      <span className={isFeatured ? "partyPriceFeatured" : "partyPrice"}>
+                        {formatMoney(pkg.price)}
+                      </span>
+                      <span className={isFeatured ? "partyCurrencyFeatured" : "partyCurrency"}>
+                        LKR
+                      </span>
+                    </div>
 
-              <ul className="partyPackageListFeatured">
-                <li><Check size={18} /> Up to 25 children</li>
-                <li><Check size={18} /> 3-hour party room access</li>
-                <li><Check size={18} /> Premium themed decorations</li>
-                <li><Check size={18} /> Birthday cake (2kg)</li>
-                <li><Check size={18} /> Party host & assistant</li>
-                <li><Check size={18} /> Premium goodie bags</li>
-                <li><Check size={18} /> Professional photography</li>
-                <li><Check size={18} /> Custom invitations (25)</li>
-                <li><Check size={18} /> Food & beverages included</li>
-              </ul>
+                    <ul className={isFeatured ? "partyPackageListFeatured" : "partyPackageList"}>
+                      {itemList.map((item, itemIndex) => (
+                        <li key={`${pkg.id || index}-${itemIndex}`}>
+                          <Check size={18} /> {item}
+                        </li>
+                      ))}
+                    </ul>
 
-              <Link
-                to="/profile/book?booking_type=PARTY&package=Deluxe%20Party&price=50000"
-                className="partyPackageBtnFeatured"
-              >
-                Book Package 02
-              </Link>
+                    <Link
+                      to={buildBookingLink(pkg)}
+                      className={isFeatured ? "partyPackageBtnFeatured" : "partyPackageBtn"}
+                    >
+                      {`Book ${pkg.package_code || `Package ${String(index + 1).padStart(2, "0")}`}`}
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       </section>
 

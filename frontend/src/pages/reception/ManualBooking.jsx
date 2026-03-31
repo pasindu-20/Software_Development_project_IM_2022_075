@@ -4,24 +4,10 @@ import {
   listPublicClassesApi,
   listPublicEventsApi,
   listPublicPlayAreasApi,
+  listPublicPartyPackagesApi,
 } from "../../api/publicApi";
 
-const PARTY_PACKAGES = [
-  {
-    id: "PKG01",
-    name: "Classic Party",
-    price: 25000,
-    duration: "2-hour party room access",
-    capacity: "Up to 15 children",
-  },
-  {
-    id: "PKG02",
-    name: "Deluxe Party",
-    price: 50000,
-    duration: "3-hour party room access",
-    capacity: "Up to 25 children",
-  },
-];
+
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString();
@@ -96,17 +82,20 @@ export default function RecManualBooking() {
     setErr("");
 
     try {
-      if (type === "PLAY_AREA") {
-        const res = await listPublicPlayAreasApi();
+      if (type === "PARTY") {
+        const res = await listPublicPartyPackagesApi();
         setCatalogItems(
-          (res.data || []).map((item) => ({
-            id: item.id,
-            label: `${item.name} - LKR ${formatMoney(item.price)}`,
-            name: item.name,
-            description: item.description || "",
-            price: item.price || 0,
-            extra: item.age_group ? `Age Group: ${item.age_group}` : "",
-            raw: item,
+          (res.data || []).map((pkg) => ({
+            id: pkg.id,
+            label: `${pkg.name} - LKR ${formatMoney(pkg.price)}`,
+            name: pkg.name,
+            description: pkg.duration_text || pkg.description || "",
+            price: pkg.price || 0,
+            extra:
+              Number(pkg.max_children) > 0
+                ? `Up to ${pkg.max_children} children`
+                : "",
+            raw: pkg,
           }))
         );
       } else if (type === "CLASS") {
@@ -332,12 +321,12 @@ export default function RecManualBooking() {
             {catalogLoading
               ? "Loading items..."
               : booking_type === "PLAY_AREA"
-              ? "Select Play Area"
-              : booking_type === "PARTY"
-              ? "Select Party Package"
-              : booking_type === "EVENT"
-              ? "Select Event"
-              : "Select Class"}
+                ? "Select Play Area"
+                : booking_type === "PARTY"
+                  ? "Select Party Package"
+                  : booking_type === "EVENT"
+                    ? "Select Event"
+                    : "Select Class"}
           </option>
 
           {catalogItems.map((item) => (
