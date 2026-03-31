@@ -173,14 +173,52 @@ async function columnExists(tableName, columnName) {
   return Number(rows[0]?.count || 0) > 0;
 }
 
-async function getPaymentsDateColumn() {
+async function getPaymentsEffectiveDateExpression() {
   if (!(await tableExists("payments"))) return null;
 
-  if (await columnExists("payments", "paid_at")) return "paid_at";
-  if (await columnExists("payments", "created_at")) return "created_at";
-  if (await columnExists("payments", "updated_at")) return "updated_at";
+  const columns = [];
 
-  return null;
+  if (await columnExists("payments", "paid_at")) columns.push("paid_at");
+  if (await columnExists("payments", "confirmed_at")) columns.push("confirmed_at");
+  if (await columnExists("payments", "created_at")) columns.push("created_at");
+  if (await columnExists("payments", "updated_at")) columns.push("updated_at");
+
+  if (!columns.length) return null;
+
+  return `COALESCE(${columns.join(", ")})`;
+}
+
+function formatSqlDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function buildLastThreeMonthsRevenue(rows) {
+  const now = new Date();
+  const totalsByMonth = new Map(
+    rows.map((row) => [row.month, Number(row.total || 0)])
+  );
+
+  const data = [];
+
+  for (let offset = 2; offset >= 0; offset--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+    data.push({
+      month: monthKey,
+      monthLabel: date.toLocaleString("en-US", { month: "short" }),
+      fullMonthLabel: date.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      total: totalsByMonth.get(monthKey) || 0,
+    });
+  }
+
+  return data;
 }
 
 
@@ -268,27 +306,32 @@ exports.monthlyRevenue = async (req, res) => {
       return res.json([]);
     }
 
-    const dateColumn = await getPaymentsDateColumn();
-    if (!dateColumn) {
+    const effectiveDateExpr = await getPaymentsEffectiveDateExpression();
+    if (!effectiveDateExpr) {
       return res.json([]);
     }
 
-    const [rows] = await db.query(`
-      SELECT DATE_FORMAT(${dateColumn}, '%Y-%m') AS month,
-             COALESCE(SUM(amount), 0) AS total
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        DATE_FORMAT(${effectiveDateExpr}, '%Y-%m') AS month,
+        COALESCE(SUM(amount), 0) AS total
       FROM payments
       WHERE payment_status IN ('SUCCESS', 'PAID')
-        AND ${dateColumn} IS NOT NULL
-      GROUP BY DATE_FORMAT(${dateColumn}, '%Y-%m')
+        AND ${effectiveDateExpr} IS NOT NULL
+        AND ${effectiveDateExpr} >= ?
+        AND ${effectiveDateExpr} < ?
+      GROUP BY DATE_FORMAT(${effectiveDateExpr}, '%Y-%m')
       ORDER BY month ASC
-    `);
-
-    res.json(
-      rows.map((row) => ({
-        ...row,
-        total: Number(row.total || 0),
-      }))
+      `,
+      [formatSqlDate(startDate), formatSqlDate(endDate)]
     );
+
+    return res.json(buildLastThreeMonthsRevenue(rows));
   } catch (err) {
     console.error("monthlyRevenue error:", err);
     res.status(500).json({ message: "Failed to load monthly revenue" });
