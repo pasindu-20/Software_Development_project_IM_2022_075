@@ -38,7 +38,6 @@ export default function InsMarkAttendance() {
   const loadChildren = async (id, selectedDate) => {
     setLoading(true);
     setErr("");
-    setInfo("");
     try {
       const res = await getEnrolledChildrenApi(id, selectedDate);
       const list = Array.isArray(res.data) ? res.data : [];
@@ -76,8 +75,12 @@ export default function InsMarkAttendance() {
     setSaving(true);
     try {
       await markAttendanceApi(classId, date, payload);
-      setInfo("Attendance saved successfully");
       await loadChildren(classId, date);
+      setInfo("Attendance saved successfully!");
+
+      setTimeout(() => {
+        setInfo("");
+      }, 3000);
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to save attendance");
     } finally {
@@ -93,7 +96,13 @@ export default function InsMarkAttendance() {
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <label>
             Class:&nbsp;
-            <select value={classId} onChange={(e) => setClassId(e.target.value)}>
+            <select
+              value={classId}
+              onChange={(e) => {
+                setInfo("");
+                setClassId(e.target.value);
+              }}
+            >
               {classes.length === 0 && <option value="">No classes</option>}
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -105,7 +114,14 @@ export default function InsMarkAttendance() {
 
           <label>
             Date:&nbsp;
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => {
+                setInfo("");
+                setDate(e.target.value);
+              }}
+            />
           </label>
 
           <button onClick={save} disabled={saving || loading || children.length === 0}>
@@ -113,8 +129,8 @@ export default function InsMarkAttendance() {
           </button>
         </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
-        {info && <div style={{ color: "green" }}>{info}</div>}
+        {err && <div style={{ color: "crimson", fontWeight: "500" }}>{err}</div>}
+        {info && <div style={{ color: "green", fontWeight: "600" }}>{info}</div>}
 
         {loading ? (
           <div>Loading children…</div>
