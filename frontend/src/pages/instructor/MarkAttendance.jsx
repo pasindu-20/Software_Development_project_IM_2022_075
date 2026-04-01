@@ -88,6 +88,8 @@ export default function InsMarkAttendance() {
     }
   };
 
+  
+
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <h2>Mark Attendance</h2>
