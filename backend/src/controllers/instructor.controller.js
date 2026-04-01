@@ -12,6 +12,53 @@ async function columnExists(tableName, columnName) {
   return Number(rows[0]?.count || 0) > 0;
 }
 
+async function getForeignKeyForColumn(tableName, columnName) {
+  const [rows] = await db.query(
+    `SELECT CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+     FROM information_schema.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = ?
+       AND COLUMN_NAME = ?
+       AND REFERENCED_TABLE_NAME IS NOT NULL
+     LIMIT 1`,
+    [tableName, columnName]
+  );
+
+  return rows[0] || null;
+}
+
+async function ensureForeignKey(tableName, columnName, referencedTable, referencedColumn, constraintName) {
+  const current = await getForeignKeyForColumn(tableName, columnName);
+
+  if (
+    current &&
+    (
+      current.CONSTRAINT_NAME !== constraintName ||
+      current.REFERENCED_TABLE_NAME !== referencedTable ||
+      current.REFERENCED_COLUMN_NAME !== referencedColumn
+    )
+  ) {
+    try {
+      await db.query(`ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${current.CONSTRAINT_NAME}\``);
+    } catch (err) {
+      console.error(`Failed to drop foreign key ${current.CONSTRAINT_NAME} on ${tableName}.${columnName}:`, err);
+    }
+  }
+
+  const afterDrop = await getForeignKeyForColumn(tableName, columnName);
+
+  if (!afterDrop) {
+    await db.query(
+      `ALTER TABLE \`${tableName}\`
+       ADD CONSTRAINT \`${constraintName}\`
+       FOREIGN KEY (\`${columnName}\`)
+       REFERENCES \`${referencedTable}\`(\`${referencedColumn}\`)
+       ON UPDATE CASCADE
+       ON DELETE CASCADE`
+    );
+  }
+}
+
 async function ensureClassesTableShape() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS classes (
@@ -81,6 +128,9 @@ async function ensureAttendanceTableShape() {
   try {
     await db.query(`ALTER TABLE attendance ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
   } catch (err) {}
+
+  await ensureForeignKey("attendance", "child_id", "children", "id", "attendance_ibfk_1");
+  await ensureForeignKey("attendance", "class_id", "classes", "id", "attendance_ibfk_2");
 }
 
 async function ensureEnrollmentsTableShape() {
