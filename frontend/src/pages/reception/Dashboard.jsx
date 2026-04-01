@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import { getReceptionDashboardApi } from "../../api/receptionApi";
+import { useNavigate } from "react-router-dom";
+import {
+  getReceptionDashboardApi,
+  listBookingsApi,
+} from "../../api/receptionApi";
 
 export default function RecDashboard() {
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState({
     totalBookings: 0,
     pendingBookings: 0,
@@ -10,6 +16,7 @@ export default function RecDashboard() {
     pendingEnrollments: 0,
   });
 
+  const [recentBookings, setRecentBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -20,20 +27,83 @@ export default function RecDashboard() {
   const load = async () => {
     setErr("");
     setLoading(true);
+
     try {
-      const res = await getReceptionDashboardApi();
+      const [summaryRes, bookingsRes] = await Promise.all([
+        getReceptionDashboardApi(),
+        listBookingsApi(),
+      ]);
+
       setStats({
-        totalBookings: Number(res.data?.totalBookings || 0),
-        pendingBookings: Number(res.data?.pendingBookings || 0),
-        pendingCashPayments: Number(res.data?.pendingCashPayments || 0),
-        totalInquiries: Number(res.data?.totalInquiries || 0),
-        pendingEnrollments: Number(res.data?.pendingEnrollments || 0),
+        totalBookings: Number(summaryRes.data?.totalBookings || 0),
+        pendingBookings: Number(summaryRes.data?.pendingBookings || 0),
+        pendingCashPayments: Number(summaryRes.data?.pendingCashPayments || 0),
+        totalInquiries: Number(summaryRes.data?.totalInquiries || 0),
+        pendingEnrollments: Number(summaryRes.data?.pendingEnrollments || 0),
       });
+
+      const bookings = Array.isArray(bookingsRes.data) ? bookingsRes.data : [];
+      setRecentBookings(bookings.slice(0, 5));
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to load receptionist dashboard");
     } finally {
       setLoading(false);
     }
+  };
+
+  const quickActions = [
+    {
+      title: "Pending Bookings",
+      subtitle: "Bookings waiting for review",
+      count: stats.pendingBookings,
+      btn: "View",
+      onClick: () => navigate("/reception/bookings"),
+    },
+    {
+      title: "Cash Payments Pending",
+      subtitle: "Counter payments to confirm",
+      count: stats.pendingCashPayments,
+      btn: "Open",
+      onClick: () => navigate("/reception/cash-payments"),
+    },
+    {
+      title: "Open Inquiries",
+      subtitle: "Customer follow-up needed",
+      count: stats.totalInquiries,
+      btn: "Open",
+      onClick: () => navigate("/reception/inquiries"),
+    },
+    {
+      title: "Pending Enrollments",
+      subtitle: "Class enrollments to manage",
+      count: stats.pendingEnrollments,
+      btn: "Open",
+      onClick: () => navigate("/reception/enrollment"),
+    },
+    {
+      title: "Add Manual Booking",
+      subtitle: "Create a booking for walk-in customers",
+      count: null,
+      btn: "Create",
+      onClick: () => navigate("/reception/manual-booking"),
+    },
+  ];
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "-";
+    const d = new Date(dateValue);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("en-LK");
+  };
+
+  const formatType = (value) => {
+    if (!value) return "-";
+    return String(value).replaceAll("_", " ");
+  };
+
+  const formatBookingId = (id) => {
+    if (!id) return "-";
+    return `BK-${String(id).padStart(4, "0")}`;
   };
 
   return (
@@ -60,15 +130,97 @@ export default function RecDashboard() {
             <Card title="Pending Enrollments" value={stats.pendingEnrollments} />
           </div>
 
-          <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-            <h3 style={{ marginTop: 0 }}>Reception Work Area</h3>
-            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
-              <li>View all bookings and counter bookings.</li>
-              <li>Create manual bookings for walk-in customers.</li>
-              <li>Confirm cash payments received at the counter.</li>
-              <li>Manage class enrollments.</li>
-              <li>Update inquiry status after customer follow-up.</li>
-            </ul>
+          <div className="rec-dashboard-bottom">
+            <div className="rec-dashboard-panel">
+              <div className="rec-dashboard-panel-header">
+                <div>
+                  <h3>Pending Actions</h3>
+                  <p>Quick access to receptionist tasks</p>
+                </div>
+                <button className="rec-dashboard-refresh-btn" onClick={load}>
+                  Refresh
+                </button>
+              </div>
+
+              <div className="rec-actions-list">
+                {quickActions.map((item, index) => (
+                  <div className="rec-action-card" key={index}>
+                    <div className="rec-action-left">
+                      <h4>{item.title}</h4>
+                      <p>{item.subtitle}</p>
+                    </div>
+
+                    <div className="rec-action-right">
+                      {item.count !== null && (
+                        <span
+                          className={`rec-action-badge ${
+                            item.count > 0 ? "active" : "zero"
+                          }`}
+                        >
+                          {item.count}
+                        </span>
+                      )}
+
+                      <button className="rec-action-btn" onClick={item.onClick}>
+                        {item.btn}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rec-dashboard-panel">
+              <div className="rec-dashboard-panel-header">
+                <div>
+                  <h3>Recent Bookings</h3>
+                  <p>Latest booking activity</p>
+                </div>
+              </div>
+
+              <div className="rec-bookings-table-wrap">
+                <table className="rec-bookings-table">
+                  <thead>
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Customer</th>
+                      <th>Type</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentBookings.length > 0 ? (
+                      recentBookings.map((booking) => (
+                        <tr key={booking.id}>
+                          <td>{formatBookingId(booking.id)}</td>
+                          <td>{booking.customer_name || "-"}</td>
+                          <td>{formatType(booking.booking_type)}</td>
+                          <td>{formatDate(booking.booking_date)}</td>
+                          <td>{booking.time_slot || "-"}</td>
+                          <td>
+                            <span
+                              className={`rec-status-pill ${String(
+                                booking.status || ""
+                              ).toLowerCase()}`}
+                            >
+                              {booking.status || "-"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="rec-no-data">
+                          No recent bookings found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </>
       )}
