@@ -376,10 +376,10 @@ export default function CreateBooking() {
 
       if (paymentMethod === "BANK_TRANSFER") {
         setInfo(
-          `✅ Booking created and bank transfer submitted successfully. Receipt: ${paymentNo}`
+          ` Booking created and bank transfer submitted successfully. Invoice: ${paymentNo}`
         );
       } else {
-        setInfo(`✅ Booking created successfully. Receipt: ${paymentNo}`);
+        setInfo(` Booking created successfully. Invoice: ${paymentNo}`);
       }
 
       setTimeout(() => navigate("/profile"), 1000);
@@ -405,16 +405,16 @@ export default function CreateBooking() {
           {isPartyBooking
             ? "Book a Party Package"
             : isPlayAreaBooking
-            ? "Book a Play Area"
-            : "Create Booking"}
+              ? "Book a Play Area"
+              : "Create Booking"}
         </h1>
 
         <div style={{ opacity: 0.7, marginTop: 6 }}>
           {isPartyBooking
             ? "Choose your party date and time. Then select how you want to pay."
             : isPlayAreaBooking
-            ? "Choose your play area booking date, time, child count, and payment method."
-            : "Choose your booking date and time. Our team will confirm availability."}
+              ? "Choose your play area booking date, time, child count, and payment method."
+              : "Choose your booking date and time. Our team will confirm availability."}
         </div>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 14 }}>
@@ -434,8 +434,8 @@ export default function CreateBooking() {
                   {playAreasLoading
                     ? "Loading play areas..."
                     : playAreas.length
-                    ? "Select play area"
-                    : "No active play areas"}
+                      ? "Select play area"
+                      : "No active play areas"}
                 </option>
 
                 {playAreas.map((area) => (
@@ -623,8 +623,8 @@ export default function CreateBooking() {
               {busy
                 ? "Processing..."
                 : isBookingWithPayment && paymentMethod === "CARD"
-                ? "Continue to Card Payment"
-                : "Create Booking"}
+                  ? "Continue to Card Payment"
+                  : "Create Booking"}
             </button>
           </div>
         </form>

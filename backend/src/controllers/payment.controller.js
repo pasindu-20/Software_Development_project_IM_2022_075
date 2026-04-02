@@ -1,5 +1,9 @@
 const db = require("../config/db");
 const Stripe = require("stripe");
+const {
+  sendInvoiceEmailByPaymentId,
+  sendCardPaymentInvoiceAndReceiptEmailByPaymentId,
+} = require("../services/paymentEmail.service");
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -266,6 +270,14 @@ exports.createPayment = async (req, res) => {
     await db.query(`UPDATE payments SET payment_no = ? WHERE id = ?`, [paymentNo, paymentId]);
     await db.query("COMMIT");
 
+    let email_warning = null;
+    try {
+      await sendInvoiceEmailByPaymentId(paymentId);
+    } catch (mailErr) {
+      email_warning = "Payment saved, but invoice email could not be sent.";
+      console.error("createPayment invoice email error:", mailErr);
+    }
+
     return res.status(201).json({
       message:
         payment_method === "BANK_TRANSFER"
@@ -278,6 +290,7 @@ exports.createPayment = async (req, res) => {
         payment_method,
         payment_status: "PENDING",
       },
+      email_warning,
     });
   } catch (err) {
     try {
@@ -449,6 +462,14 @@ exports.finalizeStripePayment = async (req, res) => {
 
     await db.query("COMMIT");
 
+    let email_warning = null;
+    try {
+      await sendCardPaymentInvoiceAndReceiptEmailByPaymentId(paymentId);
+    } catch (mailErr) {
+      email_warning = "Payment succeeded, but invoice/receipt email could not be sent.";
+      console.error("finalizeStripePayment invoice/receipt email error:", mailErr);
+    }
+
     return res.status(201).json({
       message: "Stripe card payment successful",
       payment: {
@@ -459,6 +480,7 @@ exports.finalizeStripePayment = async (req, res) => {
         payment_status: "PAID",
         reference_no: payment_intent_id,
       },
+      email_warning,
     });
   } catch (err) {
     try {
