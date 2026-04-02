@@ -1,12 +1,11 @@
-import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { useEffect, useRef, useState } from "react";
 import "../global.css";
 
 export default function PublicNavbar() {
-  const { token, role, logout } = useAuth();
+  const { token, role } = useAuth();
   const location = useLocation();
-  const nav = useNavigate();
 
   const isParent = !!token && role === "PARENT";
 
@@ -15,11 +14,6 @@ export default function PublicNavbar() {
 
   const navItemClass = ({ isActive }) =>
     "navLink" + (isActive ? " navLinkActive" : "");
-
-  const onLogout = () => {
-    logout();
-    nav("/");
-  };
 
   const toggleDropdown = (menu) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -57,7 +51,7 @@ export default function PublicNavbar() {
 
         {/* Center Nav */}
         <nav className="navLinks">
-          <NavLink className={navItemClass} to="/">
+          <NavLink end className={navItemClass} to="/">
             Home
           </NavLink>
 
@@ -108,21 +102,16 @@ export default function PublicNavbar() {
         {/* Right Actions */}
         <div className="navActions">
           {isParent ? (
-            <>
-              <Link
-                to="/profile"
-                className={
-                  location.pathname.startsWith("/profile")
-                    ? "navBtn navBtnSoft navBtnActive"
-                    : "navBtn navBtnSoft"
-                }
-              >
-                My Profile
-              </Link>
-              <button className="navBtn navBtnPrimary" onClick={onLogout}>
-                Logout
-              </button>
-            </>
+            <Link
+              to="/profile"
+              className={
+                location.pathname.startsWith("/profile")
+                  ? "navBtn navBtnPrimary navBtnActive"
+                  : "navBtn navBtnPrimary"
+              }
+            >
+              My Profile
+            </Link>
           ) : (
             <>
               <Link className="navBtn navBtnSoft" to="/auth/signin">
