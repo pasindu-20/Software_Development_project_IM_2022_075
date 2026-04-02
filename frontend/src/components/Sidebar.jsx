@@ -6,8 +6,12 @@ export default function Sidebar({ title, items }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isAdminInsideReception =
-    role === "ADMIN" && location.pathname.startsWith("/reception");
+  const isAdminInsideStaffView =
+    role === "ADMIN" &&
+    (
+      location.pathname.startsWith("/reception") ||
+      location.pathname.startsWith("/instructor")
+    );
 
   return (
     <aside style={{ padding: 16, borderRight: "1px solid #eee", background: "white" }}>
@@ -31,7 +35,7 @@ export default function Sidebar({ title, items }) {
         ))}
       </div>
 
-      {isAdminInsideReception && (
+      {isAdminInsideStaffView && (
         <button
           onClick={() => navigate("/admin/dashboard")}
           style={{

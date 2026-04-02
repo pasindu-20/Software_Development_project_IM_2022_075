@@ -4,8 +4,19 @@ import {
   getEnrolledChildrenApi,
   markAttendanceApi,
 } from "../../api/instructorApi";
+import useInstructorView from "../../hooks/useInstructorView";
 
 export default function InsMarkAttendance() {
+  const {
+    isAdminInstructorView,
+    instructors,
+    selectedInstructorId,
+    setSelectedInstructorId,
+    selectedInstructor,
+    loadingInstructors,
+    selectorError,
+  } = useInstructorView();
+
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -18,28 +29,48 @@ export default function InsMarkAttendance() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await getMyAssignedClassesApi();
-        const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
-        setClasses(list);
-        if (list[0]?.id) setClassId(String(list[0].id));
-      } catch {
-        setClasses([]);
-      }
-    })();
-  }, []);
+    loadClasses();
+  }, [selectedInstructorId, isAdminInstructorView]);
 
   useEffect(() => {
     if (!classId || !date) return;
     loadChildren(classId, date);
-  }, [classId, date]);
+  }, [classId, date, selectedInstructorId]);
+
+  const loadClasses = async () => {
+    if (isAdminInstructorView && !selectedInstructorId) {
+      setClasses([]);
+      setClassId("");
+      setChildren([]);
+      setRecords({});
+      return;
+    }
+
+    try {
+      const res = await getMyAssignedClassesApi(selectedInstructorId || undefined);
+      const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
+      setClasses(list);
+      setClassId(list[0]?.id ? String(list[0].id) : "");
+      setChildren([]);
+      setRecords({});
+    } catch {
+      setClasses([]);
+      setClassId("");
+      setChildren([]);
+      setRecords({});
+    }
+  };
 
   const loadChildren = async (id, selectedDate) => {
     setLoading(true);
     setErr("");
     try {
-      const res = await getEnrolledChildrenApi(id, selectedDate);
+      const res = await getEnrolledChildrenApi(
+        id,
+        selectedDate,
+        selectedInstructorId || undefined
+      );
+
       const list = Array.isArray(res.data) ? res.data : [];
       setChildren(list);
 
@@ -74,7 +105,13 @@ export default function InsMarkAttendance() {
 
     setSaving(true);
     try {
-      await markAttendanceApi(classId, date, payload);
+      await markAttendanceApi(
+        classId,
+        date,
+        payload,
+        selectedInstructorId || undefined
+      );
+
       await loadChildren(classId, date);
       setInfo("Attendance saved successfully!");
 
@@ -88,13 +125,42 @@ export default function InsMarkAttendance() {
     }
   };
 
-  
-
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <h2>Mark Attendance</h2>
 
       <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 10 }}>
+        {isAdminInstructorView && (
+          <>
+            <div style={{ fontWeight: 700 }}>Instructor View (Admin Access)</div>
+
+            <label>
+              Select Instructor:&nbsp;
+              <select
+                value={selectedInstructorId}
+                onChange={(e) => {
+                  setInfo("");
+                  setSelectedInstructorId(e.target.value);
+                }}
+                disabled={loadingInstructors}
+              >
+                {instructors.length === 0 && <option value="">No instructors</option>}
+                {instructors.map((ins) => (
+                  <option key={ins.id} value={ins.id}>
+                    {ins.full_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {selectedInstructor ? (
+              <div style={{ color: "#666" }}>Now viewing: {selectedInstructor.full_name}</div>
+            ) : null}
+
+            {selectorError ? <div style={{ color: "crimson" }}>{selectorError}</div> : null}
+          </>
+        )}
+
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <label>
             Class:&nbsp;

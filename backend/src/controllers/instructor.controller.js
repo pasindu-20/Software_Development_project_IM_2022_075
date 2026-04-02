@@ -83,19 +83,19 @@ async function ensureClassesTableShape() {
 
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN instructor_id INT NULL AFTER item_type`);
-  } catch (err) {}
+  } catch (err) { }
 
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN event_date DATE NULL AFTER instructor_id`);
-  } catch (err) {}
+  } catch (err) { }
 
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN start_time TIME NULL AFTER event_date`);
-  } catch (err) {}
+  } catch (err) { }
 
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN end_time TIME NULL AFTER start_time`);
-  } catch (err) {}
+  } catch (err) { }
 }
 
 async function ensureAttendanceTableShape() {
@@ -123,11 +123,11 @@ async function ensureAttendanceTableShape() {
 
   try {
     await db.query(`ALTER TABLE attendance ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`);
-  } catch (err) {}
+  } catch (err) { }
 
   try {
     await db.query(`ALTER TABLE attendance ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
-  } catch (err) {}
+  } catch (err) { }
 
   await ensureForeignKey("attendance", "child_id", "children", "id", "attendance_ibfk_1");
   await ensureForeignKey("attendance", "class_id", "classes", "id", "attendance_ibfk_2");
@@ -154,13 +154,30 @@ async function ensureAttendanceOwnership(classId, instructorId) {
   return rows[0] || null;
 }
 
+function getTargetInstructorId(req, res) {
+  if (req.user?.role === "ADMIN") {
+    const raw = req.query?.instructorId ?? req.body?.instructorId;
+    const parsed = Number(raw);
+
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      res.status(400).json({ message: "instructorId is required for admin access" });
+      return null;
+    }
+
+    return parsed;
+  }
+
+  return Number(req.user.id);
+}
+
 exports.dashboardSummary = async (req, res) => {
   try {
     await ensureClassesTableShape();
     await ensureAttendanceTableShape();
     await ensureEnrollmentsTableShape();
 
-    const instructorId = req.user.id;
+    const instructorId = getTargetInstructorId(req, res);
+    if (!instructorId) return;
 
     const [[stats]] = await db.query(
       `SELECT
@@ -204,7 +221,8 @@ exports.listAssignedClasses = async (req, res) => {
     await ensureAttendanceTableShape();
     await ensureEnrollmentsTableShape();
 
-    const instructorId = req.user.id;
+    const instructorId = getTargetInstructorId(req, res);
+    if (!instructorId) return;
 
     const [rows] = await db.query(
       `SELECT
@@ -253,7 +271,9 @@ exports.listEnrolledChildren = async (req, res) => {
     await ensureAttendanceTableShape();
     await ensureEnrollmentsTableShape();
 
-    const instructorId = req.user.id;
+    const instructorId = getTargetInstructorId(req, res);
+    if (!instructorId) return;
+
     const classId = Number(req.params.classId);
     const date = req.query.date || null;
 
@@ -316,7 +336,9 @@ exports.markAttendance = async (req, res) => {
     await ensureAttendanceTableShape();
     await ensureEnrollmentsTableShape();
 
-    const instructorId = req.user.id;
+    const instructorId = getTargetInstructorId(req, res);
+    if (!instructorId) return;
+
     const classId = Number(req.params.classId);
     const { date, records } = req.body || {};
 
@@ -401,7 +423,7 @@ exports.markAttendance = async (req, res) => {
   } catch (err) {
     try {
       await db.query("ROLLBACK");
-    } catch (rollbackErr) {}
+    } catch (rollbackErr) { }
 
     console.error("instructor markAttendance error:", err);
     res.status(500).json({ message: err?.sqlMessage || "Failed to save attendance" });
@@ -414,7 +436,9 @@ exports.getAttendanceRecords = async (req, res) => {
     await ensureAttendanceTableShape();
     await ensureEnrollmentsTableShape();
 
-    const instructorId = req.user.id;
+    const instructorId = getTargetInstructorId(req, res);
+    if (!instructorId) return;
+    
     const classId = Number(req.params.classId);
     const { from = null, to = null } = req.query;
 
