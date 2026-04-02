@@ -1,7 +1,18 @@
 import { useEffect, useState } from "react";
 import { getMyAssignedClassesApi, getAttendanceRecordsApi } from "../../api/instructorApi";
+import useInstructorView from "../../hooks/useInstructorView";
 
 export default function InsAttendanceRecords() {
+  const {
+    isAdminInstructorView,
+    instructors,
+    selectedInstructorId,
+    setSelectedInstructorId,
+    selectedInstructor,
+    loadingInstructors,
+    selectorError,
+  } = useInstructorView();
+
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState("");
 
@@ -13,23 +24,40 @@ export default function InsAttendanceRecords() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await getMyAssignedClassesApi();
-        const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
-        setClasses(list);
-        if (list[0]?.id) setClassId(String(list[0].id));
-      } catch {
-        setClasses([]);
-      }
-    })();
-  }, []);
+    loadClasses();
+  }, [selectedInstructorId, isAdminInstructorView]);
+
+  const loadClasses = async () => {
+    if (isAdminInstructorView && !selectedInstructorId) {
+      setClasses([]);
+      setClassId("");
+      setRows([]);
+      return;
+    }
+
+    try {
+      const res = await getMyAssignedClassesApi(selectedInstructorId || undefined);
+      const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
+      setClasses(list);
+      setClassId(list[0]?.id ? String(list[0].id) : "");
+      setRows([]);
+    } catch {
+      setClasses([]);
+      setClassId("");
+      setRows([]);
+    }
+  };
 
   const load = async () => {
     setErr("");
     setLoading(true);
     try {
-      const res = await getAttendanceRecordsApi(classId, from, to);
+      const res = await getAttendanceRecordsApi(
+        classId,
+        from,
+        to,
+        selectedInstructorId || undefined
+      );
       setRows(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       setRows([]);
@@ -44,6 +72,34 @@ export default function InsAttendanceRecords() {
       <h2>Attendance Records</h2>
 
       <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 10 }}>
+        {isAdminInstructorView && (
+          <>
+            <div style={{ fontWeight: 700 }}>Instructor View (Admin Access)</div>
+
+            <label>
+              Select Instructor:&nbsp;
+              <select
+                value={selectedInstructorId}
+                onChange={(e) => setSelectedInstructorId(e.target.value)}
+                disabled={loadingInstructors}
+              >
+                {instructors.length === 0 && <option value="">No instructors</option>}
+                {instructors.map((ins) => (
+                  <option key={ins.id} value={ins.id}>
+                    {ins.full_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {selectedInstructor ? (
+              <div style={{ color: "#666" }}>Now viewing: {selectedInstructor.full_name}</div>
+            ) : null}
+
+            {selectorError ? <div style={{ color: "crimson" }}>{selectorError}</div> : null}
+          </>
+        )}
+
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <label>
             Class:&nbsp;

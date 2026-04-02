@@ -71,7 +71,7 @@ export default function AdminDashboard() {
           console.error("Revenue load failed:", revenueRes.reason);
           setErr(
             revenueRes.reason?.response?.data?.message ||
-              "Failed to load monthly revenue"
+            "Failed to load monthly revenue"
           );
         }
       } finally {
@@ -111,27 +111,51 @@ export default function AdminDashboard() {
           flexWrap: "wrap",
         }}
       >
-        <div>
-          <h2 style={{ margin: 0 }}>Dashboard</h2>
-          <div style={{ color: "#666", marginTop: 6 }}>
-            Admin analytics overview (KPI cards + charts)
-          </div>
-        </div>
+        <h2>       </h2>
 
-        <button
-          onClick={() => navigate("/reception/dashboard")}
+        <div
           style={{
-            border: "none",
-            borderRadius: 10,
-            padding: "10px 16px",
-            background: "#a78bfa",
-            color: "#fff",
-            fontWeight: 700,
-            cursor: "pointer",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 12,
+            flexWrap: "wrap",
           }}
         >
-          Switch to Reception Dashboard
-        </button>
+          <div style={{ display: "flex",  flexWrap: "wrap" }}>
+            <button
+              onClick={() => navigate("/reception/dashboard")}
+              style={{
+                border: "none",
+                borderRadius: 10,
+                padding: "10px 16px",
+                background: "#403369",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: "pointer",
+                scale: "0.9",
+              }}
+            >
+              Switch to Reception Dashboard
+            </button>
+
+            <button
+              onClick={() => navigate("/instructor/dashboard")}
+              style={{
+                border: "none",
+                borderRadius: 10,
+                padding: "10px 16px",
+                background: "#45129e",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: "pointer",
+                scale: "0.9",
+              }}
+            >
+              Switch to Instructor Dashboard
+            </button>
+          </div>
+        </div>
       </div>
 
       {err ? (

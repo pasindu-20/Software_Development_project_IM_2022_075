@@ -210,7 +210,7 @@ export default function App() {
           {/* Instructor portal */}
           <Route
             element={
-              <ProtectedRoute allowedRoles={["INSTRUCTOR"]}>
+              <ProtectedRoute allowedRoles={["INSTRUCTOR" , "ADMIN"]}>
                 <PortalLayout menuTitle="Instructor Dashboard" items={instructorMenu} />
               </ProtectedRoute>
             }

@@ -7,3 +7,4 @@ export const createStaffApi = (payload) => api.post("/api/admin/staff", payload)
 export const listStaffApi = () => api.get("/api/admin/staff");
 
 export const listAdminPartyPackagesApi = () => api.get("/api/admin/party-packages");
+export const listInstructorsApi = () => api.get("/api/admin/instructors");

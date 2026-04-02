@@ -3,8 +3,19 @@ import {
   getInstructorDashboardApi,
   getMyAssignedClassesApi,
 } from "../../api/instructorApi";
+import useInstructorView from "../../hooks/useInstructorView";
 
 export default function InsDashboard() {
+  const {
+    isAdminInstructorView,
+    instructors,
+    selectedInstructorId,
+    setSelectedInstructorId,
+    selectedInstructor,
+    loadingInstructors,
+    selectorError,
+  } = useInstructorView();
+
   const [stats, setStats] = useState({
     assignedClasses: 0,
     totalEnrollments: 0,
@@ -16,16 +27,29 @@ export default function InsDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isAdminInstructorView && !selectedInstructorId) {
+      setStats({
+        assignedClasses: 0,
+        totalEnrollments: 0,
+        classesMarkedToday: 0,
+        pendingAttendanceToday: 0,
+      });
+      setClasses([]);
+      setLoading(false);
+      return;
+    }
+
     load();
-  }, []);
+  }, [selectedInstructorId, isAdminInstructorView]);
 
   const load = async () => {
     setLoading(true);
     setErr("");
+
     try {
       const [statsRes, classesRes] = await Promise.all([
-        getInstructorDashboardApi(),
-        getMyAssignedClassesApi(),
+        getInstructorDashboardApi(selectedInstructorId || undefined),
+        getMyAssignedClassesApi(selectedInstructorId || undefined),
       ]);
 
       setStats({
@@ -34,6 +58,7 @@ export default function InsDashboard() {
         classesMarkedToday: Number(statsRes.data?.classesMarkedToday || 0),
         pendingAttendanceToday: Number(statsRes.data?.pendingAttendanceToday || 0),
       });
+
       setClasses(Array.isArray(classesRes.data) ? classesRes.data : []);
     } catch (e) {
       setClasses([]);
@@ -46,6 +71,44 @@ export default function InsDashboard() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <h2>Instructor Dashboard</h2>
+
+      {isAdminInstructorView && (
+        <div
+          style={{
+            background: "white",
+            padding: 16,
+            borderRadius: 12,
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          <div style={{ fontWeight: 700 }}>Instructor View (Admin Access)</div>
+
+          <label>
+            Select Instructor:&nbsp;
+            <select
+              value={selectedInstructorId}
+              onChange={(e) => setSelectedInstructorId(e.target.value)}
+              disabled={loadingInstructors}
+            >
+              {instructors.length === 0 && <option value="">No instructors</option>}
+              {instructors.map((ins) => (
+                <option key={ins.id} value={ins.id}>
+                  {ins.full_name} {ins.email ? `(${ins.email})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {selectedInstructor && (
+            <div style={{ color: "#666" }}>
+              Now viewing: {selectedInstructor.full_name}
+            </div>
+          )}
+
+          {selectorError ? <div style={{ color: "crimson" }}>{selectorError}</div> : null}
+        </div>
+      )}
 
       {err ? <div style={{ color: "crimson" }}>{err}</div> : null}
 
@@ -67,7 +130,9 @@ export default function InsDashboard() {
           </div>
 
           <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-            <h3 style={{ marginTop: 0 }}>My Assigned Classes and Events</h3>
+            <h3 style={{ marginTop: 0 }}>
+              {isAdminInstructorView ? "Selected Instructor Classes and Events" : "My Assigned Classes and Events"}
+            </h3>
 
             {classes.length === 0 ? (
               <div style={{ color: "#666" }}>No assigned classes found.</div>
