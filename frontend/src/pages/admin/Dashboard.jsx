@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import StatCard from "../../components/StatCard";
 import {
   adminCardsApi,
@@ -21,11 +22,14 @@ import {
 } from "recharts";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
+
   const [cards, setCards] = useState(null);
   const [inqStatus, setInqStatus] = useState([]);
   const [revenue, setRevenue] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
+
   const revenueBarColors = ["#c9abd9", "#a78bfa", "#7c3aed"];
   const inquiryStatusColors = {
     NEW: "#a78bfa",
@@ -67,7 +71,7 @@ export default function AdminDashboard() {
           console.error("Revenue load failed:", revenueRes.reason);
           setErr(
             revenueRes.reason?.response?.data?.message ||
-            "Failed to load monthly revenue"
+              "Failed to load monthly revenue"
           );
         }
       } finally {
@@ -98,11 +102,36 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      <div>
-        <h2 style={{ margin: 0 }}>Dashboard</h2>
-        <div style={{ color: "#666", marginTop: 6 }}>
-          Admin analytics overview (KPI cards + charts)
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <h2 style={{ margin: 0 }}>Dashboard</h2>
+          <div style={{ color: "#666", marginTop: 6 }}>
+            Admin analytics overview (KPI cards + charts)
+          </div>
         </div>
+
+        <button
+          onClick={() => navigate("/reception/dashboard")}
+          style={{
+            border: "none",
+            borderRadius: 10,
+            padding: "10px 16px",
+            background: "#a78bfa",
+            color: "#fff",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Switch to Reception Dashboard
+        </button>
       </div>
 
       {err ? (

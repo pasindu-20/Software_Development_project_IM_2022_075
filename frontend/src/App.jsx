@@ -193,7 +193,7 @@ export default function App() {
           {/* Receptionist portal */}
           <Route
             element={
-              <ProtectedRoute allowedRoles={["RECEPTIONIST"]}>
+              <ProtectedRoute allowedRoles={["RECEPTIONIST" , "ADMIN"]}>
                 <PortalLayout menuTitle="Receptionist Dashboard" items={receptionMenu} />
               </ProtectedRoute>
             }
