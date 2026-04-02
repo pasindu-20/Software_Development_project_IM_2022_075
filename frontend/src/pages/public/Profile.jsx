@@ -452,7 +452,7 @@ export default function Profile() {
             actions={
               <>
                 <ProfileButton to="/profile/enroll">Enroll Now</ProfileButton>
-                <ProfileButton to="/services" variant="ghost">
+                <ProfileButton to="/classes" variant="ghost">
                   See Available Classes
                 </ProfileButton>
               </>
