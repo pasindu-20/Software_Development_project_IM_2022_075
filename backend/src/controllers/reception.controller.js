@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { sendReceiptEmailByPaymentId } = require("../services/paymentEmail.service");
 
 async function tableExists(tableName) {
   const [rows] = await db.query(
@@ -423,6 +424,16 @@ exports.confirmCashPayment = async (req, res) => {
 
     await db.query("COMMIT");
 
+    let email_warning = null;
+    try {
+      await sendReceiptEmailByPaymentId(paymentId);
+    } catch (mailErr) {
+      email_warning = "Payment was confirmed, but receipt email could not be sent.";
+      console.error("confirmCashPayment receipt email error:", mailErr);
+    }
+
+    res.json({ message: "Cash payment confirmed successfully", email_warning }); await db.query("COMMIT");
+
     res.json({ message: "Cash payment confirmed successfully" });
   } catch (err) {
     try {
@@ -586,7 +597,15 @@ exports.confirmBankTransferPayment = async (req, res) => {
 
     await db.query("COMMIT");
 
-    res.json({ message: "Bank transfer approved successfully" });
+    let email_warning = null;
+    try {
+      await sendReceiptEmailByPaymentId(paymentId);
+    } catch (mailErr) {
+      email_warning = "Payment was approved, but receipt email could not be sent.";
+      console.error("confirmBankTransferPayment receipt email error:", mailErr);
+    }
+
+    res.json({ message: "Bank transfer approved successfully", email_warning });
   } catch (err) {
     try {
       await db.query("ROLLBACK");

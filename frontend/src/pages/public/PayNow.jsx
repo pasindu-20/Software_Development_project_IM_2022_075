@@ -102,9 +102,9 @@ export default function PayNow() {
       const pay = res.data?.payment;
 
       if (method === "BANK_TRANSFER") {
-        setInfo(`✅ Bank transfer submitted. Status is PENDING until receptionist approval. Receipt: ${pay?.payment_no || ""}`);
+        setInfo(` Bank transfer submitted. Status is PENDING until receptionist approval. Invoice: ${pay?.payment_no || ""}`);
       } else {
-        setInfo(`✅ Payment submitted as PENDING. Receipt: ${pay?.payment_no || ""}`);
+        setInfo(` Payment submitted as PENDING. Invoice: ${pay?.payment_no || ""}`);
       }
 
       setTimeout(() => navigate("/profile"), 1000);
