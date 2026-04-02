@@ -2,22 +2,106 @@ import { useState } from "react";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { createInquiryApi } from "../../api/publicApi";
 
-export default function Contact() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-  });
+const initialFormData = {
+  name: "",
+  email: "",
+  phone: "",
+  message: "",
+};
 
+const initialErrors = {
+  name: "",
+  email: "",
+  phone: "",
+  message: "",
+};
+
+export default function Contact() {
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState(initialErrors);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
 
+  const normalizePhone = (value) => value.replace(/[\s-]/g, "");
+
+  const validateField = (name, value) => {
+    const trimmed = value.trim();
+
+    switch (name) {
+      case "name":
+        if (!trimmed) return "Name is required";
+        if (trimmed.length < 3) return "Name must be at least 3 characters";
+        if (!/^[A-Za-z\s.'-]+$/.test(trimmed)) {
+          return "Name can only contain letters, spaces, apostrophes, dots, and hyphens";
+        }
+        return "";
+
+      case "email":
+        if (!trimmed) return "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+          return "Enter a valid email address";
+        }
+        return "";
+
+      case "phone": {
+        if (!trimmed) return "Phone number is required";
+        const cleaned = normalizePhone(trimmed);
+        if (!/^(?:0\d{9}|\+94\d{9}|94\d{9})$/.test(cleaned)) {
+          return "Enter a valid Sri Lankan phone number";
+        }
+        return "";
+      }
+
+      case "message":
+        if (!trimmed) return "Message is required";
+        if (trimmed.length < 10) return "Message must be at least 10 characters";
+        return "";
+
+      default:
+        return "";
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      name: validateField("name", formData.name),
+      email: validateField("email", formData.email),
+      phone: validateField("phone", formData.phone),
+      message: validateField("message", formData.message),
+    };
+
+    setErrors(newErrors);
+    return !Object.values(newErrors).some((value) => value);
+  };
+
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    const cleanedValue =
+      name === "phone" ? value.replace(/[^0-9+\s-]/g, "") : value;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: cleanedValue,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+
     setErr("");
     setInfo("");
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -25,28 +109,25 @@ export default function Contact() {
     setErr("");
     setInfo("");
 
-    if (!formData.name.trim()) return setErr("Name is required");
-    if (!formData.phone.trim()) return setErr("Phone is required");
-    if (!formData.message.trim()) return setErr("Message is required");
+    if (!validateForm()) {
+      setErr("Please fix the highlighted fields.");
+      return;
+    }
 
     setBusy(true);
     try {
       await createInquiryApi({
-  customer_name: formData.name.trim(),
-  email: formData.email.trim() || null,
-  phone: formData.phone.trim(),
-  inquiry_type: "WEBSITE",
-  message: formData.message.trim(),
-  preferred_program_id: null,
-});
+        customer_name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: normalizePhone(formData.phone.trim()),
+        inquiry_type: "WEBSITE",
+        message: formData.message.trim(),
+        preferred_program_id: null,
+      });
 
       setInfo("Thank you for contacting us! We will get back to you soon.");
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        message: "",
-      });
+      setFormData(initialFormData);
+      setErrors(initialErrors);
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Failed to submit inquiry");
     } finally {
@@ -166,18 +247,24 @@ export default function Contact() {
               <h2 className="contactSectionTitle">Send Us a Message</h2>
 
               {err ? (
-                <div className="kidCard" style={{ padding: 12, color: "#b00020", marginBottom: 12 }}>
+                <div
+                  className="kidCard"
+                  style={{ padding: 12, color: "#b00020", marginBottom: 12 }}
+                >
                   {err}
                 </div>
               ) : null}
 
               {info ? (
-                <div className="kidCard" style={{ padding: 12, color: "#0a6b2b", marginBottom: 12 }}>
+                <div
+                  className="kidCard"
+                  style={{ padding: 12, color: "#0a6b2b", marginBottom: 12 }}
+                >
                   {info}
                 </div>
               ) : null}
 
-              <form onSubmit={handleSubmit} className="contactForm">
+              <form onSubmit={handleSubmit} className="contactForm" noValidate>
                 <div className="contactFieldGroup">
                   <label htmlFor="name" className="contactLabel">
                     Your Name
@@ -188,10 +275,16 @@ export default function Contact() {
                     type="text"
                     value={formData.name}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     placeholder="Enter your full name"
+                    maxLength={100}
                     required
-                    className="contactInput"
+                    className={`contactInput ${errors.name ? "contactInputError" : ""}`}
+                    aria-invalid={!!errors.name}
                   />
+                  {errors.name ? (
+                    <small className="contactFieldError">{errors.name}</small>
+                  ) : null}
                 </div>
 
                 <div className="contactFormTwoCol">
@@ -205,9 +298,16 @@ export default function Contact() {
                       type="email"
                       value={formData.email}
                       onChange={handleInputChange}
+                      onBlur={handleBlur}
                       placeholder="your@email.com"
-                      className="contactInput"
+                      maxLength={120}
+                      required
+                      className={`contactInput ${errors.email ? "contactInputError" : ""}`}
+                      aria-invalid={!!errors.email}
                     />
+                    {errors.email ? (
+                      <small className="contactFieldError">{errors.email}</small>
+                    ) : null}
                   </div>
 
                   <div className="contactFieldGroup">
@@ -220,10 +320,16 @@ export default function Contact() {
                       type="text"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      placeholder="0751179443"
+                      onBlur={handleBlur}
+                      placeholder="0771234567"
+                      maxLength={15}
                       required
-                      className="contactInput"
+                      className={`contactInput ${errors.phone ? "contactInputError" : ""}`}
+                      aria-invalid={!!errors.phone}
                     />
+                    {errors.phone ? (
+                      <small className="contactFieldError">{errors.phone}</small>
+                    ) : null}
                   </div>
                 </div>
 
@@ -236,11 +342,17 @@ export default function Contact() {
                     name="message"
                     value={formData.message}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     placeholder="Tell us how we can help you..."
                     rows={6}
+                    maxLength={500}
                     required
-                    className="contactTextarea"
+                    className={`contactTextarea ${errors.message ? "contactTextareaError" : ""}`}
+                    aria-invalid={!!errors.message}
                   />
+                  {errors.message ? (
+                    <small className="contactFieldError">{errors.message}</small>
+                  ) : null}
                 </div>
 
                 <button type="submit" className="contactSubmitBtn" disabled={busy}>
