@@ -1,8 +1,13 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 
 export default function Sidebar({ title, items }) {
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isAdminInsideReception =
+    role === "ADMIN" && location.pathname.startsWith("/reception");
 
   return (
     <aside style={{ padding: 16, borderRight: "1px solid #eee", background: "white" }}>
@@ -25,6 +30,25 @@ export default function Sidebar({ title, items }) {
           </NavLink>
         ))}
       </div>
+
+      {isAdminInsideReception && (
+        <button
+          onClick={() => navigate("/admin/dashboard")}
+          style={{
+            marginTop: 20,
+            width: "100%",
+            border: "none",
+            borderRadius: 10,
+            padding: "10px 12px",
+            background: "#222",
+            color: "#fff",
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+        >
+          Back to Admin Dashboard
+        </button>
+      )}
 
       <button onClick={logout} style={{ marginTop: 20, width: "100%" }}>
         Logout
