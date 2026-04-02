@@ -1362,6 +1362,26 @@
   display: block;
 }
 
+.contactInputError,
+.contactTextareaError {
+  border-color: #dc2626 !important;
+  background: #fff7f7;
+}
+
+.contactInputError:focus,
+.contactTextareaError:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12) !important;
+}
+
+.contactFieldError {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #dc2626;
+}
+
 /*party packages*/
 .partyPage {
   min-height: 100vh;

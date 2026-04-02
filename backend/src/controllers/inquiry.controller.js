@@ -1,5 +1,8 @@
 const db = require("../config/db");
 const { audit } = require("../utils/audit");
+const {
+  sendInquiryAcknowledgementEmail,
+} = require("../services/inquiryEmail.service");
 
 async function ensureInquiryTables() {
   await db.query(`
@@ -48,23 +51,58 @@ async function ensureInquiryTables() {
   `);
 }
 
+function normalizePhone(value) {
+  return String(value || "").replace(/[\s-]/g, "").trim();
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
+function isValidSriLankanPhone(value) {
+  return /^(?:0\d{9}|\+94\d{9}|94\d{9})$/.test(String(value || "").trim());
+}
+
 // PUBLIC: Create inquiry
 exports.createInquiry = async (req, res) => {
   try {
     await ensureInquiryTables();
 
-    const {
-      customer_name,
-      phone,
-      email = null,
-      inquiry_type,
-      message = null,
-      preferred_program_id = null,
-    } = req.body;
+    const customer_name = String(req.body.customer_name || "").trim();
+    const email = String(req.body.email || "").trim();
+    const phone = normalizePhone(req.body.phone || "");
+    const inquiry_type = String(req.body.inquiry_type || "").trim();
+    const message = String(req.body.message || "").trim();
+    const preferred_program_id = req.body.preferred_program_id ?? null;
 
-    if (!customer_name || !phone || !inquiry_type) {
+    if (!customer_name || !email || !phone || !inquiry_type || !message) {
       return res.status(400).json({
-        message: "customer_name, phone, and inquiry_type are required",
+        message:
+          "customer_name, email, phone, inquiry_type, and message are required",
+      });
+    }
+
+    if (customer_name.length < 3) {
+      return res.status(400).json({
+        message: "Name must be at least 3 characters",
+      });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        message: "Enter a valid email address",
+      });
+    }
+
+    if (!isValidSriLankanPhone(phone)) {
+      return res.status(400).json({
+        message: "Enter a valid Sri Lankan phone number",
+      });
+    }
+
+    if (message.length < 10) {
+      return res.status(400).json({
+        message: "Message must be at least 10 characters",
       });
     }
 
@@ -91,9 +129,27 @@ exports.createInquiry = async (req, res) => {
       ip_address: req.ip,
     });
 
+    let emailSent = false;
+
+    try {
+      await sendInquiryAcknowledgementEmail({
+        customerName: customer_name,
+        email,
+        phone,
+        inquiryType: inquiry_type,
+        message,
+      });
+      emailSent = true;
+    } catch (mailErr) {
+      console.error("Inquiry acknowledgement email failed:", mailErr);
+    }
+
     return res.status(201).json({
-      message: "Inquiry submitted successfully",
+      message: emailSent
+        ? "Inquiry submitted successfully. A confirmation email has been sent."
+        : "Inquiry submitted successfully, but confirmation email could not be sent.",
       inquiry_id: result.insertId,
+      email_sent: emailSent,
     });
   } catch (err) {
     console.error("createInquiry error:", err);
@@ -184,10 +240,10 @@ exports.updateInquiryStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    await db.query(
-      `UPDATE customer_inquiries SET status=? WHERE id=?`,
-      [status, inquiryId]
-    );
+    await db.query(`UPDATE customer_inquiries SET status=? WHERE id=?`, [
+      status,
+      inquiryId,
+    ]);
 
     await audit({
       user_id: req.user.id,
