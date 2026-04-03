@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -32,12 +32,6 @@ export default function EnrollClasses() {
     }
   };
 
-  const toggleChildSelection = (id) => {
-    setSelectedChildren((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
   const loadClasses = async () => {
     try {
       const clsRes = await listClassesApi();
@@ -63,24 +57,30 @@ export default function EnrollClasses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const toggleChildSelection = (id) => {
+    setSelectedChildren((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const addChild = async (e) => {
     e.preventDefault();
     setErr("");
     setInfo("");
 
     if (!newChildName.trim()) {
-      setErr("Child name is required");
+      setErr("Child name is required.");
       return;
     }
 
     setBusy(true);
     try {
       await addChildApi({ child_name: newChildName.trim() });
-      setInfo("Child added");
+      setInfo("Child added successfully.");
       setNewChildName("");
-      await loadChildren(); // only reload children
+      await loadChildren();
     } catch (e2) {
-      setErr(e2?.response?.data?.message || "Failed to add child");
+      setErr(e2?.response?.data?.message || "Failed to add child.");
     } finally {
       setBusy(false);
     }
@@ -92,7 +92,7 @@ export default function EnrollClasses() {
     setInfo("");
 
     if (!selectedChildren.length || !class_id) {
-      setErr("Select at least one child and a class");
+      setErr("Please select at least one child and one class.");
       return;
     }
 
@@ -109,7 +109,7 @@ export default function EnrollClasses() {
 
       if (enrolledCount > 0 && alreadyCount > 0) {
         setInfo(
-          `${enrolledCount} child(ren) enrolled. ${alreadyCount} already enrolled before.`
+          `${enrolledCount} child(ren) enrolled successfully. ${alreadyCount} child(ren) were already enrolled before.`
         );
       } else if (enrolledCount > 0) {
         setInfo(`${enrolledCount} child(ren) enrolled successfully.`);
@@ -120,99 +120,131 @@ export default function EnrollClasses() {
       }
 
       setSelectedChildren([]);
-      setTimeout(() => navigate("/profile"), 1000);
+      setTimeout(() => navigate("/profile"), 1200);
     } catch (e2) {
-      setErr(e2?.response?.data?.message || "Failed to enroll");
+      setErr(e2?.response?.data?.message || "Failed to enroll.");
     } finally {
       setBusy(false);
     }
   };
 
+  const selectedClass = useMemo(() => {
+    return classes.find((cl) => String(cl.id) === String(class_id)) || null;
+  }, [classes, class_id]);
+
+  const formatMoney = (value) => `LKR ${Number(value || 0).toFixed(2)}`;
+
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <div
-        className="kidCard"
-        style={{ padding: 16, maxWidth: 860, display: "grid", gap: 14 }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 10,
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div className="badgeSoft">🎓 Enroll to a Class</div>
-            <h1 style={{ margin: "10px 0 0", fontSize: 26 }}>Enroll Classes</h1>
+    <motion.div
+      className="enrollModernPage"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+    >
+      <div className="enrollModernHero">
+        <div className="enrollModernHeroText">
+          <div className="enrollModernBadge">🎓 Enroll to a Class</div>
+          <h1 className="enrollModernTitle">Enroll Classes</h1>
+          <p className="enrollModernSubtitle">
+            Add your child details and enroll them into the class you want in a
+            clean and simple flow.
+          </p>
+
+          <div className="enrollModernStats">
+            <div className="enrollModernStat">
+              <span className="enrollModernStatLabel">Children</span>
+              <strong>{children.length}</strong>
+            </div>
+            <div className="enrollModernStat">
+              <span className="enrollModernStatLabel">Available Classes</span>
+              <strong>{classes.length}</strong>
+            </div>
+            <div className="enrollModernStat">
+              <span className="enrollModernStatLabel">Selected</span>
+              <strong>{selectedChildren.length}</strong>
+            </div>
           </div>
-          <Link className="kidBtnGhost" to="/profile">
-            Back to Profile
-          </Link>
         </div>
 
-        {err ? <div style={{ color: "#b00020", fontWeight: 800 }}>{err}</div> : null}
-        {info ? <div style={{ color: "#0a6b2b", fontWeight: 800 }}>{info}</div> : null}
+        <Link className="enrollModernBackBtn" to="/profile">
+          ← Back to Profile
+        </Link>
+      </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          <div className="kidCard" style={{ padding: 14, boxShadow: "none" }}>
-            <div style={{ fontWeight: 900, marginBottom: 10 }}>👶 Add Child</div>
+      {err ? (
+        <div className="enrollModernAlert enrollModernAlertError">{err}</div>
+      ) : null}
 
-            <form onSubmit={addChild} style={{ display: "grid", gap: 10 }}>
-              <input
-                className="kidInput"
-                placeholder="Child name"
-                value={newChildName}
-                onChange={(e) => setNewChildName(e.target.value)}
-              />
+      {info ? (
+        <div className="enrollModernAlert enrollModernAlertSuccess">{info}</div>
+      ) : null}
 
-              <button disabled={busy} className="kidBtn" type="submit">
-                {busy ? "Saving..." : "Add Child"}
-              </button>
-            </form>
+      <div className="enrollModernGrid">
+        <section className="enrollModernCard">
+          
+          <h2 className="enrollModernCardTitle">Add Child</h2>
+          <p className="enrollModernCardText">
+            Add one or more children before enrolling them into classes.
+          </p>
 
-            <div style={{ marginTop: 10, opacity: 0.75, fontSize: 13 }}>
-              You can add multiple children and enroll them to classes.
+          <form onSubmit={addChild} className="enrollModernForm">
+            <label className="enrollModernLabel">Child name</label>
+            <input
+              className="enrollModernInput"
+              placeholder="Enter child name"
+              value={newChildName}
+              onChange={(e) => setNewChildName(e.target.value)}
+            />
+
+            <button disabled={busy} className="enrollModernPrimaryBtn" type="submit">
+              {busy ? "Saving..." : "Add Child"}
+            </button>
+          </form>
+
+          <div className="enrollModernHelper">
+            You can add multiple children and later enroll them together.
+          </div>
+        </section>
+
+        <section className="enrollModernCard enrollModernCardLarge">
+          <div className="enrollModernCardTop">
+            <div>
+              
+              <h2 className="enrollModernCardTitle">Enroll Child / Children</h2>
+              <p className="enrollModernCardText">
+                Select the children and choose the class you want to enroll in.
+              </p>
+            </div>
+
+            <div className="enrollModernSelectedPill">
+              {selectedChildren.length} selected
             </div>
           </div>
 
-          <div className="kidCard" style={{ padding: 14, boxShadow: "none" }}>
-            <div style={{ fontWeight: 900, marginBottom: 10 }}>
-               Enroll Child / Children
-            </div>
+          <form onSubmit={enroll} className="enrollModernForm">
+            <div>
+              <label className="enrollModernLabel">Select children</label>
 
-            <form onSubmit={enroll} style={{ display: "grid", gap: 10 }}>
-              <div
-                style={{
-                  border: "1px solid #ccc",
-                  borderRadius: 8,
-                  padding: 10,
-                  display: "grid",
-                  gap: 8,
-                  maxHeight: 180,
-                  overflowY: "auto",
-                  background: "#fff",
-                }}
-              >
+              <div className="enrollModernChildrenBox">
                 {children.length === 0 ? (
-                  <div style={{ fontSize: 14, opacity: 0.7 }}>No children added yet</div>
+                  <div className="enrollModernEmpty">
+                    No children added yet. Add a child first to continue.
+                  </div>
                 ) : (
                   children.map((c) => {
                     const childIdNum = Number(c.id);
+                    const checked = selectedChildren.includes(childIdNum);
+
                     return (
                       <label
                         key={c.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          cursor: "pointer",
-                        }}
+                        className={`enrollModernChildItem ${
+                          checked ? "active" : ""
+                        }`}
                       >
                         <input
                           type="checkbox"
-                          checked={selectedChildren.includes(childIdNum)}
+                          checked={checked}
                           onChange={() => toggleChildSelection(childIdNum)}
                         />
                         <span>{c.child_name || c.full_name}</span>
@@ -221,31 +253,45 @@ export default function EnrollClasses() {
                   })
                 )}
               </div>
+            </div>
 
+            <div>
+              <label className="enrollModernLabel">Select class</label>
               <select
-                className="kidInput"
+                className="enrollModernInput enrollModernSelect"
                 value={class_id}
                 onChange={(e) => setClassId(e.target.value)}
               >
-                <option value="">Select Class</option>
+                <option value="">Choose a class</option>
                 {classes.map((cl) => (
                   <option key={cl.id} value={cl.id}>
-                    {cl.title} (LKR {Number(cl.fee || 0).toFixed(2)})
+                    {cl.title} ({formatMoney(cl.fee)})
                   </option>
                 ))}
               </select>
-
-              <button disabled={busy} className="kidBtn" type="submit">
-                {busy ? "Enrolling..." : "Enroll Now"}
-              </button>
-            </form>
-
-            <div style={{ marginTop: 10, opacity: 0.75, fontSize: 13 }}>
-              After enrolling, go back to <b>My Profile</b> and click <b>Pay Now</b> for
-              pending enrollments.
             </div>
+
+            {selectedClass ? (
+              <div className="enrollModernClassPreview">
+                <span className="enrollModernClassPreviewName">
+                  {selectedClass.title}
+                </span>
+                <span className="enrollModernClassPreviewFee">
+                  {formatMoney(selectedClass.fee)}
+                </span>
+              </div>
+            ) : null}
+
+            <button disabled={busy} className="enrollModernPrimaryBtn" type="submit">
+              {busy ? "Enrolling..." : "Enroll Now"}
+            </button>
+          </form>
+
+          <div className="enrollModernNote">
+            After enrolling, go back to <strong>My Profile</strong> and click{" "}
+            <strong>Pay Now</strong> for pending enrollments.
           </div>
-        </div>
+        </section>
       </div>
     </motion.div>
   );

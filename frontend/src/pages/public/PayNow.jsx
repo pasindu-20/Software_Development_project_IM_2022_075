@@ -3,6 +3,27 @@ import { motion } from "framer-motion";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { createPaymentApi } from "../../api/parentApi";
 
+const METHOD_OPTIONS = [
+  {
+    key: "CARD",
+    
+    title: "Card Payment",
+    desc: "Pay securely online using your card.",
+  },
+  {
+    key: "CASH",
+    
+    title: "Cash Payment",
+    desc: "Pay physically at the reception counter.",
+  },
+  {
+    key: "BANK_TRANSFER",
+    
+    title: "Bank Transfer",
+    desc: "Upload your bank slip for receptionist approval.",
+  },
+];
+
 export default function PayNow() {
   const { enrollmentId } = useParams();
   const navigate = useNavigate();
@@ -17,6 +38,11 @@ export default function PayNow() {
   const [busy, setBusy] = useState(false);
 
   const enrollment_id = useMemo(() => Number(enrollmentId), [enrollmentId]);
+
+  const selectedMethod = useMemo(
+    () => METHOD_OPTIONS.find((item) => item.key === method),
+    [method]
+  );
 
   const readFileAsBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -70,9 +96,11 @@ export default function PayNow() {
     setErr("");
     setInfo("");
 
-    if (!enrollment_id) return setErr("Invalid enrollment id");
+    if (!enrollment_id) {
+      setErr("Invalid enrollment id");
+      return;
+    }
 
-    // CARD -> go to Stripe page only
     if (method === "CARD") {
       navigate(`/pay/card?enrollmentId=${enrollment_id}`);
       return;
@@ -80,11 +108,13 @@ export default function PayNow() {
 
     if (method === "BANK_TRANSFER") {
       if (!reference_no.trim()) {
-        return setErr("Reference number is required for bank transfer.");
+        setErr("Reference number is required for bank transfer.");
+        return;
       }
 
       if (!bankSlipFile || !bankSlipData) {
-        return setErr("Please upload the bank slip.");
+        setErr("Please upload the bank slip.");
+        return;
       }
     }
 
@@ -95,19 +125,26 @@ export default function PayNow() {
         payment_method: method,
         reference_no: method === "BANK_TRANSFER" ? reference_no.trim() : null,
         notes: notes || null,
-        bank_slip_name: method === "BANK_TRANSFER" ? bankSlipFile?.name || null : null,
+        bank_slip_name:
+          method === "BANK_TRANSFER" ? bankSlipFile?.name || null : null,
         bank_slip_data: method === "BANK_TRANSFER" ? bankSlipData : null,
       });
 
       const pay = res.data?.payment;
 
       if (method === "BANK_TRANSFER") {
-        setInfo(` Bank transfer submitted. Status is PENDING until receptionist approval. Invoice: ${pay?.payment_no || ""}`);
+        setInfo(
+          `Bank transfer submitted. Status is PENDING until receptionist approval. Invoice: ${
+            pay?.payment_no || ""
+          }`
+        );
       } else {
-        setInfo(` Payment submitted as PENDING. Invoice: ${pay?.payment_no || ""}`);
+        setInfo(
+          `Payment submitted as PENDING. Invoice: ${pay?.payment_no || ""}`
+        );
       }
 
-      setTimeout(() => navigate("/profile"), 1000);
+      setTimeout(() => navigate("/profile"), 1200);
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Payment failed");
     } finally {
@@ -116,73 +153,178 @@ export default function PayNow() {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <div className="kidCard" style={{ padding: 16, maxWidth: 650 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <div>
-            <div className="badgeSoft">💳 Pay Now</div>
-            <h1 style={{ margin: "10px 0 0", fontSize: 26 }}>Complete Payment</h1>
-            <div style={{ opacity: 0.75, marginTop: 6 }}>
-              Enrollment ID: <b>#{enrollment_id}</b>
+    <motion.div
+      className="payNowModernPage"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="payNowModernHero">
+        <div className="payNowModernHeroText">
+          <div className="payNowModernBadge"> Pay Now</div>
+          <h1 className="payNowModernTitle">Complete Payment</h1>
+          <p className="payNowModernSubtitle">
+            Choose your payment method and complete the enrollment payment in a
+            simple and clear way.
+          </p>
+
+          <div className="payNowModernMetaRow">
+            <div className="payNowModernMetaCard">
+              <span className="payNowModernMetaLabel">Enrollment ID</span>
+              <strong>#{enrollment_id}</strong>
+            </div>
+
+            <div className="payNowModernMetaCard">
+              <span className="payNowModernMetaLabel">Selected Method</span>
+              <strong>{selectedMethod?.title || "Payment"}</strong>
             </div>
           </div>
-          <Link className="kidBtnGhost" to="/profile">Back</Link>
         </div>
 
-        <form onSubmit={submit} style={{ display: "grid", gap: 10, marginTop: 14 }}>
-          <label style={{ fontWeight: 900 }}>Payment Method</label>
-          <select className="kidInput" value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="CARD">Card</option>
-            <option value="CASH">Cash (pay at counter)</option>
-            <option value="BANK_TRANSFER">Bank Transfer</option>
-          </select>
+        <Link className="payNowModernBackBtn" to="/profile">
+          ← Back
+        </Link>
+      </div>
 
-          {method === "BANK_TRANSFER" ? (
-            <>
-              <label style={{ fontWeight: 900 }}>Bank Reference No</label>
-              <input
-                className="kidInput"
-                placeholder="e.g. BOC-TRX-12345"
-                value={reference_no}
-                onChange={(e) => setReference(e.target.value)}
-              />
+      {err ? <div className="payNowModernAlert error">{err}</div> : null}
+      {info ? <div className="payNowModernAlert success">{info}</div> : null}
 
-              <label style={{ fontWeight: 900 }}>Upload Bank Slip</label>
-              <input
-                className="kidInput"
-                type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
-                onChange={handleSlipChange}
-              />
+      <div className="payNowModernGrid">
+        <section className="payNowModernCard">
+          <h2 className="payNowModernCardTitle">Choose Payment Method</h2>
+          <p className="payNowModernCardText">
+            Select the payment option that works best for you.
+          </p>
 
-              {bankSlipFile ? (
-                <div style={{ fontSize: 13, opacity: 0.8 }}>
-                  Selected file: <b>{bankSlipFile.name}</b>
+          <form onSubmit={submit} className="payNowModernForm">
+            <div>
+              <label className="payNowModernLabel">Payment Method</label>
+
+              <div className="payNowMethodGrid">
+                {METHOD_OPTIONS.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setMethod(item.key)}
+                    className={`payNowMethodCard ${
+                      method === item.key ? "active" : ""
+                    }`}
+                  >
+                    <div className="payNowMethodIcon">{item.icon}</div>
+                    <div className="payNowMethodContent">
+                      <div className="payNowMethodTitle">{item.title}</div>
+                      <div className="payNowMethodDesc">{item.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {method === "BANK_TRANSFER" ? (
+              <div className="payNowModernBankBox">
+                <div>
+                  <label className="payNowModernLabel">Bank Reference No</label>
+                  <input
+                    className="payNowModernInput"
+                    placeholder="e.g. BOC-TRX-12345"
+                    value={reference_no}
+                    onChange={(e) => setReference(e.target.value)}
+                  />
                 </div>
-              ) : null}
-            </>
-          ) : null}
 
-          <label style={{ fontWeight: 900 }}>Notes (optional)</label>
-          <textarea
-            className="kidInput"
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any details to help our team"
-          />
+                <div>
+                  <label className="payNowModernLabel">Upload Bank Slip</label>
 
-          {err ? <div style={{ color: "#b00020", fontWeight: 800 }}>{err}</div> : null}
-          {info ? <div style={{ color: "#0a6b2b", fontWeight: 800 }}>{info}</div> : null}
+                  <label className="payNowUploadBox">
+                    <input
+                      className="payNowHiddenFileInput"
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      onChange={handleSlipChange}
+                    />
+                    <span className="payNowUploadIcon">📎</span>
+                    <span className="payNowUploadText">
+                      {bankSlipFile
+                        ? bankSlipFile.name
+                        : "Click to upload JPG, PNG, or PDF"}
+                    </span>
+                  </label>
 
-          <button disabled={busy} className="kidBtn" type="submit">
-            {method === "CARD" ? "Continue to Card Payment" : busy ? "Processing..." : "Pay Now"}
-          </button>
+                  <div className="payNowUploadHint">
+                    Maximum file size: 5MB
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
-          <div style={{ opacity: 0.7, fontSize: 13 }}>
-            Card payments go through Stripe and are marked <b>PAID</b> only after successful card confirmation. Cash payments stay <b>PENDING</b> until confirmation. Bank transfer stays <b>PENDING</b> until the receptionist approves the uploaded slip.
+            <div>
+              <label className="payNowModernLabel">Notes (optional)</label>
+              <textarea
+                className="payNowModernTextarea"
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any details to help our team"
+              />
+            </div>
+
+            <button disabled={busy} className="payNowModernPrimaryBtn" type="submit">
+              {method === "CARD"
+                ? "Continue to Card Payment"
+                : busy
+                ? "Processing..."
+                : "Pay Now"}
+            </button>
+          </form>
+        </section>
+
+        <aside className="payNowModernCard payNowModernSideCard">
+          <h2 className="payNowModernCardTitle">Payment Guide</h2>
+          <p className="payNowModernCardText">
+            Here is what happens after you continue with your selected method.
+          </p>
+
+          <div className="payNowInfoList">
+            <div className="payNowInfoItem">
+              <div className="payNowInfoDot">1</div>
+              <div>
+                <strong>Card Payment</strong>
+                <p>
+                  You will be redirected to the Stripe payment flow. The payment
+                  becomes <b>PAID</b> only after successful confirmation.
+                </p>
+              </div>
+            </div>
+
+            <div className="payNowInfoItem">
+              <div className="payNowInfoDot">2</div>
+              <div>
+                <strong>Cash Payment</strong>
+                <p>
+                  The payment remains <b>PENDING</b> until it is confirmed by the
+                  reception team.
+                </p>
+              </div>
+            </div>
+
+            <div className="payNowInfoItem">
+              <div className="payNowInfoDot">3</div>
+              <div>
+                <strong>Bank Transfer</strong>
+                <p>
+                  Upload your bank slip and reference number. The payment remains{" "}
+                  <b>PENDING</b> until receptionist approval.
+                </p>
+              </div>
+            </div>
           </div>
-        </form>
+
+          <div className="payNowSelectedBox">
+            <span className="payNowSelectedLabel">Currently selected</span>
+            <strong>{selectedMethod?.title || "Payment"}</strong>
+            <p>{selectedMethod?.desc || ""}</p>
+          </div>
+        </aside>
       </div>
     </motion.div>
   );

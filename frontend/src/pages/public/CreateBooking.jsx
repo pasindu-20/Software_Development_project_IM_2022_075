@@ -27,6 +27,27 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString();
 }
 
+const PAYMENT_OPTIONS = [
+  {
+    key: "CARD",
+    
+    title: "Card Payment",
+    desc: "Pay securely online using your card.",
+  },
+  {
+    key: "CASH",
+    
+    title: "Cash Payment",
+    desc: "Pay physically at the reception counter.",
+  },
+  {
+    key: "BANK_TRANSFER",
+   
+    title: "Bank Transfer",
+    desc: "Upload your bank slip for receptionist approval.",
+  },
+];
+
 export default function CreateBooking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -212,6 +233,11 @@ export default function CreateBooking() {
     return "";
   }, [isPartyBooking, isPlayAreaBooking, packageAmount, totalPlayAreaAmount]);
 
+  const selectedPayment = useMemo(
+    () => PAYMENT_OPTIONS.find((item) => item.key === paymentMethod),
+    [paymentMethod]
+  );
+
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const readFileAsBase64 = (file) =>
@@ -346,13 +372,13 @@ export default function CreateBooking() {
       createdBookingId = bookingId;
 
       if (!isBookingWithPayment) {
-        setInfo("✅ Booking created! Our team will confirm soon.");
+        setInfo(" Booking created! Our team will confirm soon.");
         setTimeout(() => navigate("/profile"), 700);
         return;
       }
 
       if (!bookingId) {
-        setInfo("✅ Booking created successfully.");
+        setInfo(" Booking created successfully.");
         setTimeout(() => navigate("/profile"), 700);
         return;
       }
@@ -376,10 +402,10 @@ export default function CreateBooking() {
 
       if (paymentMethod === "BANK_TRANSFER") {
         setInfo(
-          ` Booking created and bank transfer submitted successfully. Invoice: ${paymentNo}`
+          `Booking created and bank transfer submitted successfully. Invoice: ${paymentNo}`
         );
       } else {
-        setInfo(` Booking created successfully. Invoice: ${paymentNo}`);
+        setInfo(`Booking created successfully. Invoice: ${paymentNo}`);
       }
 
       setTimeout(() => navigate("/profile"), 1000);
@@ -397,237 +423,375 @@ export default function CreateBooking() {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <div className="kidCard" style={{ padding: 16, maxWidth: 700 }}>
-        <div className="badgeSoft">📅 Create Booking</div>
+    <motion.div
+      className="bookingModernPage"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <div className="bookingModernHero">
+        <div className="bookingModernHeroText">
+          <div className="bookingModernBadge"> Create Booking</div>
 
-        <h1 style={{ margin: "10px 0 0", fontSize: 26 }}>
-          {isPartyBooking
-            ? "Book a Party Package"
-            : isPlayAreaBooking
-              ? "Book a Play Area"
-              : "Create Booking"}
-        </h1>
+          <h1 className="bookingModernTitle">
+            {isPartyBooking
+              ? "Book a Party Package"
+              : isPlayAreaBooking
+                ? "Book a Play Area"
+                : "Create Booking"}
+          </h1>
 
-        <div style={{ opacity: 0.7, marginTop: 6 }}>
-          {isPartyBooking
-            ? "Choose your party date and time. Then select how you want to pay."
-            : isPlayAreaBooking
-              ? "Choose your play area booking date, time, child count, and payment method."
-              : "Choose your booking date and time. Our team will confirm availability."}
+          <p className="bookingModernSubtitle">
+            {isPartyBooking
+              ? "Choose your party date, time, and payment method."
+              : isPlayAreaBooking
+                ? "Choose your play area booking date, time, child count, and payment method."
+                : "Choose your booking date and time. Our team will confirm availability."}
+          </p>
+
+          <div className="bookingModernMetaRow">
+            <div className="bookingModernMetaCard">
+              <span className="bookingModernMetaLabel">Booking Type</span>
+              <strong>{form.booking_type === "PLAY_AREA" ? "Play Area" : form.booking_type}</strong>
+            </div>
+
+            {isPlayAreaBooking && selectedPlayArea ? (
+              <div className="bookingModernMetaCard">
+                <span className="bookingModernMetaLabel">Selected Area</span>
+                <strong>{selectedPlayArea.name}</strong>
+              </div>
+            ) : null}
+
+            {isBookingWithPayment && paymentAmountLabel ? (
+              <div className="bookingModernMetaCard">
+                <span className="bookingModernMetaLabel">Amount</span>
+                <strong>{paymentAmountLabel}</strong>
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 14 }}>
-          <label style={{ fontWeight: 800 }}>Booking Type</label>
-          <input className="kidInput" value={form.booking_type} readOnly />
+        <button
+          type="button"
+          className="bookingModernBackBtn"
+          onClick={() => navigate("/profile")}
+        >
+          ← Back
+        </button>
+      </div>
 
-          {isPlayAreaBooking ? (
-            <>
-              <label style={{ fontWeight: 800 }}>Play Area</label>
-              <select
-                className="kidInput"
-                value={selectedPlayAreaId}
-                onChange={(e) => setSelectedPlayAreaId(e.target.value)}
-                disabled={playAreasLoading || playAreas.length === 0}
-              >
-                <option value="">
-                  {playAreasLoading
-                    ? "Loading play areas..."
-                    : playAreas.length
-                      ? "Select play area"
-                      : "No active play areas"}
-                </option>
+      {err ? <div className="bookingModernAlert error">{err}</div> : null}
+      {info ? <div className="bookingModernAlert success">{info}</div> : null}
 
-                {playAreas.map((area) => (
-                  <option key={area.id} value={area.id}>
-                    {area.name} - LKR {formatMoney(area.price)}
-                  </option>
-                ))}
-              </select>
+      <div className="bookingModernGrid">
+        <section className="bookingModernCard">
+          
+          <h2 className="bookingModernCardTitle">Booking Details</h2>
+          <p className="bookingModernCardText">
+            Fill in the booking information below and continue with payment.
+          </p>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 12,
-                }}
-              >
+          <form onSubmit={submit} className="bookingModernForm">
+            <div>
+              <label className="bookingModernLabel">Booking Type</label>
+              <div className="bookingModernReadonly">{form.booking_type}</div>
+            </div>
+
+            {isPlayAreaBooking ? (
+              <>
                 <div>
-                  <label
-                    style={{ fontWeight: 800, display: "block", marginBottom: 6 }}
+                  <label className="bookingModernLabel">Play Area</label>
+                  <select
+                    className="bookingModernInput"
+                    value={selectedPlayAreaId}
+                    onChange={(e) => setSelectedPlayAreaId(e.target.value)}
+                    disabled={playAreasLoading || playAreas.length === 0}
                   >
-                    Maximum Slots
-                  </label>
-                  <input
-                    className="kidInput"
-                    value={availability.max_slots || 0}
-                    readOnly
-                  />
+                    <option value="">
+                      {playAreasLoading
+                        ? "Loading play areas..."
+                        : playAreas.length
+                          ? "Select play area"
+                          : "No active play areas"}
+                    </option>
+
+                    {playAreas.map((area) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name} - LKR {formatMoney(area.price)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div>
-                  <label
-                    style={{ fontWeight: 800, display: "block", marginBottom: 6 }}
-                  >
-                    Remaining Slots
-                  </label>
-                  <input
-                    className="kidInput"
-                    value={
-                      availabilityLoading
+                <div className="bookingModernStatsGrid">
+                  <div className="bookingModernStatBox">
+                    <span>Maximum Slots</span>
+                    <strong>{availability.max_slots || 0}</strong>
+                  </div>
+
+                  <div className="bookingModernStatBox">
+                    <span>Remaining Slots</span>
+                    <strong>
+                      {availabilityLoading
                         ? "Loading..."
-                        : Number(availability.remaining_slots || 0)
-                    }
-                    readOnly
+                        : Number(availability.remaining_slots || 0)}
+                    </strong>
+                  </div>
+
+                  <div className="bookingModernStatBox">
+                    <span>Already Booked</span>
+                    <strong>{Number(availability.booked_slots || 0)}</strong>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="bookingModernLabel">Number of Children</label>
+                  <input
+                    className="bookingModernInput"
+                    type="number"
+                    min="1"
+                    max={Math.max(1, Number(availability.remaining_slots || 0))}
+                    value={childCount}
+                    onChange={(e) => setChildCount(e.target.value)}
                   />
                 </div>
-              </div>
+              </>
+            ) : null}
 
-              <div style={{ fontSize: 13, opacity: 0.75 }}>
-                Already booked for this time: {Number(availability.booked_slots || 0)}
-              </div>
-
-              <label style={{ fontWeight: 800 }}>Number of Children</label>
-              <input
-                className="kidInput"
-                type="number"
-                min="1"
-                max={Math.max(1, Number(availability.remaining_slots || 0))}
-                value={childCount}
-                onChange={(e) => setChildCount(e.target.value)}
-              />
-            </>
-          ) : null}
-
-          <label style={{ fontWeight: 800 }}>Booking Date</label>
-          <input
-            className="kidInput"
-            type="date"
-            min={todayStr}
-            value={form.booking_date}
-            onChange={(e) => set("booking_date", e.target.value)}
-          />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 12,
-            }}
-          >
             <div>
-              <label style={{ fontWeight: 800, display: "block", marginBottom: 6 }}>
-                Start Time
-              </label>
+              <label className="bookingModernLabel">Booking Date</label>
               <input
-                className="kidInput"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                className="bookingModernInput"
+                type="date"
+                min={todayStr}
+                value={form.booking_date}
+                onChange={(e) => set("booking_date", e.target.value)}
               />
             </div>
 
+            <div className="bookingModernTwoCol">
+              <div>
+                <label className="bookingModernLabel">Start Time</label>
+                <input
+                  className="bookingModernInput"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="bookingModernLabel">End Time</label>
+                <input
+                  className="bookingModernInput"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
             <div>
-              <label style={{ fontWeight: 800, display: "block", marginBottom: 6 }}>
-                End Time
-              </label>
-              <input
-                className="kidInput"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+              <label className="bookingModernLabel">Selected Time Slot</label>
+              <div className="bookingModernReadonly">
+                {form.time_slot || "Time slot will be generated automatically"}
+              </div>
+            </div>
+
+            <div>
+              <label className="bookingModernLabel">Notes</label>
+              <textarea
+                className="bookingModernTextarea"
+                rows={4}
+                placeholder="Any special requests?"
+                value={customerNotes}
+                onChange={(e) => setCustomerNotes(e.target.value)}
               />
             </div>
-          </div>
 
-          <label style={{ fontWeight: 800 }}>Selected Time Slot</label>
-          <input
-            className="kidInput"
-            value={form.time_slot}
-            readOnly
-            placeholder="Time slot will be generated automatically"
-          />
-
-          <label style={{ fontWeight: 800 }}>Notes</label>
-          <textarea
-            className="kidInput"
-            rows={3}
-            placeholder="Any special requests?"
-            value={customerNotes}
-            onChange={(e) => setCustomerNotes(e.target.value)}
-          />
-
-          {isBookingWithPayment ? (
-            <>
-              {paymentAmountLabel ? (
-                <>
-                  <label style={{ fontWeight: 800 }}>
-                    {isPlayAreaBooking ? "Total Amount" : "Package Amount"}
-                  </label>
-                  <input className="kidInput" value={paymentAmountLabel} readOnly />
-                </>
-              ) : null}
-
-              <label style={{ fontWeight: 800 }}>Payment Method</label>
-              <select
-                className="kidInput"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
-                <option value="CARD">Card Payment</option>
-                <option value="CASH">Cash Payment</option>
-                <option value="BANK_TRANSFER">Bank Transfer</option>
-              </select>
-
-              {paymentMethod === "BANK_TRANSFER" ? (
-                <>
-                  <label style={{ fontWeight: 800 }}>Reference Number</label>
-                  <input
-                    className="kidInput"
-                    value={referenceNo}
-                    onChange={(e) => setReferenceNo(e.target.value)}
-                    placeholder="Enter bank transfer reference number"
-                  />
-
-                  <label style={{ fontWeight: 800 }}>Upload Bank Slip</label>
-                  <input
-                    className="kidInput"
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.pdf"
-                    onChange={handleSlipChange}
-                  />
-
-                  {bankSlipFile ? (
-                    <div style={{ fontSize: 13, opacity: 0.8 }}>
-                      Selected file: <b>{bankSlipFile.name}</b>
+            {isBookingWithPayment ? (
+              <>
+                {paymentAmountLabel ? (
+                  <div>
+                    <label className="bookingModernLabel">
+                      {isPlayAreaBooking ? "Total Amount" : "Package Amount"}
+                    </label>
+                    <div className="bookingModernReadonly bookingModernAmount">
+                      {paymentAmountLabel}
                     </div>
-                  ) : null}
-                </>
-              ) : null}
-            </>
-          ) : null}
+                  </div>
+                ) : null}
 
-          {err ? <div style={{ color: "#b00020", fontWeight: 800 }}>{err}</div> : null}
-          {info ? <div style={{ color: "#0a6b2b", fontWeight: 800 }}>{info}</div> : null}
+                <div>
+                  <label className="bookingModernLabel">Payment Method</label>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-            <button
-              type="button"
-              className="kidBtnGhost"
-              onClick={() => navigate("/profile")}
-            >
-              Back
-            </button>
+                  <div className="bookingModernMethodGrid">
+                    {PAYMENT_OPTIONS.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setPaymentMethod(item.key)}
+                        className={`bookingModernMethodCard ${
+                          paymentMethod === item.key ? "active" : ""
+                        }`}
+                      >
+                        <div className="bookingModernMethodIcon">{item.icon}</div>
+                        <div className="bookingModernMethodContent">
+                          <div className="bookingModernMethodTitle">{item.title}</div>
+                          <div className="bookingModernMethodDesc">{item.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <button disabled={busy} className="kidBtn" type="submit">
-              {busy
-                ? "Processing..."
-                : isBookingWithPayment && paymentMethod === "CARD"
-                  ? "Continue to Card Payment"
-                  : "Create Booking"}
-            </button>
+                {paymentMethod === "BANK_TRANSFER" ? (
+                  <div className="bookingModernBankBox">
+                    <div>
+                      <label className="bookingModernLabel">Reference Number</label>
+                      <input
+                        className="bookingModernInput"
+                        value={referenceNo}
+                        onChange={(e) => setReferenceNo(e.target.value)}
+                        placeholder="Enter bank transfer reference number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="bookingModernLabel">Upload Bank Slip</label>
+
+                      <label className="bookingModernUploadBox">
+                        <input
+                          className="bookingModernHiddenFileInput"
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf"
+                          onChange={handleSlipChange}
+                        />
+                        <span className="bookingModernUploadIcon">📎</span>
+                        <span className="bookingModernUploadText">
+                          {bankSlipFile
+                            ? bankSlipFile.name
+                            : "Click to upload JPG, PNG, or PDF"}
+                        </span>
+                      </label>
+
+                      <div className="bookingModernUploadHint">
+                        Maximum file size: 5MB
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+            <div className="bookingModernActionRow">
+              <button
+                type="button"
+                className="bookingModernGhostBtn"
+                onClick={() => navigate("/profile")}
+              >
+                Back
+              </button>
+
+              <button disabled={busy} className="bookingModernPrimaryBtn" type="submit">
+                {busy
+                  ? "Processing..."
+                  : isBookingWithPayment && paymentMethod === "CARD"
+                    ? "Continue to Card Payment"
+                    : "Create Booking"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <aside className="bookingModernCard bookingModernSideCard">
+          <h2 className="bookingModernCardTitle">Booking Summary</h2>
+          <p className="bookingModernCardText">
+            Review the selected details before continuing.
+          </p>
+
+          <div className="bookingModernSummaryList">
+            <div className="bookingModernSummaryItem">
+              <span>Booking Type</span>
+              <strong>{form.booking_type}</strong>
+            </div>
+
+            {isPlayAreaBooking ? (
+              <>
+                <div className="bookingModernSummaryItem">
+                  <span>Play Area</span>
+                  <strong>{selectedPlayArea?.name || "-"}</strong>
+                </div>
+
+                <div className="bookingModernSummaryItem">
+                  <span>Children</span>
+                  <strong>{Number(childCount || 0)}</strong>
+                </div>
+
+                <div className="bookingModernSummaryItem">
+                  <span>Unit Price</span>
+                  <strong>
+                    {selectedPlayArea ? `LKR ${formatMoney(selectedPlayArea.price)}` : "-"}
+                  </strong>
+                </div>
+
+                <div className="bookingModernSummaryItem">
+                  <span>Remaining Slots</span>
+                  <strong>
+                    {availabilityLoading
+                      ? "Loading..."
+                      : Number(availability.remaining_slots || 0)}
+                  </strong>
+                </div>
+              </>
+            ) : null}
+
+            {isPartyBooking ? (
+              <>
+                <div className="bookingModernSummaryItem">
+                  <span>Package</span>
+                  <strong>{packageNameFromUrl || "-"}</strong>
+                </div>
+
+                <div className="bookingModernSummaryItem">
+                  <span>Package Price</span>
+                  <strong>{packageAmount ? `LKR ${formatMoney(packageAmount)}` : "-"}</strong>
+                </div>
+              </>
+            ) : null}
+
+            <div className="bookingModernSummaryItem">
+              <span>Date</span>
+              <strong>{form.booking_date || "-"}</strong>
+            </div>
+
+            <div className="bookingModernSummaryItem">
+              <span>Time Slot</span>
+              <strong>{form.time_slot || "-"}</strong>
+            </div>
+
+            {isBookingWithPayment ? (
+              <>
+                <div className="bookingModernSummaryItem">
+                  <span>Payment Method</span>
+                  <strong>{selectedPayment?.title || "-"}</strong>
+                </div>
+
+                <div className="bookingModernSummaryItem bookingModernSummaryHighlight">
+                  <span>Total</span>
+                  <strong>{paymentAmountLabel || "-"}</strong>
+                </div>
+              </>
+            ) : null}
           </div>
-        </form>
+
+          <div className="bookingModernTipBox">
+            <div className="bookingModernTipTitle">Important</div>
+            <p>
+              Card payments continue to Stripe. Cash and bank transfer payments stay
+              pending until confirmation.
+            </p>
+          </div>
+        </aside>
       </div>
     </motion.div>
   );
