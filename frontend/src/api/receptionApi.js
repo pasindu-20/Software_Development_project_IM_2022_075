@@ -31,6 +31,12 @@ export const listInquiriesApi = () => api.get("/api/inquiry");
 export const updateInquiryStatusApi = (id, status) =>
   api.patch(`/api/inquiry/${id}/status`, { status });
 
+export const sendInquiryReplyApi = (id, payload) =>
+  api.post(`/api/inquiry/${id}/reply`, payload);
+
+export const listInquiryFollowupsApi = (id) =>
+  api.get(`/api/inquiry/${id}/followups`);
+
 export const getBookingPaymentDetailsApi = (bookingId) =>
   api.get(`/api/reception/payments/booking/${bookingId}`);
 

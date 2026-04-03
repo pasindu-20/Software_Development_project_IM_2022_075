@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { listInquiriesApi, updateInquiryStatusApi } from "../../api/receptionApi";
+import {
+  listInquiriesApi,
+  listInquiryFollowupsApi,
+  sendInquiryReplyApi,
+  updateInquiryStatusApi,
+} from "../../api/receptionApi";
+
+const APP_NAME = "Poddo Play House";
 
 const formatDateTime = (value) => {
   if (!value) return "—";
@@ -7,6 +14,17 @@ const formatDateTime = (value) => {
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString();
 };
+
+const buildDefaultReplySubject = (row) => {
+  const type = String(row?.inquiry_type || "general").toLowerCase();
+  return `Re: Your ${type} inquiry to ${APP_NAME}`;
+};
+
+const isEmailReplyNote = (note) =>
+  String(note || "").trim().startsWith("[EMAIL_REPLY]");
+
+const cleanHistoryNote = (note) =>
+  String(note || "").replace(/^\[EMAIL_REPLY\]\s*/, "").trim();
 
 export default function RecInquiries() {
   const [rows, setRows] = useState([]);
@@ -17,9 +35,16 @@ export default function RecInquiries() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
 
-  const load = async () => {
+  const [replySubject, setReplySubject] = useState("");
+  const [replyMessage, setReplyMessage] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+
+  const [followups, setFollowups] = useState([]);
+  const [followupsLoading, setFollowupsLoading] = useState(false);
+
+  const load = async ({ keepInfo = false } = {}) => {
     setErr("");
-    setInfo("");
+    if (!keepInfo) setInfo("");
     setLoading(true);
 
     try {
@@ -40,15 +65,28 @@ export default function RecInquiries() {
     }
   };
 
+  const loadFollowups = async (inquiryId) => {
+    if (!inquiryId) return;
+
+    setFollowupsLoading(true);
+
+    try {
+      const res = await listInquiryFollowupsApi(inquiryId);
+      setFollowups(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      setFollowups([]);
+    } finally {
+      setFollowupsLoading(false);
+    }
+  };
+
   useEffect(() => {
     load();
   }, []);
 
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === "Escape") {
-        closeModal();
-      }
+      if (e.key === "Escape") closeModal();
     };
 
     if (showModal) {
@@ -60,16 +98,23 @@ export default function RecInquiries() {
     };
   }, [showModal]);
 
-  const openInquiryModal = (row) => {
+  const openInquiryModal = async (row) => {
     setSelected(row);
     setShowModal(true);
     setErr("");
     setInfo("");
+    setReplySubject(buildDefaultReplySubject(row));
+    setReplyMessage("");
+    setFollowups([]);
+    await loadFollowups(row.id);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelected(null);
+    setReplySubject("");
+    setReplyMessage("");
+    setFollowups([]);
   };
 
   const updateStatus = async (id, status) => {
@@ -79,8 +124,9 @@ export default function RecInquiries() {
 
     try {
       await updateInquiryStatusApi(id, status);
+      await load({ keepInfo: true });
+
       setInfo("Inquiry updated successfully.");
-      await load();
 
       if (selected?.id === id) {
         setSelected((prev) => (prev ? { ...prev, status } : prev));
@@ -89,6 +135,51 @@ export default function RecInquiries() {
       setErr(e?.response?.data?.message || "Failed to update inquiry");
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const sendReply = async () => {
+    if (!selected) return;
+
+    setErr("");
+    setInfo("");
+
+    if (!replySubject.trim()) {
+      setErr("Reply subject is required.");
+      return;
+    }
+
+    if (!replyMessage.trim()) {
+      setErr("Reply message is required.");
+      return;
+    }
+
+    setSendingReply(true);
+
+    try {
+      await sendInquiryReplyApi(selected.id, {
+        subject: replySubject.trim(),
+        message: replyMessage.trim(),
+      });
+
+      await load({ keepInfo: true });
+      await loadFollowups(selected.id);
+
+      setSelected((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: prev.status === "NEW" ? "CONTACTED" : prev.status,
+            }
+          : prev
+      );
+
+      setReplyMessage("");
+      setInfo("Reply email sent successfully.");
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to send reply");
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -187,7 +278,7 @@ export default function RecInquiries() {
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "100%",
-              maxWidth: 800,
+              maxWidth: 900,
               maxHeight: "90vh",
               overflowY: "auto",
               background: "#fff",
@@ -267,6 +358,139 @@ export default function RecInquiries() {
                 }}
               >
                 {selected.message || "No message available."}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <strong>Reply to Customer:</strong>
+
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "grid",
+                  gap: 10,
+                  padding: 14,
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  background: "#fcfcfc",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    Subject
+                  </div>
+                  <input
+                    type="text"
+                    value={replySubject}
+                    onChange={(e) => setReplySubject(e.target.value)}
+                    placeholder="Enter reply subject"
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      borderRadius: 8,
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    Reply Message
+                  </div>
+                  <textarea
+                    value={replyMessage}
+                    onChange={(e) => setReplyMessage(e.target.value)}
+                    placeholder="Type your reply to the customer here..."
+                    rows={6}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      borderRadius: 8,
+                      border: "1px solid #ccc",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ fontSize: 13, color: "#666" }}>
+                    Reply will be sent to: <strong>{selected.email || "No email"}</strong>
+                  </div>
+
+                  <button onClick={sendReply} disabled={sendingReply}>
+                    {sendingReply ? "Sending..." : "Send Reply Email"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <strong>Reply / Follow-up History:</strong>
+
+              <div
+                style={{
+                  marginTop: 10,
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  background: "#fafafa",
+                  padding: 12,
+                }}
+              >
+                {followupsLoading ? (
+                  <div>Loading history...</div>
+                ) : followups.length === 0 ? (
+                  <div style={{ color: "#666" }}>No follow-up history yet.</div>
+                ) : (
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {followups.map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          border: "1px solid #e3e3e3",
+                          borderRadius: 8,
+                          background: "#fff",
+                          padding: 12,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            flexWrap: "wrap",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <div>
+                            <strong>{item.staff_name || "Staff"}</strong>
+                          </div>
+                          <div style={{ fontSize: 12, color: "#666" }}>
+                            {isEmailReplyNote(item.note) ? "Email Reply" : "Follow Up"} •{" "}
+                            {formatDateTime(item.created_at)}
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            lineHeight: 1.6,
+                            color: "#333",
+                          }}
+                        >
+                          {cleanHistoryNote(item.note)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

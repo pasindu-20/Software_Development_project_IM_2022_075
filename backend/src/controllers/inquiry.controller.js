@@ -2,6 +2,7 @@ const db = require("../config/db");
 const { audit } = require("../utils/audit");
 const {
   sendInquiryAcknowledgementEmail,
+  sendInquiryReplyEmail,
 } = require("../services/inquiryEmail.service");
 
 async function ensureInquiryTables() {
@@ -257,6 +258,93 @@ exports.updateInquiryStatus = async (req, res) => {
   } catch (err) {
     console.error("updateInquiryStatus error:", err);
     return res.status(500).json({ message: "Failed to update status" });
+  }
+};
+
+// PROTECTED: Send reply email to inquiry customer
+exports.replyToInquiry = async (req, res) => {
+  try {
+    await ensureInquiryTables();
+
+    const inquiryId = Number(req.params.id);
+    const subject = String(req.body.subject || "").trim();
+    const message = String(req.body.message || "").trim();
+
+    if (!subject) {
+      return res.status(400).json({ message: "Reply subject is required" });
+    }
+
+    if (subject.length < 3) {
+      return res.status(400).json({ message: "Reply subject is too short" });
+    }
+
+    if (!message) {
+      return res.status(400).json({ message: "Reply message is required" });
+    }
+
+    if (message.length < 5) {
+      return res.status(400).json({ message: "Reply message is too short" });
+    }
+
+    const [[inquiry]] = await db.query(
+      `SELECT * FROM customer_inquiries WHERE id=? LIMIT 1`,
+      [inquiryId]
+    );
+
+    if (!inquiry) {
+      return res.status(404).json({ message: "Inquiry not found" });
+    }
+
+    if (!inquiry.email || !isValidEmail(inquiry.email)) {
+      return res.status(400).json({
+        message: "Customer inquiry does not have a valid email address",
+      });
+    }
+
+    await sendInquiryReplyEmail({
+      customerName: inquiry.customer_name,
+      email: inquiry.email,
+      subject,
+      replyMessage: message,
+      staffName: req.user.full_name || "Reception Team",
+      originalMessage: inquiry.message,
+    });
+
+    const replyNote = [
+      `[EMAIL_REPLY]`,
+      `Subject: ${subject}`,
+      `Sent By: ${req.user.full_name || req.user.email || "Staff"}`,
+      "",
+      message,
+    ].join("\n");
+
+    await db.query(
+      `INSERT INTO inquiry_followups (inquiry_id, user_id, note, followup_date)
+       VALUES (?, ?, ?, NULL)`,
+      [inquiryId, req.user.id, replyNote]
+    );
+
+    await db.query(
+      `UPDATE customer_inquiries
+       SET status = CASE WHEN status='NEW' THEN 'CONTACTED' ELSE status END
+       WHERE id=?`,
+      [inquiryId]
+    );
+
+    await audit({
+      user_id: req.user.id,
+      action: "INQUIRY_REPLY_SENT",
+      table_name: "customer_inquiries",
+      record_id: inquiryId,
+      ip_address: req.ip,
+    });
+
+    return res.json({
+      message: "Reply sent to customer successfully",
+    });
+  } catch (err) {
+    console.error("replyToInquiry error:", err);
+    return res.status(500).json({ message: "Failed to send reply" });
   }
 };
 
