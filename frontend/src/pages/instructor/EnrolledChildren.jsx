@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { getMyAssignedClassesApi, getEnrolledChildrenApi } from "../../api/instructorApi";
+import {
+  getEnrolledChildrenApi,
+  getMyAssignedClassesApi,
+} from "../../api/instructorApi";
 import useInstructorView from "../../hooks/useInstructorView";
 
 export default function InsEnrolledChildren() {
@@ -37,7 +40,9 @@ export default function InsEnrolledChildren() {
 
     try {
       const res = await getMyAssignedClassesApi(selectedInstructorId || undefined);
-      const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
+      const list = Array.isArray(res.data)
+        ? res.data.filter((x) => x.item_type === "CLASS")
+        : [];
       setClasses(list);
       setClassId(list[0]?.id ? String(list[0].id) : "");
       setChildren([]);
@@ -52,7 +57,11 @@ export default function InsEnrolledChildren() {
     setLoading(true);
     setErr("");
     try {
-      const res = await getEnrolledChildrenApi(id, undefined, selectedInstructorId || undefined);
+      const res = await getEnrolledChildrenApi(
+        id,
+        undefined,
+        selectedInstructorId || undefined
+      );
       setChildren(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       setChildren([]);
@@ -63,16 +72,23 @@ export default function InsEnrolledChildren() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Enrolled Children</h2>
+    <div className="instructorPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Enrolled Children</h2>
+      </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 10 }}>
-        {isAdminInstructorView && (
-          <>
-            <div style={{ fontWeight: 700 }}>Instructor View (Admin Access)</div>
+      {isAdminInstructorView && (
+        <div className="instructorAdminCard">
+          <div>
+            <p className="instructorAdminTitle">Instructor View (Admin Access)</p>
+            <p className="instructorAdminText">
+              Select an instructor first, then switch between their class lists.
+            </p>
+          </div>
 
-            <label>
-              Select Instructor:&nbsp;
+          <div className="instructorToolbar">
+            <label className="instructorField">
+              <span className="instructorFieldLabel">Select Instructor</span>
               <select
                 value={selectedInstructorId}
                 onChange={(e) => setSelectedInstructorId(e.target.value)}
@@ -86,54 +102,75 @@ export default function InsEnrolledChildren() {
                 ))}
               </select>
             </label>
+          </div>
 
-            {selectedInstructor ? (
-              <div style={{ color: "#666" }}>Now viewing: {selectedInstructor.full_name}</div>
-            ) : null}
+          {selectedInstructor ? (
+            <div className="instructorMuted">
+              Now viewing: <strong>{selectedInstructor.full_name}</strong>
+            </div>
+          ) : null}
 
-            {selectorError ? <div style={{ color: "crimson" }}>{selectorError}</div> : null}
-          </>
-        )}
+          {selectorError ? <div className="instructorError">{selectorError}</div> : null}
+        </div>
+      )}
 
-        <label>
-          Select Class:
-          <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ marginLeft: 10 }}>
-            {classes.length === 0 && <option value="">No classes</option>}
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title || `Class #${c.id}`}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Class Enrollments</h3>
+            <p className="instructorSectionText">
+              Review the children currently enrolled in each assigned class.
+            </p>
+          </div>
+        </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
+        <div className="instructorToolbar">
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Select Class</span>
+            <select value={classId} onChange={(e) => setClassId(e.target.value)}>
+              {classes.length === 0 && <option value="">No classes</option>}
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title || `Class #${c.id}`}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {err ? <div className="instructorError">{err}</div> : null}
 
         {loading ? (
-          <div>Loading…</div>
+          <div className="instructorMuted">Loading enrolled children…</div>
         ) : children.length === 0 ? (
-          <div style={{ color: "#666" }}>No enrolled children found.</div>
+          <div className="instructorMuted">No enrolled children found.</div>
         ) : (
-          <table width="100%" cellPadding="8" border="1">
-            <thead>
-              <tr>
-                <th>Child Name</th>
-                <th>Guardian</th>
-                <th>Contact</th>
-                <th>Enrollment Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {children.map((ch) => (
-                <tr key={ch.id}>
-                  <td>{ch.child_name || `Child #${ch.id}`}</td>
-                  <td>{ch.guardian_name || "—"}</td>
-                  <td>{ch.guardian_phone || "—"}</td>
-                  <td>{ch.enrollment_status || "—"}</td>
+          <div className="instructorTableOuter">
+            <table className="instructorTable">
+              <thead>
+                <tr>
+                  <th>Child Name</th>
+                  <th>Guardian</th>
+                  <th>Contact</th>
+                  <th>Enrollment Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {children.map((ch) => (
+                  <tr key={ch.id}>
+                    <td>{ch.child_name || `Child #${ch.id}`}</td>
+                    <td>{ch.guardian_name || "—"}</td>
+                    <td>{ch.guardian_phone || "—"}</td>
+                    <td>
+                      <span className="instructorStatusPill">
+                        {ch.enrollment_status || "—"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

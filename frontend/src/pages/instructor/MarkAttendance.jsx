@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  getMyAssignedClassesApi,
   getEnrolledChildrenApi,
+  getMyAssignedClassesApi,
   markAttendanceApi,
 } from "../../api/instructorApi";
 import useInstructorView from "../../hooks/useInstructorView";
@@ -48,7 +48,9 @@ export default function InsMarkAttendance() {
 
     try {
       const res = await getMyAssignedClassesApi(selectedInstructorId || undefined);
-      const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
+      const list = Array.isArray(res.data)
+        ? res.data.filter((x) => x.item_type === "CLASS")
+        : [];
       setClasses(list);
       setClassId(list[0]?.id ? String(list[0].id) : "");
       setChildren([]);
@@ -126,16 +128,23 @@ export default function InsMarkAttendance() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Mark Attendance</h2>
+    <div className="instructorPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Mark Attendance</h2>
+      </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 10 }}>
-        {isAdminInstructorView && (
-          <>
-            <div style={{ fontWeight: 700 }}>Instructor View (Admin Access)</div>
+      {isAdminInstructorView && (
+        <div className="instructorAdminCard">
+          <div>
+            <p className="instructorAdminTitle">Instructor View (Admin Access)</p>
+            <p className="instructorAdminText">
+              Choose the instructor first, then record attendance for the selected class.
+            </p>
+          </div>
 
-            <label>
-              Select Instructor:&nbsp;
+          <div className="instructorToolbar">
+            <label className="instructorField">
+              <span className="instructorFieldLabel">Select Instructor</span>
               <select
                 value={selectedInstructorId}
                 onChange={(e) => {
@@ -152,18 +161,31 @@ export default function InsMarkAttendance() {
                 ))}
               </select>
             </label>
+          </div>
 
-            {selectedInstructor ? (
-              <div style={{ color: "#666" }}>Now viewing: {selectedInstructor.full_name}</div>
-            ) : null}
+          {selectedInstructor ? (
+            <div className="instructorMuted">
+              Now viewing: <strong>{selectedInstructor.full_name}</strong>
+            </div>
+          ) : null}
 
-            {selectorError ? <div style={{ color: "crimson" }}>{selectorError}</div> : null}
-          </>
-        )}
+          {selectorError ? <div className="instructorError">{selectorError}</div> : null}
+        </div>
+      )}
 
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <label>
-            Class:&nbsp;
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Attendance Sheet</h3>
+            <p className="instructorSectionText">
+              Mark each enrolled child as present or absent for the selected day.
+            </p>
+          </div>
+        </div>
+
+        <div className="instructorToolbar">
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Class</span>
             <select
               value={classId}
               onChange={(e) => {
@@ -180,8 +202,8 @@ export default function InsMarkAttendance() {
             </select>
           </label>
 
-          <label>
-            Date:&nbsp;
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Date</span>
             <input
               type="date"
               value={date}
@@ -192,53 +214,60 @@ export default function InsMarkAttendance() {
             />
           </label>
 
-          <button onClick={save} disabled={saving || loading || children.length === 0}>
+          <button
+            onClick={save}
+            disabled={saving || loading || children.length === 0}
+            className="instructorButton"
+            type="button"
+          >
             {saving ? "Saving…" : "Save Attendance"}
           </button>
         </div>
 
-        {err && <div style={{ color: "crimson", fontWeight: "500" }}>{err}</div>}
-        {info && <div style={{ color: "green", fontWeight: "600" }}>{info}</div>}
+        {err ? <div className="instructorError">{err}</div> : null}
+        {info ? <div className="instructorSuccess">{info}</div> : null}
 
         {loading ? (
-          <div>Loading children…</div>
+          <div className="instructorMuted">Loading children…</div>
         ) : children.length === 0 ? (
-          <div style={{ color: "#666" }}>No children found for this class.</div>
+          <div className="instructorMuted">No children found for this class.</div>
         ) : (
-          <table width="100%" cellPadding="8" border="1">
-            <thead>
-              <tr>
-                <th>Child</th>
-                <th>Guardian</th>
-                <th>Present</th>
-                <th>Absent</th>
-              </tr>
-            </thead>
-            <tbody>
-              {children.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.child_name || `Child #${c.id}`}</td>
-                  <td>{c.guardian_name || "—"}</td>
-                  <td style={{ textAlign: "center" }}>
-                    <input
-                      type="radio"
-                      name={`att_${c.id}`}
-                      checked={(records[c.id] || "PRESENT") === "PRESENT"}
-                      onChange={() => setStatus(c.id, "PRESENT")}
-                    />
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <input
-                      type="radio"
-                      name={`att_${c.id}`}
-                      checked={(records[c.id] || "PRESENT") === "ABSENT"}
-                      onChange={() => setStatus(c.id, "ABSENT")}
-                    />
-                  </td>
+          <div className="instructorTableOuter">
+            <table className="instructorTable">
+              <thead>
+                <tr>
+                  <th>Child</th>
+                  <th>Guardian</th>
+                  <th>Present</th>
+                  <th>Absent</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {children.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.child_name || `Child #${c.id}`}</td>
+                    <td>{c.guardian_name || "—"}</td>
+                    <td className="instructorRadioCell">
+                      <input
+                        type="radio"
+                        name={`att_${c.id}`}
+                        checked={(records[c.id] || "PRESENT") === "PRESENT"}
+                        onChange={() => setStatus(c.id, "PRESENT")}
+                      />
+                    </td>
+                    <td className="instructorRadioCell">
+                      <input
+                        type="radio"
+                        name={`att_${c.id}`}
+                        checked={(records[c.id] || "PRESENT") === "ABSENT"}
+                        onChange={() => setStatus(c.id, "ABSENT")}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { BookOpen, CalendarCheck2, ClipboardList, Users } from "lucide-react";
 import {
   getInstructorDashboardApi,
   getMyAssignedClassesApi,
 } from "../../api/instructorApi";
+import { useAuth } from "../../auth/useAuth";
 import useInstructorView from "../../hooks/useInstructorView";
 
 export default function InsDashboard() {
+  const { user } = useAuth();
   const {
     isAdminInstructorView,
     instructors,
@@ -56,7 +59,9 @@ export default function InsDashboard() {
         assignedClasses: Number(statsRes.data?.assignedClasses || 0),
         totalEnrollments: Number(statsRes.data?.totalEnrollments || 0),
         classesMarkedToday: Number(statsRes.data?.classesMarkedToday || 0),
-        pendingAttendanceToday: Number(statsRes.data?.pendingAttendanceToday || 0),
+        pendingAttendanceToday: Number(
+          statsRes.data?.pendingAttendanceToday || 0
+        ),
       });
 
       setClasses(Array.isArray(classesRes.data) ? classesRes.data : []);
@@ -68,102 +73,152 @@ export default function InsDashboard() {
     }
   };
 
+  const displayName = useMemo(() => {
+    if (isAdminInstructorView) {
+      return selectedInstructor?.full_name || "Instructor";
+    }
+
+    return user?.full_name || user?.name || "Instructor";
+  }, [isAdminInstructorView, selectedInstructor, user]);
+
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Instructor Dashboard</h2>
+    <div className="instructorPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Instructor Dashboard</h2>
+      </div>
 
       {isAdminInstructorView && (
-        <div
-          style={{
-            background: "white",
-            padding: 16,
-            borderRadius: 12,
-            display: "grid",
-            gap: 10,
-          }}
-        >
-          <div style={{ fontWeight: 700 }}>Instructor View (Admin Access)</div>
+        <div className="instructorAdminCard">
+          <div>
+            <p className="instructorAdminTitle">Instructor View (Admin Access)</p>
+            <p className="instructorAdminText">
+              Switch between instructors without changing any existing behavior.
+            </p>
+          </div>
 
-          <label>
-            Select Instructor:&nbsp;
-            <select
-              value={selectedInstructorId}
-              onChange={(e) => setSelectedInstructorId(e.target.value)}
-              disabled={loadingInstructors}
-            >
-              {instructors.length === 0 && <option value="">No instructors</option>}
-              {instructors.map((ins) => (
-                <option key={ins.id} value={ins.id}>
-                  {ins.full_name} {ins.email ? `(${ins.email})` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="instructorToolbar">
+            <label className="instructorField">
+              <span className="instructorFieldLabel">Select Instructor</span>
+              <select
+                value={selectedInstructorId}
+                onChange={(e) => setSelectedInstructorId(e.target.value)}
+                disabled={loadingInstructors}
+              >
+                {instructors.length === 0 && <option value="">No instructors</option>}
+                {instructors.map((ins) => (
+                  <option key={ins.id} value={ins.id}>
+                    {ins.full_name} {ins.email ? `(${ins.email})` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
           {selectedInstructor && (
-            <div style={{ color: "#666" }}>
-              Now viewing: {selectedInstructor.full_name}
+            <div className="instructorMuted">
+              Now viewing: <strong>{selectedInstructor.full_name}</strong>
             </div>
           )}
 
-          {selectorError ? <div style={{ color: "crimson" }}>{selectorError}</div> : null}
+          {selectorError ? <div className="instructorError">{selectorError}</div> : null}
         </div>
       )}
 
-      {err ? <div style={{ color: "crimson" }}>{err}</div> : null}
+      {err ? <div className="instructorError">{err}</div> : null}
 
       {loading ? (
-        <div>Loading…</div>
+        <div className="instructorContentCard">
+          <div className="instructorMuted">Loading dashboard data…</div>
+        </div>
       ) : (
         <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-            }}
-          >
-            <Card title="Assigned Items" value={stats.assignedClasses} />
-            <Card title="Total Enrollments" value={stats.totalEnrollments} />
-            <Card title="Classes Marked Today" value={stats.classesMarkedToday} />
-            <Card title="Pending Attendance" value={stats.pendingAttendanceToday} />
+          <div className="instructorHeroCard">
+            <div className="instructorHeroEyebrow">Teaching overview</div>
+            <h3 className="instructorHeroTitle">Welcome back, {displayName}</h3>
+            <p className="instructorHeroText">
+              
+            </p>
           </div>
 
-          <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-            <h3 style={{ marginTop: 0 }}>
-              {isAdminInstructorView ? "Selected Instructor Classes and Events" : "My Assigned Classes and Events"}
-            </h3>
+          <div className="instructorStatsGrid">
+            <StatCard
+              icon={BookOpen}
+              title="Assigned Items"
+              value={stats.assignedClasses}
+            />
+            <StatCard
+              icon={Users}
+              title="Total Enrollments"
+              value={stats.totalEnrollments}
+            />
+            <StatCard
+              icon={CalendarCheck2}
+              title="Classes Marked Today"
+              value={stats.classesMarkedToday}
+            />
+            <StatCard
+              icon={ClipboardList}
+              title="Pending Attendance"
+              value={stats.pendingAttendanceToday}
+            />
+          </div>
+
+          <div className="instructorContentCard">
+            <div className="instructorSectionHeader">
+              <div>
+                <h3 className="instructorSectionTitle">
+                  {isAdminInstructorView
+                    ? "Selected Instructor Classes and Events"
+                    : "My Assigned Classes and Events"}
+                </h3>
+                <p className="instructorSectionText">
+                  A quick view of scheduled items and today&apos;s attendance counts.
+                </p>
+              </div>
+            </div>
 
             {classes.length === 0 ? (
-              <div style={{ color: "#666" }}>No assigned classes found.</div>
+              <div className="instructorMuted">No assigned classes found.</div>
             ) : (
-              <table width="100%" cellPadding="8" border="1">
-                <thead>
-                  <tr>
-                    <th>Type</th>
-                    <th>Title</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Enrolled</th>
-                    <th>Today Attendance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {classes.map((c) => (
-                    <tr key={c.id}>
-                      <td>{c.item_type || "-"}</td>
-                      <td>{c.title || `Class #${c.id}`}</td>
-                      <td>{c.event_date ? String(c.event_date).slice(0, 10) : "-"}</td>
-                      <td>
-                        {c.start_time ? String(c.start_time).slice(0, 5) : "-"}
-                        {c.end_time ? ` - ${String(c.end_time).slice(0, 5)}` : ""}
-                      </td>
-                      <td>{Number(c.enrolled_count || 0)}</td>
-                      <td>{c.item_type === "CLASS" ? Number(c.today_attendance_count || 0) : "-"}</td>
+              <div className="instructorTableOuter">
+                <table className="instructorTable">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Title</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Enrolled</th>
+                      <th>Today Attendance</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {classes.map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <span className="instructorStatusPill">
+                            {c.item_type || "-"}
+                          </span>
+                        </td>
+                        <td>{c.title || `Class #${c.id}`}</td>
+                        <td>
+                          {c.event_date ? String(c.event_date).slice(0, 10) : "-"}
+                        </td>
+                        <td>
+                          {c.start_time ? String(c.start_time).slice(0, 5) : "-"}
+                          {c.end_time ? ` - ${String(c.end_time).slice(0, 5)}` : ""}
+                        </td>
+                        <td>{Number(c.enrolled_count || 0)}</td>
+                        <td>
+                          {c.item_type === "CLASS"
+                            ? Number(c.today_attendance_count || 0)
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </>
@@ -172,11 +227,17 @@ export default function InsDashboard() {
   );
 }
 
-function Card({ title, value }) {
+function StatCard({ icon: Icon, title, value }) {
   return (
-    <div style={{ background: "white", padding: 14, borderRadius: 12 }}>
-      <div style={{ fontSize: 13, color: "#666" }}>{title}</div>
-      <div style={{ fontSize: 24, fontWeight: 800 }}>{value}</div>
+    <div className="instructorStatCard">
+      <div className="instructorStatIcon">
+        <Icon size={20} strokeWidth={2} />
+      </div>
+
+      <div>
+        <div className="instructorStatLabel">{title}</div>
+        <div className="instructorStatValue">{value}</div>
+      </div>
     </div>
   );
 }
