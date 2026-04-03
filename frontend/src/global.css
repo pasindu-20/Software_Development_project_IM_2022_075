@@ -3382,10 +3382,19 @@
 /* end of reception dashboard CSS */
 
 /* profile  */
+.profileModernPage {
+  min-height: 100vh;
+  background: #fffdfb;
+}
+
 .profileModernWrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
   display: grid;
-  gap: 18px;
+  gap: 22px;
   color: #172033;
+  box-sizing: border-box;
 }
 
 .profileModernHero {
@@ -3393,12 +3402,9 @@
   overflow: hidden;
   border-radius: 28px;
   padding: 24px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background:
-    radial-gradient(circle at top right, rgba(255, 182, 193, 0.22), transparent 30%),
-    radial-gradient(circle at bottom left, rgba(251, 239, 118, 0.22), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fffaf1 48%, #fff7fb 100%);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: linear-gradient(135deg, #fffdf8 0%, #fffefe 55%, #fffafb 100%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
 }
 
 .profileModernBadge {
@@ -3463,9 +3469,9 @@
 }
 
 .profileModernBtn.primary {
-  background: linear-gradient(135deg, #fa5c5c 0%, #fd8a6b 100%);
+  background: linear-gradient(135deg, #f86b6b 0%, #f79a7c 100%);
   color: white;
-  box-shadow: 0 14px 28px rgba(250, 92, 92, 0.22);
+  box-shadow: 0 10px 22px rgba(248, 107, 107, 0.18);
 }
 
 .profileModernBtn.ghost {
@@ -3476,6 +3482,7 @@
 
 .profileModernBtn:hover {
   transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .profileModernBtn:disabled {
@@ -3497,21 +3504,12 @@
   align-items: flex-start;
   padding: 16px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(8px);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
 }
 
-.profileModernStatIcon {
-  width: 46px;
-  height: 46px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #fff2d6 0%, #ffe1e1 100%);
-  font-size: 20px;
-  flex-shrink: 0;
-}
+
 
 .profileModernStatLabel {
   font-size: 12px;
@@ -3556,8 +3554,8 @@
   border-radius: 24px;
   padding: 22px;
   background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
 }
 
 .profileModernPanelHead {
@@ -3590,8 +3588,8 @@
   align-items: center;
   padding: 18px;
   border-radius: 22px;
-  background: linear-gradient(135deg, #fff9ec 0%, #fff 48%, #fff5f9 100%);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: #fffdf9;
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .profileModernAvatar {
@@ -3603,8 +3601,8 @@
   font-size: 28px;
   font-weight: 900;
   color: #172033;
-  background: linear-gradient(135deg, #fbe676 0%, #ffd6c7 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+  background: linear-gradient(135deg, #ffe9a8 0%, #ffdccc 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
   flex-shrink: 0;
 }
 
@@ -3672,8 +3670,8 @@
 .profileModernInfoCard {
   padding: 15px 16px;
   border-radius: 18px;
-  background: #f8fafc;
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: #fbfcfe;
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .profileModernInfoLabel {
@@ -3701,8 +3699,9 @@
 .profileModernChildCard {
   padding: 16px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #ffffff 0%, #fffaf2 100%);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fffdfa;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
 }
 
 .profileModernChildTop {
@@ -3712,16 +3711,7 @@
   gap: 10px;
 }
 
-.profileModernChildAvatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #ffe8ef 0%, #fff0c2 100%);
-  font-size: 18px;
-  font-weight: 900;
-}
+
 
 .profileModernChildName {
   margin-top: 12px;
@@ -3738,9 +3728,10 @@
 
 .profileModernTableWrap {
   overflow-x: auto;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 20px;
   background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.035);
 }
 
 .profileModernTable {
@@ -3900,3 +3891,1357 @@
 }
 
 /* end of profile CSS */
+
+/*  Enroll Classes - Modern UI */
+
+.enrollModernPage {
+  width: min(1120px, 92vw);
+  margin: 0 auto;
+  padding: 8px 0 20px;
+}
+
+.enrollModernHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 26px;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.55)),
+    radial-gradient(circle at top left, rgba(255, 233, 154, 0.45), transparent 42%),
+    radial-gradient(circle at top right, rgba(255, 170, 170, 0.32), transparent 42%),
+    radial-gradient(circle at bottom center, rgba(255, 213, 134, 0.28), transparent 35%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.07),
+    0 8px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+.enrollModernHeroText {
+  flex: 1;
+  min-width: 280px;
+}
+
+.enrollModernBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 241, 199, 0.8);
+  border: 1px solid rgba(255, 213, 134, 0.65);
+  color: #5b3a00;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.enrollModernTitle {
+  margin: 14px 0 10px;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.1;
+  font-weight: 1000;
+  color: #1f2937;
+}
+
+.enrollModernSubtitle {
+  margin: 0;
+  max-width: 760px;
+  color: #5f6b7a;
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+.enrollModernStats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.enrollModernStat {
+  min-width: 120px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.enrollModernStatLabel {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.enrollModernStat strong {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.enrollModernBackBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 800;
+  color: #4c1d95;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(76, 29, 149, 0.12);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.enrollModernBackBtn:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.enrollModernAlert {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.enrollModernAlertError {
+  background: rgba(255, 236, 236, 0.9);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  color: #b91c1c;
+}
+
+.enrollModernAlertSuccess {
+  background: rgba(236, 253, 243, 0.9);
+  border: 1px solid rgba(22, 163, 74, 0.15);
+  color: #15803d;
+}
+
+.enrollModernGrid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.enrollModernCard {
+  position: relative;
+  padding: 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.enrollModernCard::after {
+  content: "";
+  position: absolute;
+  top: -45px;
+  right: -45px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 170, 170, 0.2), transparent 65%);
+  pointer-events: none;
+}
+
+.enrollModernCardLarge {
+  min-height: 100%;
+}
+
+.enrollModernCardTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+
+
+.enrollModernCardTitle {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.enrollModernCardText {
+  margin: 0 0 20px;
+  color: #6b7280;
+  line-height: 1.65;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.enrollModernSelectedPill {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 241, 199, 0.85);
+  border: 1px solid rgba(255, 213, 134, 0.55);
+  font-size: 13px;
+  font-weight: 800;
+  color: #674d00;
+}
+
+.enrollModernForm {
+  display: grid;
+  gap: 16px;
+}
+
+.enrollModernLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #374151;
+}
+
+.enrollModernInput {
+  width: 100%;
+  height: 50px;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0 16px;
+  font-size: 15px;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.enrollModernInput:focus {
+  border-color: rgba(250, 92, 92, 0.4);
+  box-shadow: 0 0 0 4px rgba(255, 170, 170, 0.18);
+}
+
+.enrollModernSelect {
+  appearance: none;
+}
+
+.enrollModernPrimaryBtn {
+  height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fa5c5c, #ff8f7a);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 14px 24px rgba(250, 92, 92, 0.24);
+  transition: all 0.2s ease;
+}
+
+.enrollModernPrimaryBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(250, 92, 92, 0.28);
+}
+
+.enrollModernPrimaryBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.enrollModernHelper {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 248, 226, 0.72);
+  border: 1px solid rgba(255, 233, 154, 0.55);
+  color: #7b6a35;
+  line-height: 1.6;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.enrollModernChildrenBox {
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(249, 250, 251, 0.75);
+  display: grid;
+  gap: 10px;
+}
+
+.enrollModernChildItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 700;
+  color: #374151;
+}
+
+.enrollModernChildItem:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.enrollModernChildItem.active {
+  border-color: rgba(250, 92, 92, 0.25);
+  background: rgba(255, 243, 243, 0.85);
+  box-shadow: 0 10px 20px rgba(250, 92, 92, 0.08);
+}
+
+.enrollModernChildItem input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #fa5c5c;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.enrollModernEmpty {
+  padding: 18px;
+  border-radius: 16px;
+  text-align: center;
+  color: #6b7280;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px dashed rgba(31, 41, 55, 0.14);
+}
+
+.enrollModernClassPreview {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 233, 154, 0.28), rgba(255, 170, 170, 0.18));
+  border: 1px solid rgba(255, 213, 134, 0.45);
+}
+
+.enrollModernClassPreviewName {
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.enrollModernClassPreviewFee {
+  font-weight: 900;
+  color: #c2410c;
+}
+
+.enrollModernNote {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  color: #5f6b7a;
+  line-height: 1.7;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .enrollModernGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .enrollModernHero {
+    padding: 20px;
+  }
+
+  .enrollModernCard {
+    padding: 20px;
+  }
+
+  .enrollModernBackBtn {
+    width: 100%;
+  }
+}
+
+/* Pay Now  */
+
+.payNowModernPage {
+  width: min(1120px, 92vw);
+  margin: 0 auto;
+  padding: 8px 0 24px;
+}
+
+.payNowModernHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 26px;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.55)),
+    radial-gradient(circle at top left, rgba(255, 233, 154, 0.45), transparent 42%),
+    radial-gradient(circle at top right, rgba(255, 170, 170, 0.32), transparent 42%),
+    radial-gradient(circle at bottom center, rgba(255, 213, 134, 0.28), transparent 35%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.07),
+    0 8px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+.payNowModernHeroText {
+  flex: 1;
+  min-width: 280px;
+}
+
+.payNowModernBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 241, 199, 0.8);
+  border: 1px solid rgba(255, 213, 134, 0.65);
+  color: #5b3a00;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.payNowModernTitle {
+  margin: 14px 0 10px;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.1;
+  font-weight: 1000;
+  color: #1f2937;
+}
+
+.payNowModernSubtitle {
+  margin: 0;
+  max-width: 760px;
+  color: #5f6b7a;
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+.payNowModernMetaRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.payNowModernMetaCard {
+  min-width: 160px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.payNowModernMetaLabel {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.payNowModernMetaCard strong {
+  font-size: 20px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.payNowModernBackBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 800;
+  color: #4c1d95;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(76, 29, 149, 0.12);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.payNowModernBackBtn:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.payNowModernAlert {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.payNowModernAlert.error {
+  background: rgba(255, 236, 236, 0.9);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  color: #b91c1c;
+}
+
+.payNowModernAlert.success {
+  background: rgba(236, 253, 243, 0.9);
+  border: 1px solid rgba(22, 163, 74, 0.15);
+  color: #15803d;
+}
+
+.payNowModernGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) 360px;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.payNowModernCard {
+  position: relative;
+  padding: 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.payNowModernCard::after {
+  content: "";
+  position: absolute;
+  top: -45px;
+  right: -45px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 170, 170, 0.2), transparent 65%);
+  pointer-events: none;
+}
+
+
+
+.payNowModernCardTitle {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.payNowModernCardText {
+  margin: 0 0 20px;
+  color: #6b7280;
+  line-height: 1.65;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.payNowModernForm {
+  display: grid;
+  gap: 18px;
+}
+
+.payNowModernLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #374151;
+}
+
+.payNowMethodGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.payNowMethodCard {
+  width: 100%;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.payNowMethodCard:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.payNowMethodCard.active {
+  border-color: rgba(250, 92, 92, 0.25);
+  background: rgba(255, 243, 243, 0.85);
+  box-shadow: 0 10px 20px rgba(250, 92, 92, 0.08);
+}
+
+.payNowMethodIcon {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  display: inline-flex;
+  place-items: center;
+  font-size: 22px;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.payNowMethodContent {
+  min-width: 0;
+}
+
+.payNowMethodTitle {
+  font-size: 15px;
+  font-weight: 900;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.payNowMethodDesc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.payNowModernInput,
+.payNowModernTextarea {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 14px 16px;
+  font-size: 15px;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.payNowModernInput {
+  height: 50px;
+}
+
+.payNowModernTextarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.payNowModernInput:focus,
+.payNowModernTextarea:focus {
+  border-color: rgba(250, 92, 92, 0.4);
+  box-shadow: 0 0 0 4px rgba(255, 170, 170, 0.18);
+}
+
+.payNowModernBankBox {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 248, 226, 0.48);
+  border: 1px solid rgba(255, 233, 154, 0.55);
+}
+
+.payNowUploadBox {
+  min-height: 58px;
+  border-radius: 16px;
+  border: 1.5px dashed rgba(31, 41, 55, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.payNowUploadBox:hover {
+  background: #ffffff;
+  border-color: rgba(250, 92, 92, 0.35);
+}
+
+.payNowHiddenFileInput {
+  display: none;
+}
+
+.payNowUploadIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.payNowUploadText {
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.payNowUploadHint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.payNowModernPrimaryBtn {
+  height: 54px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fa5c5c, #ff8f7a);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 14px 24px rgba(250, 92, 92, 0.24);
+  transition: all 0.2s ease;
+}
+
+.payNowModernPrimaryBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(250, 92, 92, 0.28);
+}
+
+.payNowModernPrimaryBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.payNowModernSideCard {
+  height: fit-content;
+}
+
+.payNowInfoList {
+  display: grid;
+  gap: 16px;
+}
+
+.payNowInfoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+}
+
+.payNowInfoDot {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #fa5c5c, #ff8f7a);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.payNowInfoItem strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #1f2937;
+}
+
+.payNowInfoItem p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.payNowSelectedBox {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 233, 154, 0.28),
+    rgba(255, 170, 170, 0.18)
+  );
+  border: 1px solid rgba(255, 213, 134, 0.45);
+}
+
+.payNowSelectedLabel {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.payNowSelectedBox strong {
+  display: block;
+  font-size: 16px;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.payNowSelectedBox p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5f6b7a;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .payNowModernGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .payNowModernHero {
+    padding: 20px;
+  }
+
+  .payNowModernCard {
+    padding: 20px;
+  }
+
+  .payNowModernBackBtn {
+    width: 100%;
+  }
+}
+
+/* Create Booking/play area */
+
+.bookingModernPage {
+  width: min(1180px, 92vw);
+  margin: 0 auto;
+  padding: 8px 0 24px;
+}
+
+.bookingModernHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 26px;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.55)),
+    radial-gradient(circle at top left, rgba(255, 233, 154, 0.45), transparent 42%),
+    radial-gradient(circle at top right, rgba(255, 170, 170, 0.32), transparent 42%),
+    radial-gradient(circle at bottom center, rgba(255, 213, 134, 0.28), transparent 35%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.07),
+    0 8px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+.bookingModernHeroText {
+  flex: 1;
+  min-width: 280px;
+}
+
+.bookingModernBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 241, 199, 0.8);
+  border: 1px solid rgba(255, 213, 134, 0.65);
+  color: #5b3a00;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.bookingModernTitle {
+  margin: 14px 0 10px;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.1;
+  font-weight: 1000;
+  color: #1f2937;
+}
+
+.bookingModernSubtitle {
+  margin: 0;
+  max-width: 760px;
+  color: #5f6b7a;
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+.bookingModernMetaRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.bookingModernMetaCard {
+  min-width: 160px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.bookingModernMetaLabel {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.bookingModernMetaCard strong {
+  font-size: 20px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.bookingModernBackBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 800;
+  color: #4c1d95;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(76, 29, 149, 0.12);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.bookingModernBackBtn:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.bookingModernAlert {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.bookingModernAlert.error {
+  background: rgba(255, 236, 236, 0.9);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  color: #b91c1c;
+}
+
+.bookingModernAlert.success {
+  background: rgba(236, 253, 243, 0.9);
+  border: 1px solid rgba(22, 163, 74, 0.15);
+  color: #15803d;
+}
+
+.bookingModernGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) 360px;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.bookingModernCard {
+  position: relative;
+  padding: 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.bookingModernCard::after {
+  content: "";
+  position: absolute;
+  top: -45px;
+  right: -45px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 170, 170, 0.2), transparent 65%);
+  pointer-events: none;
+}
+
+
+
+.bookingModernCardTitle {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.bookingModernCardText {
+  margin: 0 0 20px;
+  color: #6b7280;
+  line-height: 1.65;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bookingModernForm {
+  display: grid;
+  gap: 18px;
+}
+
+.bookingModernLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #374151;
+}
+
+.bookingModernInput,
+.bookingModernTextarea,
+.bookingModernReadonly {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 14px 16px;
+  font-size: 15px;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.bookingModernInput {
+  height: 52px;
+}
+
+.bookingModernTextarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.bookingModernReadonly {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  color: #4b5563;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.bookingModernAmount {
+  font-weight: 900;
+  color: #c2410c;
+}
+
+.bookingModernInput:focus,
+.bookingModernTextarea:focus {
+  border-color: rgba(250, 92, 92, 0.4);
+  box-shadow: 0 0 0 4px rgba(255, 170, 170, 0.18);
+}
+
+.bookingModernTwoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.bookingModernStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.bookingModernStatBox {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.85);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+}
+
+.bookingModernStatBox span {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.bookingModernStatBox strong {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.bookingModernMethodGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.bookingModernMethodCard {
+  width: 100%;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bookingModernMethodCard:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.bookingModernMethodCard.active {
+  border-color: rgba(250, 92, 92, 0.25);
+  background: rgba(255, 243, 243, 0.85);
+  box-shadow: 0 10px 20px rgba(250, 92, 92, 0.08);
+}
+
+.bookingModernMethodIcon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.bookingModernMethodContent {
+  min-width: 0;
+}
+
+.bookingModernMethodTitle {
+  font-size: 15px;
+  font-weight: 900;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.bookingModernMethodDesc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.bookingModernBankBox {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 248, 226, 0.48);
+  border: 1px solid rgba(255, 233, 154, 0.55);
+}
+
+.bookingModernUploadBox {
+  min-height: 58px;
+  border-radius: 16px;
+  border: 1.5px dashed rgba(31, 41, 55, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bookingModernUploadBox:hover {
+  background: #ffffff;
+  border-color: rgba(250, 92, 92, 0.35);
+}
+
+.bookingModernHiddenFileInput {
+  display: none;
+}
+
+.bookingModernUploadIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.bookingModernUploadText {
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.bookingModernUploadHint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.bookingModernActionRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.bookingModernGhostBtn,
+.bookingModernPrimaryBtn {
+  height: 52px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bookingModernGhostBtn {
+  min-width: 130px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  color: #374151;
+}
+
+.bookingModernGhostBtn:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.bookingModernPrimaryBtn {
+  flex: 1;
+  border: none;
+  background: linear-gradient(135deg, #fa5c5c, #ff8f7a);
+  color: #ffffff;
+  box-shadow: 0 14px 24px rgba(250, 92, 92, 0.24);
+}
+
+.bookingModernPrimaryBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(250, 92, 92, 0.28);
+}
+
+.bookingModernPrimaryBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bookingModernSideCard {
+  height: fit-content;
+}
+
+.bookingModernSummaryList {
+  display: grid;
+  gap: 12px;
+}
+
+.bookingModernSummaryItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+}
+
+.bookingModernSummaryItem span {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.bookingModernSummaryItem strong {
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 900;
+  text-align: right;
+}
+
+.bookingModernSummaryHighlight {
+  background: linear-gradient(135deg, rgba(255, 233, 154, 0.28), rgba(255, 170, 170, 0.18));
+  border: 1px solid rgba(255, 213, 134, 0.45);
+}
+
+.bookingModernTipBox {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 248, 226, 0.55);
+  border: 1px solid rgba(255, 233, 154, 0.55);
+}
+
+.bookingModernTipTitle {
+  font-size: 14px;
+  font-weight: 900;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.bookingModernTipBox p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #5f6b7a;
+  font-weight: 600;
+}
+
+@media (max-width: 980px) {
+  .bookingModernGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .bookingModernHero,
+  .bookingModernCard {
+    padding: 20px;
+  }
+
+  .bookingModernBackBtn {
+    width: 100%;
+  }
+
+  .bookingModernTwoCol,
+  .bookingModernStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bookingModernActionRow {
+    flex-direction: column;
+  }
+
+  .bookingModernGhostBtn,
+  .bookingModernPrimaryBtn {
+    width: 100%;
+  }
+}

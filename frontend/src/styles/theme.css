@@ -19,14 +19,10 @@
 *{ box-sizing:border-box; }
 html, body { height:100%; }
 body{
-  margin:0;
+  margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 15% 10%, rgba(255,233,154,0.75), transparent 45%),
-    radial-gradient(circle at 85% 15%, rgba(255,170,170,0.55), transparent 45%),
-    radial-gradient(circle at 70% 85%, rgba(255,213,134,0.65), transparent 45%),
-    linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.35));
+  background: #ffffff;
 }
 
 /* Layout */

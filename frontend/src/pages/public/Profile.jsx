@@ -232,6 +232,7 @@ export default function Profile() {
   );
 
   return (
+  <div className="profileModernPage">
     <div className="profileModernWrap">
       <motion.section {...pageAnim} className="profileModernHero">
         <div className="profileModernHeroTop">
@@ -255,7 +256,7 @@ export default function Profile() {
 
         <div className="profileModernStats">
           <StatCard
-            icon="👨‍👩‍👧"
+            
             label="Children"
             value={children.length}
             caption={
@@ -266,14 +267,14 @@ export default function Profile() {
           />
 
           <StatCard
-            icon="📅"
+           
             label="Bookings"
             value={bookings.length}
             caption="Track your play area reservations"
           />
 
           <StatCard
-            icon="🎓"
+           
             label="Pending enrollments"
             value={pendingEnrollments}
             caption={
@@ -284,7 +285,7 @@ export default function Profile() {
           />
 
           <StatCard
-            icon="💳"
+           
             label="Confirmed payments"
             value={confirmedPayments}
             caption={
@@ -353,7 +354,6 @@ export default function Profile() {
               {children.map((child, index) => (
                 <div key={child.id || index} className="profileModernChildCard">
                   <div className="profileModernChildTop">
-                    <div className="profileModernChildAvatar">🧒</div>
                     <span className="profileModernPill neutral">
                       Child ID: {child.id}
                     </span>
@@ -590,7 +590,8 @@ export default function Profile() {
             )}
           </>
         )}
-      </Panel>
+            </Panel>
     </div>
+  </div>
   );
 }

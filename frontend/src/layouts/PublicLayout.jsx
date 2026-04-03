@@ -7,7 +7,7 @@ export default function PublicLayout() {
   return (
     <>
       <PublicNavbar />
-      <main style={{ paddingTop: 18 }}>
+      <main style={{ paddingTop: 0 }}>
         <Outlet />
       </main>
       <Footer />
