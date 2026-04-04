@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { getMyAssignedClassesApi, getAttendanceRecordsApi } from "../../api/instructorApi";
+import {
+  getAttendanceRecordsApi,
+  getMyAssignedClassesApi,
+} from "../../api/instructorApi";
 import useInstructorView from "../../hooks/useInstructorView";
 
 export default function InsAttendanceRecords() {
@@ -37,7 +40,9 @@ export default function InsAttendanceRecords() {
 
     try {
       const res = await getMyAssignedClassesApi(selectedInstructorId || undefined);
-      const list = Array.isArray(res.data) ? res.data.filter((x) => x.item_type === "CLASS") : [];
+      const list = Array.isArray(res.data)
+        ? res.data.filter((x) => x.item_type === "CLASS")
+        : [];
       setClasses(list);
       setClassId(list[0]?.id ? String(list[0].id) : "");
       setRows([]);
@@ -68,16 +73,23 @@ export default function InsAttendanceRecords() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Attendance Records</h2>
+    <div className="instructorPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Attendance Records</h2>
+      </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 10 }}>
-        {isAdminInstructorView && (
-          <>
-            <div style={{ fontWeight: 700 }}>Instructor View (Admin Access)</div>
+      {isAdminInstructorView && (
+        <div className="instructorAdminCard">
+          <div>
+            <p className="instructorAdminTitle">Instructor View (Admin Access)</p>
+            <p className="instructorAdminText">
+              View attendance history for a selected instructor and class.
+            </p>
+          </div>
 
-            <label>
-              Select Instructor:&nbsp;
+          <div className="instructorToolbar">
+            <label className="instructorField">
+              <span className="instructorFieldLabel">Select Instructor</span>
               <select
                 value={selectedInstructorId}
                 onChange={(e) => setSelectedInstructorId(e.target.value)}
@@ -91,18 +103,31 @@ export default function InsAttendanceRecords() {
                 ))}
               </select>
             </label>
+          </div>
 
-            {selectedInstructor ? (
-              <div style={{ color: "#666" }}>Now viewing: {selectedInstructor.full_name}</div>
-            ) : null}
+          {selectedInstructor ? (
+            <div className="instructorMuted">
+              Now viewing: <strong>{selectedInstructor.full_name}</strong>
+            </div>
+          ) : null}
 
-            {selectorError ? <div style={{ color: "crimson" }}>{selectorError}</div> : null}
-          </>
-        )}
+          {selectorError ? <div className="instructorError">{selectorError}</div> : null}
+        </div>
+      )}
 
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <label>
-            Class:&nbsp;
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Attendance History</h3>
+            <p className="instructorSectionText">
+              Filter records by class and date range, then load the matching attendance list.
+            </p>
+          </div>
+        </div>
+
+        <div className="instructorToolbar">
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Class</span>
             <select value={classId} onChange={(e) => setClassId(e.target.value)}>
               {classes.length === 0 && <option value="">No classes</option>}
               {classes.map((c) => (
@@ -113,48 +138,57 @@ export default function InsAttendanceRecords() {
             </select>
           </label>
 
-          <label>
-            From:&nbsp;
+          <label className="instructorField">
+            <span className="instructorFieldLabel">From</span>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
           </label>
 
-          <label>
-            To:&nbsp;
+          <label className="instructorField">
+            <span className="instructorFieldLabel">To</span>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </label>
 
-          <button onClick={load} disabled={loading || !classId}>
+          <button
+            onClick={load}
+            disabled={loading || !classId}
+            className="instructorButton"
+            type="button"
+          >
             {loading ? "Loading…" : "Load Records"}
           </button>
         </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
+        {err ? <div className="instructorError">{err}</div> : null}
 
         {rows.length === 0 ? (
-          <div style={{ color: "#666" }}>No records found.</div>
+          <div className="instructorMuted">No records found.</div>
         ) : (
-          <table width="100%" cellPadding="8" border="1">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Child</th>
-                <th>Guardian</th>
-                <th>Phone</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, idx) => (
-                <tr key={r.id || idx}>
-                  <td>{r.date ? String(r.date).slice(0, 10) : "—"}</td>
-                  <td>{r.child_name || "—"}</td>
-                  <td>{r.guardian_name || "—"}</td>
-                  <td>{r.guardian_phone || "—"}</td>
-                  <td>{r.status || "—"}</td>
+          <div className="instructorTableOuter">
+            <table className="instructorTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Child</th>
+                  <th>Guardian</th>
+                  <th>Phone</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r, idx) => (
+                  <tr key={r.id || idx}>
+                    <td>{r.date ? String(r.date).slice(0, 10) : "—"}</td>
+                    <td>{r.child_name || "—"}</td>
+                    <td>{r.guardian_name || "—"}</td>
+                    <td>{r.guardian_phone || "—"}</td>
+                    <td>
+                      <span className="instructorStatusPill">{r.status || "—"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -42,80 +42,108 @@ export default function AssignedClasses() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Assigned Classes</h2>
+    <div className="instructorPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Assigned Classes</h2>
+      </div>
 
       {isAdminInstructorView && (
-        <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 10 }}>Instructor View (Admin Access)</div>
+        <div className="instructorAdminCard">
+          <div>
+            <p className="instructorAdminTitle">Instructor View (Admin Access)</p>
+            <p className="instructorAdminText">
+              Pick an instructor to view their current class and event assignments.
+            </p>
+          </div>
 
-          <label>
-            Select Instructor:&nbsp;
-            <select
-              value={selectedInstructorId}
-              onChange={(e) => setSelectedInstructorId(e.target.value)}
-              disabled={loadingInstructors}
-            >
-              {instructors.length === 0 && <option value="">No instructors</option>}
-              {instructors.map((ins) => (
-                <option key={ins.id} value={ins.id}>
-                  {ins.full_name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="instructorToolbar">
+            <label className="instructorField">
+              <span className="instructorFieldLabel">Select Instructor</span>
+              <select
+                value={selectedInstructorId}
+                onChange={(e) => setSelectedInstructorId(e.target.value)}
+                disabled={loadingInstructors}
+              >
+                {instructors.length === 0 && <option value="">No instructors</option>}
+                {instructors.map((ins) => (
+                  <option key={ins.id} value={ins.id}>
+                    {ins.full_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
           {selectedInstructor ? (
-            <div style={{ color: "#666", marginTop: 8 }}>
-              Now viewing: {selectedInstructor.full_name}
+            <div className="instructorMuted">
+              Now viewing: <strong>{selectedInstructor.full_name}</strong>
             </div>
           ) : null}
 
-          {selectorError ? <div style={{ color: "crimson", marginTop: 8 }}>{selectorError}</div> : null}
+          {selectorError ? <div className="instructorError">{selectorError}</div> : null}
         </div>
       )}
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-        {err ? <div style={{ color: "crimson", marginBottom: 12 }}>{err}</div> : null}
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Schedule Overview</h3>
+            <p className="instructorSectionText">
+              All assigned class and event items appear here with enrollment and fee details.
+            </p>
+          </div>
+        </div>
+
+        {err ? <div className="instructorError">{err}</div> : null}
 
         {loading ? (
-          <div>Loading…</div>
+          <div className="instructorMuted">Loading assigned classes…</div>
         ) : rows.length === 0 ? (
-          <div style={{ color: "#666" }}>No assigned classes or events found.</div>
+          <div className="instructorMuted">No assigned classes or events found.</div>
         ) : (
-          <table width="100%" cellPadding="8" border="1">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Type</th>
-                <th>Title</th>
-                <th>Age Range</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Fee</th>
-                <th>Enrolled</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.id}</td>
-                  <td>{row.item_type || "-"}</td>
-                  <td>{row.title || "-"}</td>
-                  <td>{row.age_min ?? "-"} - {row.age_max ?? "-"}</td>
-                  <td>{row.event_date ? String(row.event_date).slice(0, 10) : "-"}</td>
-                  <td>
-                    {row.start_time ? String(row.start_time).slice(0, 5) : "-"}
-                    {row.end_time ? ` - ${String(row.end_time).slice(0, 5)}` : ""}
-                  </td>
-                  <td>LKR {Number(row.fee || 0).toFixed(2)}</td>
-                  <td>{Number(row.enrolled_count || 0)}</td>
-                  <td>{row.status || "-"}</td>
+          <div className="instructorTableOuter">
+            <table className="instructorTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Title</th>
+                  <th>Age Range</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Fee</th>
+                  <th>Enrolled</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.id}</td>
+                    <td>
+                      <span className="instructorStatusPill">{row.item_type || "-"}</span>
+                    </td>
+                    <td>{row.title || "-"}</td>
+                    <td>
+                      {row.age_min ?? "-"} - {row.age_max ?? "-"}
+                    </td>
+                    <td>
+                      {row.event_date ? String(row.event_date).slice(0, 10) : "-"}
+                    </td>
+                    <td>
+                      {row.start_time ? String(row.start_time).slice(0, 5) : "-"}
+                      {row.end_time ? ` - ${String(row.end_time).slice(0, 5)}` : ""}
+                    </td>
+                    <td>LKR {Number(row.fee || 0).toFixed(2)}</td>
+                    <td>{Number(row.enrolled_count || 0)}</td>
+                    <td>
+                      <span className="instructorStatusPill">{row.status || "-"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
