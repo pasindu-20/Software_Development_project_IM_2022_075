@@ -4,8 +4,14 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardCheck,
+  GraduationCap,
+  Landmark,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
+  PlusCircle,
+  ReceiptText,
+  Rows3,
   Users,
 } from "lucide-react";
 import { useAuth } from "../auth/useAuth";
@@ -18,20 +24,35 @@ const instructorIconMap = {
   "View Attendance Records": CalendarDays,
 };
 
+const receptionIconMap = {
+  Dashboard: LayoutDashboard,
+  "View Bookings": Rows3,
+  "Add Manual Booking": PlusCircle,
+  "Update Cash Payments": ReceiptText,
+  "Approve Bank Transfers": Landmark,
+  "Manage Enrollment": GraduationCap,
+  "Customer Inquiry": MessageCircle,
+};
+
 export default function Sidebar({ title, items }) {
   const { logout, role } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isInstructorPortal = location.pathname.startsWith("/instructor");
+  const isReceptionPortal = location.pathname.startsWith("/reception");
+  const isStaffPortal = isInstructorPortal || isReceptionPortal;
   const isAdminInsideStaffView =
     role === "ADMIN" &&
-    (
-      location.pathname.startsWith("/reception") ||
-      location.pathname.startsWith("/instructor")
-    );
+    (location.pathname.startsWith("/reception") ||
+      location.pathname.startsWith("/instructor"));
 
-  if (isInstructorPortal) {
+  if (isStaffPortal) {
+    const iconMap = isInstructorPortal ? instructorIconMap : receptionIconMap;
+    const portalSubtitle = isInstructorPortal
+      ? "Instructor Dashboard"
+      : "Receptionist Dashboard";
+
     return (
       <aside className="sidebarInstructorShell">
         <div className="sidebarInstructorTop">
@@ -45,7 +66,7 @@ export default function Sidebar({ title, items }) {
             </div>
             <div>
               <div className="sidebarInstructorBrandName">Poddo Play House</div>
-              <div className="sidebarInstructorBrandSub">Instructor Dashboard</div>
+              <div className="sidebarInstructorBrandSub">{portalSubtitle}</div>
             </div>
           </div>
 
@@ -53,14 +74,16 @@ export default function Sidebar({ title, items }) {
 
           <nav className="sidebarInstructorNav">
             {items.map((x) => {
-              const Icon = instructorIconMap[x.label] || LayoutDashboard;
+              const Icon = iconMap[x.label] || LayoutDashboard;
 
               return (
                 <NavLink
                   key={x.to}
                   to={x.to}
                   className={({ isActive }) =>
-                    `sidebarInstructorLink${isActive ? " sidebarInstructorLinkActive" : ""}`
+                    `sidebarInstructorLink${
+                      isActive ? " sidebarInstructorLinkActive" : ""
+                    }`
                   }
                 >
                   <Icon size={18} strokeWidth={2} />

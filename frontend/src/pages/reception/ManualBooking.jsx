@@ -7,8 +7,6 @@ import {
   listPublicPartyPackagesApi,
 } from "../../api/publicApi";
 
-
-
 function formatMoney(value) {
   return Number(value || 0).toLocaleString();
 }
@@ -64,10 +62,8 @@ export default function RecManualBooking() {
   const today = getTodayDateString();
   const currentTime = getCurrentTimeString();
 
-  const isManualTimeType =
-    booking_type === "PLAY_AREA" || booking_type === "PARTY";
-  const isAutoTimeType =
-    booking_type === "CLASS" || booking_type === "EVENT";
+  const isManualTimeType = booking_type === "PLAY_AREA" || booking_type === "PARTY";
+  const isAutoTimeType = booking_type === "CLASS" || booking_type === "EVENT";
 
   useEffect(() => {
     loadItemsByType(booking_type);
@@ -82,7 +78,23 @@ export default function RecManualBooking() {
     setErr("");
 
     try {
-      if (type === "PARTY") {
+      if (type === "PLAY_AREA") {
+        const res = await listPublicPlayAreasApi();
+        setCatalogItems(
+          (res.data || []).map((item) => ({
+            id: item.id,
+            label: `${item.name || item.title} - LKR ${formatMoney(item.price)}`,
+            name: item.name || item.title,
+            description: item.description || "",
+            price: item.price || 0,
+            extra:
+              Number(item.capacity || item.max_children || 0) > 0
+                ? `Capacity: ${item.capacity || item.max_children}`
+                : "",
+            raw: item,
+          }))
+        );
+      } else if (type === "PARTY") {
         const res = await listPublicPartyPackagesApi();
         setCatalogItems(
           (res.data || []).map((pkg) => ({
@@ -92,9 +104,7 @@ export default function RecManualBooking() {
             description: pkg.duration_text || pkg.description || "",
             price: pkg.price || 0,
             extra:
-              Number(pkg.max_children) > 0
-                ? `Up to ${pkg.max_children} children`
-                : "",
+              Number(pkg.max_children) > 0 ? `Up to ${pkg.max_children} children` : "",
             raw: pkg,
           }))
         );
@@ -127,28 +137,14 @@ export default function RecManualBooking() {
             price: item.fee || 0,
             extra: item.event_date ? `Event Date: ${item.event_date}` : "",
             time_slot:
-              item.time_slot ||
-              buildTimeSlotFromTimes(item.start_time, item.end_time) ||
-              "",
+              item.time_slot || buildTimeSlotFromTimes(item.start_time, item.end_time) || "",
             raw: item,
-          }))
-        );
-      } else if (type === "PARTY") {
-        setCatalogItems(
-          PARTY_PACKAGES.map((pkg) => ({
-            id: pkg.id,
-            label: `${pkg.name} - LKR ${formatMoney(pkg.price)}`,
-            name: pkg.name,
-            description: pkg.duration,
-            price: pkg.price,
-            extra: pkg.capacity,
-            raw: pkg,
           }))
         );
       } else {
         setCatalogItems([]);
       }
-    } catch (e) {
+    } catch {
       setCatalogItems([]);
       setErr("Failed to load available items for the selected booking type.");
     } finally {
@@ -157,10 +153,7 @@ export default function RecManualBooking() {
   };
 
   const selectedItem = useMemo(() => {
-    return (
-      catalogItems.find((item) => String(item.id) === String(selectedItemId)) ||
-      null
-    );
+    return catalogItems.find((item) => String(item.id) === String(selectedItemId)) || null;
   }, [catalogItems, selectedItemId]);
 
   useEffect(() => {
@@ -278,160 +271,156 @@ export default function RecManualBooking() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Add Manual Booking</h2>
+    <div className="instructorPage receptionPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Add Manual Booking</h2>
+      </div>
 
-      <form
-        onSubmit={submit}
-        style={{
-          background: "white",
-          padding: 16,
-          borderRadius: 12,
-          display: "grid",
-          gap: 10,
-          maxWidth: 700,
-        }}
-      >
-        <input
-          placeholder="Customer name"
-          value={customer_name}
-          onChange={handleNameChange}
-        />
+      <form onSubmit={submit} className="instructorContentCard receptionFormCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Create Booking</h3>
+            <p className="instructorSectionText">
+            </p>
+          </div>
+        </div>
 
-        <input
-          placeholder="Phone"
-          value={phone}
-          onChange={handlePhoneChange}
-          maxLength={10}
-        />
+        <div className="receptionStack">
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Customer Name</span>
+            <input placeholder="Customer name" value={customer_name} onChange={handleNameChange} />
+          </label>
 
-        <select value={booking_type} onChange={(e) => setType(e.target.value)}>
-          <option value="PLAY_AREA">Play Area</option>
-          <option value="PARTY">Party</option>
-          <option value="EVENT">Event</option>
-          <option value="CLASS">Class</option>
-        </select>
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Phone</span>
+            <input placeholder="Phone" value={phone} onChange={handlePhoneChange} maxLength={10} />
+          </label>
 
-        <select
-          value={selectedItemId}
-          onChange={(e) => setSelectedItemId(e.target.value)}
-          disabled={catalogLoading || catalogItems.length === 0}
-        >
-          <option value="">
-            {catalogLoading
-              ? "Loading items..."
-              : booking_type === "PLAY_AREA"
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Booking Type</span>
+            <select value={booking_type} onChange={(e) => setType(e.target.value)}>
+              <option value="PLAY_AREA">Play Area</option>
+              <option value="PARTY">Party</option>
+              <option value="EVENT">Event</option>
+              <option value="CLASS">Class</option>
+            </select>
+          </label>
+
+          <label className="instructorField">
+            <span className="instructorFieldLabel">
+              {booking_type === "PLAY_AREA"
                 ? "Select Play Area"
                 : booking_type === "PARTY"
+                ? "Select Party Package"
+                : booking_type === "EVENT"
+                ? "Select Event"
+                : "Select Class"}
+            </span>
+            <select
+              value={selectedItemId}
+              onChange={(e) => setSelectedItemId(e.target.value)}
+              disabled={catalogLoading || catalogItems.length === 0}
+            >
+              <option value="">
+                {catalogLoading
+                  ? "Loading items..."
+                  : booking_type === "PLAY_AREA"
+                  ? "Select Play Area"
+                  : booking_type === "PARTY"
                   ? "Select Party Package"
                   : booking_type === "EVENT"
-                    ? "Select Event"
-                    : "Select Class"}
-          </option>
+                  ? "Select Event"
+                  : "Select Class"}
+              </option>
+              {catalogItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-          {catalogItems.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Payment Type</span>
+            <select value={payment_type} onChange={(e) => setPaymentType(e.target.value)}>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+              <option value="BANK_TRANSFER">Bank Transfer</option>
+              <option value="ONLINE">Online Payment</option>
+            </select>
+          </label>
 
-        <select
-          value={payment_type}
-          onChange={(e) => setPaymentType(e.target.value)}
-        >
-          <option value="CASH">Cash</option>
-          <option value="CARD">Card</option>
-          <option value="BANK_TRANSFER">Bank Transfer</option>
-          <option value="ONLINE">Online Payment</option>
-        </select>
-
-        {selectedItem && (
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 10,
-              padding: 12,
-              background: "#fafafa",
-              display: "grid",
-              gap: 6,
-            }}
-          >
-            <div style={{ fontWeight: 700 }}>{selectedItem.name}</div>
-            {selectedItem.description ? (
-              <div style={{ color: "#555" }}>{selectedItem.description}</div>
-            ) : null}
-            {selectedItem.extra ? (
-              <div style={{ color: "#555" }}>{selectedItem.extra}</div>
-            ) : null}
-            {selectedItem.price ? (
-              <div style={{ color: "#111827", fontWeight: 600 }}>
-                Price: LKR {formatMoney(selectedItem.price)}
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        <input
-          type="date"
-          value={booking_date}
-          min={today}
-          onChange={(e) => setDate(e.target.value)}
-        />
-
-        {isManualTimeType && (
-          <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
-          >
-            <div>
-              <label style={{ display: "block", marginBottom: 6 }}>
-                Start Time
-              </label>
-              <input
-                type="time"
-                value={startTime}
-                min={booking_date === today ? currentTime : undefined}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
+          {selectedItem ? (
+            <div className="receptionDetailBox">
+              <div className="receptionDetailTitle">{selectedItem.name}</div>
+              {selectedItem.description ? (
+                <div className="instructorMuted">{selectedItem.description}</div>
+              ) : null}
+              {selectedItem.extra ? (
+                <div className="instructorMuted">{selectedItem.extra}</div>
+              ) : null}
+              {selectedItem.price ? (
+                <div className="receptionDetailStrong">Price: LKR {formatMoney(selectedItem.price)}</div>
+              ) : null}
             </div>
+          ) : null}
 
-            <div>
-              <label style={{ display: "block", marginBottom: 6 }}>
-                End Time
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Booking Date</span>
+            <input type="date" value={booking_date} min={today} onChange={(e) => setDate(e.target.value)} />
+          </label>
+
+          {isManualTimeType ? (
+            <div className="receptionFormGrid2">
+              <label className="instructorField">
+                <span className="instructorFieldLabel">Start Time</span>
+                <input
+                  type="time"
+                  value={startTime}
+                  min={booking_date === today ? currentTime : undefined}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
               </label>
-              <input
-                type="time"
-                value={endTime}
-                min={
-                  startTime || (booking_date === today ? currentTime : undefined)
-                }
-                onChange={(e) => setEndTime(e.target.value)}
-              />
+
+              <label className="instructorField">
+                <span className="instructorFieldLabel">End Time</span>
+                <input
+                  type="time"
+                  value={endTime}
+                  min={startTime || (booking_date === today ? currentTime : undefined)}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </label>
             </div>
-          </div>
-        )}
+          ) : null}
 
-        {isAutoTimeType && (
-          <input
-            value={time_slot}
-            readOnly
-            placeholder="Auto-filled time slot"
-          />
-        )}
+          {isAutoTimeType ? (
+            <label className="instructorField">
+              <span className="instructorFieldLabel">Auto-filled Time Slot</span>
+              <input value={time_slot} readOnly placeholder="Auto-filled time slot" />
+            </label>
+          ) : null}
 
-        <textarea
-          rows={4}
-          placeholder="Note (optional)"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Note</span>
+            <textarea
+              className="receptionTextarea"
+              rows={4}
+              placeholder="Note (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </label>
+        </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
-        {info && <div style={{ color: "green" }}>{info}</div>}
+        {err ? <div className="instructorError">{err}</div> : null}
+        {info ? <div className="instructorSuccess">{info}</div> : null}
 
-        <button disabled={busy} type="submit">
-          {busy ? "Saving..." : "Create Booking"}
-        </button>
+        <div className="receptionButtonRow">
+          <button className="instructorButton" disabled={busy} type="submit">
+            {busy ? "Saving..." : "Create Booking"}
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -88,124 +88,116 @@ export default function RecBankTransfers() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Approve Bank Transfers</h2>
+    <div className="instructorPage receptionPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Approve Bank Transfers</h2>
+      </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 14 }}>
-        <div style={{ fontWeight: 600 }}>Pending Bank Transfer Payments</div>
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Pending Bank Transfer Payments</h3>
+            <p className="instructorSectionText">
+             
+            </p>
+          </div>
+        </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, alignItems: "end" }}>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label>Filter by Booking ID</label>
+        <div className="receptionFormGrid3">
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Filter by Booking ID</span>
             <input
               type="text"
               placeholder="Booking ID"
               value={bookingIdSearch}
               onChange={(e) => setBookingIdSearch(e.target.value)}
             />
-          </div>
+          </label>
 
-          <div style={{ display: "grid", gap: 6 }}>
-            <label>Filter by Enrollment ID</label>
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Filter by Enrollment ID</span>
             <input
               type="text"
               placeholder="Enrollment ID"
               value={enrollmentIdSearch}
               onChange={(e) => setEnrollmentIdSearch(e.target.value)}
             />
-          </div>
+          </label>
 
-          <button
-            type="button"
-            onClick={() => {
-              setBookingIdSearch("");
-              setEnrollmentIdSearch("");
-              setSearch("");
-            }}
-          >
-            Clear
-          </button>
+          <div className="receptionButtonRow receptionButtonRowEnd">
+            <button
+              className="receptionSecondaryButton"
+              type="button"
+              onClick={() => {
+                setBookingIdSearch("");
+                setEnrollmentIdSearch("");
+                setSearch("");
+              }}
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label>General Search</label>
+        <label className="instructorField">
+          <span className="instructorFieldLabel">General Search</span>
           <input
             placeholder="Payment no, customer, child, class, phone, reference..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </div>
+        </label>
 
-        <div>
-          <button type="button" onClick={loadPayments} disabled={loading}>
+        <div className="receptionButtonRow">
+          <button className="receptionSecondaryButton" type="button" onClick={loadPayments}>
             {loading ? "Loading..." : "Refresh"}
           </button>
         </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
-        {info && <div style={{ color: "green" }}>{info}</div>}
+        {err ? <div className="instructorError">{err}</div> : null}
+        {info ? <div className="instructorSuccess">{info}</div> : null}
 
-        {!loading && filtered.length === 0 && (
-          <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 14, background: "#fafafa" }}>
-            No pending bank transfer payments found.
-          </div>
-        )}
+        {!loading && filtered.length === 0 ? (
+          <div className="receptionEmptyState">No pending bank transfer payments found.</div>
+        ) : null}
 
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="receptionCardStack">
           {filtered.map((payment) => (
-            <div
-              key={payment.id}
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                padding: 14,
-                background: "#fafafa",
-                display: "grid",
-                gap: 10,
-              }}
-            >
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(220px, 1fr))", gap: 8 }}>
-                <div><strong>Payment ID:</strong> {payment.id}</div>
-                <div><strong>Payment No:</strong> {payment.payment_no || "—"}</div>
-                <div><strong>For:</strong> {payment.payment_for || "—"}</div>
-                <div><strong>Amount:</strong> LKR {Number(payment.amount || 0).toFixed(2)}</div>
-                <div><strong>Method:</strong> {payment.payment_method || "—"}</div>
-                <div><strong>Status:</strong> {payment.status || "—"}</div>
-                <div><strong>Customer:</strong> {payment.customer_name || "—"}</div>
-                <div><strong>Phone:</strong> {payment.customer_phone || "—"}</div>
-                <div><strong>Booking ID:</strong> {payment.booking_id || "—"}</div>
-                <div><strong>Enrollment ID:</strong> {payment.enrollment_id || "—"}</div>
-                <div><strong>Child:</strong> {payment.child_name || "—"}</div>
-                <div><strong>Class:</strong> {payment.class_title || "—"}</div>
-                <div><strong>Reference No:</strong> {payment.reference_no || "—"}</div>
-                <div><strong>Created At:</strong> {payment.created_at ? new Date(payment.created_at).toLocaleString() : "—"}</div>
+            <div key={payment.id} className="receptionDetailBox">
+              <div className="receptionDetailGrid">
+                <div className="receptionDetailItem"><strong>Payment ID:</strong> {payment.id}</div>
+                <div className="receptionDetailItem"><strong>Payment No:</strong> {payment.payment_no || "—"}</div>
+                <div className="receptionDetailItem"><strong>For:</strong> {payment.payment_for || "—"}</div>
+                <div className="receptionDetailItem"><strong>Amount:</strong> LKR {Number(payment.amount || 0).toFixed(2)}</div>
+                <div className="receptionDetailItem"><strong>Method:</strong> {payment.payment_method || "—"}</div>
+                <div className="receptionDetailItem"><strong>Status:</strong> {payment.status || "—"}</div>
+                <div className="receptionDetailItem"><strong>Customer:</strong> {payment.customer_name || "—"}</div>
+                <div className="receptionDetailItem"><strong>Phone:</strong> {payment.customer_phone || "—"}</div>
+                <div className="receptionDetailItem"><strong>Booking ID:</strong> {payment.booking_id || "—"}</div>
+                <div className="receptionDetailItem"><strong>Enrollment ID:</strong> {payment.enrollment_id || "—"}</div>
+                <div className="receptionDetailItem"><strong>Child:</strong> {payment.child_name || "—"}</div>
+                <div className="receptionDetailItem"><strong>Class:</strong> {payment.class_title || "—"}</div>
+                <div className="receptionDetailItem"><strong>Reference No:</strong> {payment.reference_no || "—"}</div>
+                <div className="receptionDetailItem"><strong>Created At:</strong> {payment.created_at ? new Date(payment.created_at).toLocaleString() : "—"}</div>
               </div>
 
               {payment.bank_slip_data ? (
-                <div>
-                  <a
-                    href={payment.bank_slip_data}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ fontWeight: 700 }}
-                  >
+                <div className="receptionLinkRow">
+                  <a href={payment.bank_slip_data} target="_blank" rel="noreferrer">
                     View Uploaded Bank Slip
                   </a>
                   {payment.bank_slip_name ? (
-                    <div style={{ marginTop: 4, fontSize: 13, opacity: 0.75 }}>
-                      File: {payment.bank_slip_name}
-                    </div>
+                    <span className="instructorMuted">File: {payment.bank_slip_name}</span>
                   ) : null}
                 </div>
               ) : (
-                <div style={{ color: "crimson", fontWeight: 700 }}>
-                  No bank slip found.
-                </div>
+                <div className="instructorError">No bank slip found.</div>
               )}
 
-              <div style={{ display: "grid", gap: 6 }}>
-                <label>Approval Note (optional)</label>
+              <label className="instructorField">
+                <span className="instructorFieldLabel">Approval Note</span>
                 <textarea
+                  className="receptionTextarea"
                   rows={3}
                   placeholder="Add a note"
                   value={noteById[payment.id] || ""}
@@ -213,10 +205,11 @@ export default function RecBankTransfers() {
                     setNoteById((prev) => ({ ...prev, [payment.id]: e.target.value }))
                   }
                 />
-              </div>
+              </label>
 
-              <div>
+              <div className="receptionButtonRow">
                 <button
+                  className="instructorButton"
                   type="button"
                   onClick={() => handleApprove(payment.id)}
                   disabled={confirmingId === payment.id}

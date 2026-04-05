@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  CalendarClock,
+  CreditCard,
+  GraduationCap,
+  MessageCircleMore,
+  Rows3,
+} from "lucide-react";
+import {
   getReceptionDashboardApi,
   listBookingsApi,
 } from "../../api/receptionApi";
@@ -107,61 +114,74 @@ export default function RecDashboard() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Receptionist Dashboard</h2>
+    <div className="instructorPage receptionPage receptionDashboardPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Receptionist Dashboard</h2>
+      </div>
 
-      {err && <div style={{ color: "crimson" }}>{err}</div>}
+      {err ? <div className="instructorError">{err}</div> : null}
 
       {loading ? (
-        <div>Loading…</div>
+        <div className="instructorContentCard receptionDashboardPanel">
+          <div className="instructorMuted">Loading dashboard data…</div>
+        </div>
       ) : (
         <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-            }}
-          >
-            <Card title="Total Bookings" value={stats.totalBookings} />
-            <Card title="Pending Bookings" value={stats.pendingBookings} />
-            <Card title="Cash Payments Pending" value={stats.pendingCashPayments} />
-            <Card title="Open Inquiries" value={stats.totalInquiries} />
-            <Card title="Pending Enrollments" value={stats.pendingEnrollments} />
+          <div className="receptionStatsGrid receptionDashboardStatsGrid">
+            <StatCard icon={Rows3} title="Total Bookings" value={stats.totalBookings} />
+            <StatCard icon={CalendarClock} title="Pending Bookings" value={stats.pendingBookings} />
+            <StatCard
+              icon={CreditCard}
+              title="Cash Payments Pending"
+              value={stats.pendingCashPayments}
+            />
+            <StatCard
+              icon={MessageCircleMore}
+              title="Open Inquiries"
+              value={stats.totalInquiries}
+            />
+            <StatCard
+              icon={GraduationCap}
+              title="Pending Enrollments"
+              value={stats.pendingEnrollments}
+            />
           </div>
 
-          <div className="rec-dashboard-bottom">
-            <div className="rec-dashboard-panel">
-              <div className="rec-dashboard-panel-header">
+          <div className="receptionQuickGrid receptionDashboardQuickGrid">
+            <div className="instructorContentCard receptionDashboardPanel">
+              <div className="instructorSectionHeader">
                 <div>
-                  <h3>Pending Actions</h3>
-                  <p>Quick access to receptionist tasks</p>
+                  <h3 className="instructorSectionTitle">Pending Actions</h3>
+                  <p className="instructorSectionText">
+                    
+                  </p>
                 </div>
-                <button className="rec-dashboard-refresh-btn" onClick={load}>
+
+                <button className="receptionSecondaryButton" onClick={load} type="button">
                   Refresh
                 </button>
               </div>
 
-              <div className="rec-actions-list">
-                {quickActions.map((item, index) => (
-                  <div className="rec-action-card" key={index}>
-                    <div className="rec-action-left">
+              <div className="receptionActionList">
+                {quickActions.map((item) => (
+                  <div className="receptionActionCard" key={item.title}>
+                    <div className="receptionActionCopy">
                       <h4>{item.title}</h4>
                       <p>{item.subtitle}</p>
                     </div>
 
-                    <div className="rec-action-right">
-                      {item.count !== null && (
+                    <div className="receptionActionRight">
+                      {item.count !== null ? (
                         <span
-                          className={`rec-action-badge ${
-                            item.count > 0 ? "active" : "zero"
+                          className={`receptionActionBadge${
+                            item.count > 0 ? " receptionActionBadgeActive" : ""
                           }`}
                         >
                           {item.count}
                         </span>
-                      )}
+                      ) : null}
 
-                      <button className="rec-action-btn" onClick={item.onClick}>
+                      <button className="instructorButton" onClick={item.onClick} type="button">
                         {item.btn}
                       </button>
                     </div>
@@ -170,29 +190,31 @@ export default function RecDashboard() {
               </div>
             </div>
 
-            <div className="rec-dashboard-panel">
-              <div className="rec-dashboard-panel-header">
+            <div className="instructorContentCard receptionDashboardPanel">
+              <div className="instructorSectionHeader">
                 <div>
-                  <h3>Recent Bookings</h3>
-                  <p>Latest booking activity</p>
+                  <h3 className="instructorSectionTitle">Recent Bookings</h3>
+                  <p className="instructorSectionText">Latest booking activity.</p>
                 </div>
               </div>
 
-              <div className="rec-bookings-table-wrap">
-                <table className="rec-bookings-table">
-                  <thead>
-                    <tr>
-                      <th>Booking ID</th>
-                      <th>Customer</th>
-                      <th>Type</th>
-                      <th>Date</th>
-                      <th>Time</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentBookings.length > 0 ? (
-                      recentBookings.map((booking) => (
+              {recentBookings.length === 0 ? (
+                <div className="instructorMuted">No recent bookings found.</div>
+              ) : (
+                <div className="instructorTableOuter">
+                  <table className="instructorTable">
+                    <thead>
+                      <tr>
+                        <th>Booking ID</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentBookings.map((booking) => (
                         <tr key={booking.id}>
                           <td>{formatBookingId(booking.id)}</td>
                           <td>{booking.customer_name || "-"}</td>
@@ -201,7 +223,7 @@ export default function RecDashboard() {
                           <td>{booking.time_slot || "-"}</td>
                           <td>
                             <span
-                              className={`rec-status-pill ${String(
+                              className={`receptionStatusPill ${String(
                                 booking.status || ""
                               ).toLowerCase()}`}
                             >
@@ -209,17 +231,11 @@ export default function RecDashboard() {
                             </span>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="6" className="rec-no-data">
-                          No recent bookings found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -228,11 +244,19 @@ export default function RecDashboard() {
   );
 }
 
-function Card({ title, value }) {
+function StatCard({ icon, title, value }) {
+  const LucideIcon = icon;
+
   return (
-    <div style={{ background: "white", padding: 14, borderRadius: 12 }}>
-      <div style={{ fontSize: 13, color: "#666" }}>{title}</div>
-      <div style={{ fontSize: 24, fontWeight: 800 }}>{value}</div>
+    <div className="instructorStatCard">
+      <div className="instructorStatIcon">
+        <LucideIcon size={20} strokeWidth={2} />
+      </div>
+
+      <div>
+        <div className="instructorStatLabel">{title}</div>
+        <div className="instructorStatValue">{value}</div>
+      </div>
     </div>
   );
 }
