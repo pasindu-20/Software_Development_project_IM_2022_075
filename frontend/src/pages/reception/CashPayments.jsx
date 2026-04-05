@@ -77,11 +77,7 @@ export default function RecCashPayments() {
 
     const existingPayment = bookingDetails.payment || null;
 
-    const amount =
-      Number(existingPayment?.amount || 0) > 0
-        ? Number(existingPayment.amount)
-        : 2500;
-
+    const amount = Number(existingPayment?.amount || 0) > 0 ? Number(existingPayment.amount) : 2500;
     const paymentMethod = existingPayment?.payment_method || "CASH";
     const transactionRef = existingPayment?.transaction_ref || null;
 
@@ -159,69 +155,60 @@ export default function RecCashPayments() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Update Cash Payments</h2>
+    <div className="instructorPage receptionPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Update Cash Payments</h2>
+      </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 12 }}>
-        <div style={{ fontWeight: 600 }}>Search by Booking ID</div>
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Search by Booking ID</h3>
+            <p className="instructorSectionText">
+            </p>
+          </div>
+        </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
+        <div className="receptionSearchRow">
           <input
             placeholder="Booking ID"
             value={bookingLookupId}
             onChange={(e) => setBookingLookupId(e.target.value)}
           />
-          <button type="button" onClick={handleLoadBooking} disabled={lookupLoading}>
+          <button className="instructorButton" type="button" onClick={handleLoadBooking} disabled={lookupLoading}>
             {lookupLoading ? "Loading..." : "Load Booking"}
           </button>
         </div>
 
-        {bookingDetails?.booking && (
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 12,
-              padding: 14,
-              display: "grid",
-              gap: 12,
-              background: "#fafafa",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(220px, 1fr))",
-                gap: 8,
-              }}
-            >
-              <div><strong>Booking ID:</strong> {bookingDetails.booking.id}</div>
-              <div><strong>Customer:</strong> {bookingDetails.booking.customer_name || "—"}</div>
-              <div><strong>Phone:</strong> {bookingDetails.booking.customer_phone || "—"}</div>
-              <div><strong>Booking Type:</strong> {bookingDetails.booking.booking_type || "—"}</div>
-              <div><strong>Booking Date:</strong> {bookingDetails.booking.booking_date || "—"}</div>
-              <div><strong>Time Slot:</strong> {bookingDetails.booking.time_slot || "—"}</div>
-              <div><strong>Booking Status:</strong> {bookingDetails.booking.status || "—"}</div>
-              <div><strong>Payment No:</strong> {bookingDetails.payment?.payment_no || "—"}</div>
-              <div><strong>Amount:</strong> {bookingDetails.payment?.amount || "—"}</div>
-              <div><strong>Payment Method:</strong> {bookingDetails.payment?.payment_method || "CASH"}</div>
-              <div><strong>Reference No:</strong> {bookingDetails.payment?.transaction_ref || "—"}</div>
-              <div><strong>Current Payment Status:</strong> {bookingDetails.payment?.payment_status || "PENDING"}</div>
+        {bookingDetails?.booking ? (
+          <div className="receptionDetailBox">
+            <div className="receptionDetailGrid">
+              <div className="receptionDetailItem"><strong>Booking ID:</strong> {bookingDetails.booking.id}</div>
+              <div className="receptionDetailItem"><strong>Customer:</strong> {bookingDetails.booking.customer_name || "—"}</div>
+              <div className="receptionDetailItem"><strong>Phone:</strong> {bookingDetails.booking.customer_phone || "—"}</div>
+              <div className="receptionDetailItem"><strong>Booking Type:</strong> {bookingDetails.booking.booking_type || "—"}</div>
+              <div className="receptionDetailItem"><strong>Booking Date:</strong> {bookingDetails.booking.booking_date || "—"}</div>
+              <div className="receptionDetailItem"><strong>Time Slot:</strong> {bookingDetails.booking.time_slot || "—"}</div>
+              <div className="receptionDetailItem"><strong>Booking Status:</strong> {bookingDetails.booking.status || "—"}</div>
+              <div className="receptionDetailItem"><strong>Payment No:</strong> {bookingDetails.payment?.payment_no || "—"}</div>
+              <div className="receptionDetailItem"><strong>Amount:</strong> {bookingDetails.payment?.amount || "—"}</div>
+              <div className="receptionDetailItem"><strong>Payment Method:</strong> {bookingDetails.payment?.payment_method || "CASH"}</div>
+              <div className="receptionDetailItem"><strong>Reference No:</strong> {bookingDetails.payment?.transaction_ref || "—"}</div>
+              <div className="receptionDetailItem"><strong>Current Payment Status:</strong> {bookingDetails.payment?.payment_status || "PENDING"}</div>
             </div>
 
-            <div style={{ display: "grid", gap: 6, maxWidth: 260 }}>
-              <label>Update Payment Status</label>
-              <select
-                value={bookingPaymentStatus}
-                onChange={(e) => setBookingPaymentStatus(e.target.value)}
-              >
+            <label className="instructorField receptionFieldNarrow">
+              <span className="instructorFieldLabel">Update Payment Status</span>
+              <select value={bookingPaymentStatus} onChange={(e) => setBookingPaymentStatus(e.target.value)}>
                 <option value="PENDING">Pending</option>
                 <option value="SUCCESS">Success</option>
                 <option value="FAILED">Failed</option>
               </select>
-            </div>
+            </label>
 
-            <div>
+            <div className="receptionButtonRow">
               <button
+                className="instructorButton"
                 type="button"
                 onClick={handleUpdateBookingPaymentStatus}
                 disabled={saveLoading}
@@ -230,127 +217,126 @@ export default function RecCashPayments() {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12, display: "grid", gap: 14 }}>
-        <div style={{ fontWeight: 600 }}>Pending Cash Payments</div>
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Pending Cash Payments</h3>
+            <p className="instructorSectionText">Filter, search, and confirm pending cash records.</p>
+          </div>
+        </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, alignItems: "end" }}>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label>Filter by Booking ID</label>
+        <div className="receptionFormGrid3">
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Filter by Booking ID</span>
             <input
               type="text"
               placeholder="Booking ID"
               value={bookingIdSearch}
               onChange={(e) => setBookingIdSearch(e.target.value)}
             />
-          </div>
+          </label>
 
-          <div style={{ display: "grid", gap: 6 }}>
-            <label>Filter by Enrollment ID</label>
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Filter by Enrollment ID</span>
             <input
               type="text"
               placeholder="Enrollment ID"
               value={enrollmentIdSearch}
               onChange={(e) => setEnrollmentIdSearch(e.target.value)}
             />
-          </div>
+          </label>
 
-          <button
-            type="button"
-            onClick={() => {
-              setBookingIdSearch("");
-              setEnrollmentIdSearch("");
-              setSearch("");
-            }}
-          >
-            Clear
-          </button>
+          <div className="receptionButtonRow receptionButtonRowEnd">
+            <button
+              className="receptionSecondaryButton"
+              type="button"
+              onClick={() => {
+                setBookingIdSearch("");
+                setEnrollmentIdSearch("");
+                setSearch("");
+              }}
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label>General Search</label>
+        <label className="instructorField">
+          <span className="instructorFieldLabel">General Search</span>
           <input
             placeholder="Payment no, customer, child, class, phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </div>
+        </label>
 
-        <div>
-          <button type="button" onClick={loadPayments} disabled={loading}>
+        <div className="receptionButtonRow">
+          <button className="receptionSecondaryButton" type="button" onClick={loadPayments} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </button>
         </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
-        {info && <div style={{ color: "green" }}>{info}</div>}
+        {err ? <div className="instructorError">{err}</div> : null}
+        {info ? <div className="instructorSuccess">{info}</div> : null}
 
-        {!loading && filtered.length === 0 && (
-          <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 14, background: "#fafafa" }}>
-            No pending cash payments found.
-          </div>
-        )}
+        {!loading && filtered.length === 0 ? (
+          <div className="receptionEmptyState">No pending cash payments found.</div>
+        ) : null}
 
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="receptionCardStack">
           {filtered.map((payment) => (
-            <div
-              key={payment.id}
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                padding: 14,
-                background: "#fafafa",
-                display: "grid",
-                gap: 10,
-              }}
-            >
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(220px, 1fr))", gap: 8 }}>
-                <div><strong>Payment ID:</strong> {payment.id}</div>
-                <div><strong>Payment No:</strong> {payment.payment_no || "—"}</div>
-                <div><strong>For:</strong> {payment.payment_for || "—"}</div>
-                <div><strong>Amount:</strong> LKR {Number(payment.amount || 0).toFixed(2)}</div>
-                <div><strong>Method:</strong> {payment.payment_method || "—"}</div>
-                <div><strong>Status:</strong> {payment.status || "—"}</div>
-                <div><strong>Customer:</strong> {payment.customer_name || "—"}</div>
-                <div><strong>Phone:</strong> {payment.customer_phone || "—"}</div>
-
+            <div key={payment.id} className="receptionDetailBox">
+              <div className="receptionDetailGrid">
+                <div className="receptionDetailItem"><strong>Payment ID:</strong> {payment.id}</div>
+                <div className="receptionDetailItem"><strong>Payment No:</strong> {payment.payment_no || "—"}</div>
+                <div className="receptionDetailItem"><strong>For:</strong> {payment.payment_for || "—"}</div>
+                <div className="receptionDetailItem"><strong>Amount:</strong> LKR {Number(payment.amount || 0).toFixed(2)}</div>
+                <div className="receptionDetailItem"><strong>Method:</strong> {payment.payment_method || "—"}</div>
+                <div className="receptionDetailItem"><strong>Status:</strong> {payment.status || "—"}</div>
+                <div className="receptionDetailItem"><strong>Customer:</strong> {payment.customer_name || "—"}</div>
+                <div className="receptionDetailItem"><strong>Phone:</strong> {payment.customer_phone || "—"}</div>
                 {payment.booking_id ? (
                   <>
-                    <div><strong>Booking ID:</strong> {payment.booking_id}</div>
-                    <div><strong>Booking Type:</strong> {payment.booking_type || "—"}</div>
-                    <div><strong>Date:</strong> {payment.booking_date || "—"}</div>
-                    <div><strong>Time Slot:</strong> {payment.time_slot || "—"}</div>
+                    <div className="receptionDetailItem"><strong>Booking ID:</strong> {payment.booking_id}</div>
+                    <div className="receptionDetailItem"><strong>Booking Type:</strong> {payment.booking_type || "—"}</div>
+                    <div className="receptionDetailItem"><strong>Date:</strong> {payment.booking_date || "—"}</div>
+                    <div className="receptionDetailItem"><strong>Time Slot:</strong> {payment.time_slot || "—"}</div>
                   </>
                 ) : null}
-
                 {payment.enrollment_id ? (
                   <>
-                    <div><strong>Enrollment ID:</strong> {payment.enrollment_id}</div>
-                    <div><strong>Child:</strong> {payment.child_name || "—"}</div>
-                    <div><strong>Class:</strong> {payment.class_title || "—"}</div>
-                    <div><strong>Enrollment Status:</strong> {payment.enrollment_status || "—"}</div>
+                    <div className="receptionDetailItem"><strong>Enrollment ID:</strong> {payment.enrollment_id}</div>
+                    <div className="receptionDetailItem"><strong>Child:</strong> {payment.child_name || "—"}</div>
+                    <div className="receptionDetailItem"><strong>Class:</strong> {payment.class_title || "—"}</div>
+                    <div className="receptionDetailItem"><strong>Enrollment Status:</strong> {payment.enrollment_status || "—"}</div>
                   </>
                 ) : null}
               </div>
 
-              <div><strong>Notes:</strong> {payment.notes || "—"}</div>
+              <div className="receptionDetailItem"><strong>Notes:</strong> {payment.notes || "—"}</div>
 
-              <textarea
-                placeholder="Confirmation note (optional)"
-                value={noteById[payment.id] || ""}
-                onChange={(e) =>
-                  setNoteById((prev) => ({
-                    ...prev,
-                    [payment.id]: e.target.value,
-                  }))
-                }
-                rows={3}
-              />
+              <label className="instructorField">
+                <span className="instructorFieldLabel">Confirmation Note</span>
+                <textarea
+                  className="receptionTextarea"
+                  placeholder="Confirmation note (optional)"
+                  value={noteById[payment.id] || ""}
+                  onChange={(e) =>
+                    setNoteById((prev) => ({
+                      ...prev,
+                      [payment.id]: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                />
+              </label>
 
-              <div>
+              <div className="receptionButtonRow">
                 <button
+                  className="instructorButton"
                   type="button"
                   onClick={() => handleConfirm(payment.id)}
                   disabled={confirmingId === payment.id}

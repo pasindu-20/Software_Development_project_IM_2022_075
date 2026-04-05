@@ -15,7 +15,7 @@ export default function RecBookings() {
     setLoading(true);
     try {
       const res = await listBookingsApi();
-      setRows(res.data || []);
+      setRows(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       setRows([]);
       setErr(e?.response?.data?.message || "Failed to load bookings");
@@ -24,44 +24,70 @@ export default function RecBookings() {
     }
   };
 
-  return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>View Bookings</h2>
+  const formatType = (value) => {
+    if (!value) return "—";
+    return String(value).replaceAll("_", " ");
+  };
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-        {err && <div style={{ color: "crimson", marginBottom: 10 }}>{err}</div>}
+  return (
+    <div className="instructorPage receptionPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">View Bookings</h2>
+      </div>
+
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Bookings List</h3>
+            <p className="instructorSectionText">
+              
+            </p>
+          </div>
+        </div>
+
+        {err ? <div className="instructorError">{err}</div> : null}
 
         {loading ? (
-          <div>Loading…</div>
+          <div className="instructorMuted">Loading bookings…</div>
         ) : rows.length === 0 ? (
-          <div style={{ color: "#666" }}>No bookings found.</div>
+          <div className="instructorMuted">No bookings found.</div>
         ) : (
-          <table width="100%" cellPadding="8" border="1">
-            <thead>
-              <tr>
-                <th>Booking ID</th>
-                <th>Customer</th>
-                <th>Phone</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Time Slot</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((b) => (
-                <tr key={b.id}>
-                  <td>{b.id}</td>
-                  <td>{b.customer_name || "—"}</td>
-                  <td>{b.customer_phone || "—"}</td>
-                  <td>{b.booking_type || "—"}</td>
-                  <td>{b.booking_date || "—"}</td>
-                  <td>{b.time_slot || "—"}</td>
-                  <td>{b.status || "—"}</td>
+          <div className="instructorTableOuter">
+            <table className="instructorTable">
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Customer</th>
+                  <th>Phone</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th>Time Slot</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((b) => (
+                  <tr key={b.id}>
+                    <td>{b.id}</td>
+                    <td>{b.customer_name || "—"}</td>
+                    <td>{b.customer_phone || "—"}</td>
+                    <td>{formatType(b.booking_type)}</td>
+                    <td>{b.booking_date || "—"}</td>
+                    <td>{b.time_slot || "—"}</td>
+                    <td>
+                      <span
+                        className={`receptionStatusPill ${String(
+                          b.status || ""
+                        ).toLowerCase()}`}
+                      >
+                        {b.status || "—"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -20,11 +20,8 @@ const buildDefaultReplySubject = (row) => {
   return `Re: Your ${type} inquiry to ${APP_NAME}`;
 };
 
-const isEmailReplyNote = (note) =>
-  String(note || "").trim().startsWith("[EMAIL_REPLY]");
-
-const cleanHistoryNote = (note) =>
-  String(note || "").replace(/^\[EMAIL_REPLY\]\s*/, "").trim();
+const isEmailReplyNote = (note) => String(note || "").trim().startsWith("[EMAIL_REPLY]");
+const cleanHistoryNote = (note) => String(note || "").replace(/^\[EMAIL_REPLY\]\s*/, "").trim();
 
 export default function RecInquiries() {
   const [rows, setRows] = useState([]);
@@ -73,7 +70,7 @@ export default function RecInquiries() {
     try {
       const res = await listInquiryFollowupsApi(inquiryId);
       setFollowups(Array.isArray(res.data) ? res.data : []);
-    } catch (e) {
+    } catch {
       setFollowups([]);
     } finally {
       setFollowupsLoading(false);
@@ -166,12 +163,7 @@ export default function RecInquiries() {
       await loadFollowups(selected.id);
 
       setSelected((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: prev.status === "NEW" ? "CONTACTED" : prev.status,
-            }
-          : prev
+        prev ? { ...prev, status: prev.status === "NEW" ? "CONTACTED" : prev.status } : prev
       );
 
       setReplyMessage("");
@@ -184,20 +176,31 @@ export default function RecInquiries() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Customer Inquiries</h2>
+    <div className="instructorPage receptionPage receptionInquiriesPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Customer Inquiries</h2>
+      </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-        {err && <div style={{ color: "crimson", marginBottom: 10 }}>{err}</div>}
-        {info && <div style={{ color: "green", marginBottom: 10 }}>{info}</div>}
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Inquiry Queue</h3>
+            <p className="instructorSectionText">
+             
+            </p>
+          </div>
+        </div>
+
+        {err ? <div className="instructorError">{err}</div> : null}
+        {info ? <div className="instructorSuccess">{info}</div> : null}
 
         {loading ? (
-          <div>Loading...</div>
+          <div className="instructorMuted">Loading inquiries…</div>
         ) : rows.length === 0 ? (
-          <div style={{ color: "#666" }}>No inquiries found.</div>
+          <div className="instructorMuted">No inquiries found.</div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table width="100%" cellPadding="8" border="1">
+          <div className="instructorTableOuter">
+            <table className="instructorTable">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -210,7 +213,6 @@ export default function RecInquiries() {
                   <th>Actions</th>
                 </tr>
               </thead>
-
               <tbody>
                 {rows.map((q) => (
                   <tr key={q.id}>
@@ -219,38 +221,50 @@ export default function RecInquiries() {
                     <td>{q.phone || "—"}</td>
                     <td>{q.email || "—"}</td>
                     <td>{q.inquiry_type || "—"}</td>
-                    <td>{q.status || "NEW"}</td>
+                    <td>
+                      <span className={`receptionStatusPill ${String(q.status || "new").toLowerCase()}`}>
+                        {q.status || "NEW"}
+                      </span>
+                    </td>
                     <td>{formatDateTime(q.created_at)}</td>
-                    <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <button onClick={() => openInquiryModal(q)}>View Message</button>
-
-                      <button
-                        onClick={() => updateStatus(q.id, "CONTACTED")}
-                        disabled={busyId === q.id}
-                      >
-                        {busyId === q.id ? "Updating..." : "Contacted"}
-                      </button>
-
-                      <button
-                        onClick={() => updateStatus(q.id, "FOLLOW_UP")}
-                        disabled={busyId === q.id}
-                      >
-                        Follow Up
-                      </button>
-
-                      <button
-                        onClick={() => updateStatus(q.id, "CONVERTED")}
-                        disabled={busyId === q.id}
-                      >
-                        Converted
-                      </button>
-
-                      <button
-                        onClick={() => updateStatus(q.id, "CLOSED")}
-                        disabled={busyId === q.id}
-                      >
-                        Close
-                      </button>
+                    <td>
+                      <div className="receptionTableActions">
+                        <button className="receptionMiniButton" onClick={() => openInquiryModal(q)} type="button">
+                          View Message
+                        </button>
+                        <button
+                          className="receptionMiniButton"
+                          onClick={() => updateStatus(q.id, "CONTACTED")}
+                          disabled={busyId === q.id}
+                          type="button"
+                        >
+                          {busyId === q.id ? "Updating..." : "Contacted"}
+                        </button>
+                        <button
+                          className="receptionMiniButton"
+                          onClick={() => updateStatus(q.id, "FOLLOW_UP")}
+                          disabled={busyId === q.id}
+                          type="button"
+                        >
+                          Follow Up
+                        </button>
+                        <button
+                          className="receptionMiniButton"
+                          onClick={() => updateStatus(q.id, "CONVERTED")}
+                          disabled={busyId === q.id}
+                          type="button"
+                        >
+                          Converted
+                        </button>
+                        <button
+                          className="receptionMiniButton"
+                          onClick={() => updateStatus(q.id, "CLOSED")}
+                          disabled={busyId === q.id}
+                          type="button"
+                        >
+                          Close
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -260,281 +274,132 @@ export default function RecInquiries() {
         )}
       </div>
 
-      {showModal && selected && (
-        <div
-          onClick={closeModal}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: 20,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "100%",
-              maxWidth: 900,
-              maxHeight: "90vh",
-              overflowY: "auto",
-              background: "#fff",
-              borderRadius: 14,
-              padding: 24,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 18,
-              }}
-            >
-              <h3 style={{ margin: 0 }}>Inquiry Details</h3>
-              <button onClick={closeModal}>X</button>
+      {showModal && selected ? (
+        <div className="receptionModalOverlay" onClick={closeModal}>
+          <div className="receptionModalCard" onClick={(e) => e.stopPropagation()}>
+            <div className="receptionModalHeader">
+              <div>
+                <h3 className="instructorSectionTitle">Inquiry Details</h3>
+                <p className="instructorSectionText">View the message, reply, and review follow-up history.</p>
+              </div>
+              <button className="receptionIconButton" onClick={closeModal} type="button">
+                ×
+              </button>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: 14,
-                marginBottom: 20,
-              }}
-            >
-              <div>
-                <strong>ID:</strong>
-                <div>{selected.id}</div>
-              </div>
-
-              <div>
-                <strong>Customer:</strong>
-                <div>{selected.customer_name || "—"}</div>
-              </div>
-
-              <div>
-                <strong>Phone:</strong>
-                <div>{selected.phone || "—"}</div>
-              </div>
-
-              <div>
-                <strong>Email:</strong>
-                <div>{selected.email || "—"}</div>
-              </div>
-
-              <div>
-                <strong>Type:</strong>
-                <div>{selected.inquiry_type || "—"}</div>
-              </div>
-
-              <div>
-                <strong>Status:</strong>
-                <div>{selected.status || "NEW"}</div>
-              </div>
-
-              <div>
-                <strong>Created At:</strong>
-                <div>{formatDateTime(selected.created_at)}</div>
+            <div className="receptionDetailBox">
+              <div className="receptionDetailGrid">
+                <div className="receptionDetailItem"><strong>ID:</strong> {selected.id}</div>
+                <div className="receptionDetailItem"><strong>Customer:</strong> {selected.customer_name || "—"}</div>
+                <div className="receptionDetailItem"><strong>Phone:</strong> {selected.phone || "—"}</div>
+                <div className="receptionDetailItem"><strong>Email:</strong> {selected.email || "—"}</div>
+                <div className="receptionDetailItem"><strong>Type:</strong> {selected.inquiry_type || "—"}</div>
+                <div className="receptionDetailItem"><strong>Status:</strong> {selected.status || "NEW"}</div>
+                <div className="receptionDetailItem"><strong>Created At:</strong> {formatDateTime(selected.created_at)}</div>
               </div>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <strong>Message:</strong>
-              <div
-                style={{
-                  marginTop: 8,
-                  padding: 14,
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  background: "#fafafa",
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.6,
-                  minHeight: 120,
-                }}
-              >
-                {selected.message || "No message available."}
-              </div>
+            <div className="receptionDetailBox">
+              <div className="receptionDetailTitle">Message</div>
+              <div className="receptionMessageBox">{selected.message || "No message available."}</div>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <strong>Reply to Customer:</strong>
-
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "grid",
-                  gap: 10,
-                  padding: 14,
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  background: "#fcfcfc",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-                    Subject
-                  </div>
+            <div className="receptionDetailBox">
+              <div className="receptionDetailTitle">Reply to Customer</div>
+              <div className="receptionStack">
+                <label className="instructorField">
+                  <span className="instructorFieldLabel">Subject</span>
                   <input
                     type="text"
                     value={replySubject}
                     onChange={(e) => setReplySubject(e.target.value)}
                     placeholder="Enter reply subject"
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      borderRadius: 8,
-                      border: "1px solid #ccc",
-                    }}
                   />
-                </div>
+                </label>
 
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-                    Reply Message
-                  </div>
+                <label className="instructorField">
+                  <span className="instructorFieldLabel">Reply Message</span>
                   <textarea
+                    className="receptionTextarea"
                     value={replyMessage}
                     onChange={(e) => setReplyMessage(e.target.value)}
                     placeholder="Type your reply to the customer here..."
                     rows={6}
-                    style={{
-                      width: "100%",
-                      padding: 12,
-                      borderRadius: 8,
-                      border: "1px solid #ccc",
-                      resize: "vertical",
-                    }}
                   />
-                </div>
+                </label>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ fontSize: 13, color: "#666" }}>
+                <div className="receptionButtonRow receptionButtonRowBetween">
+                  <div className="instructorMuted">
                     Reply will be sent to: <strong>{selected.email || "No email"}</strong>
                   </div>
-
-                  <button onClick={sendReply} disabled={sendingReply}>
+                  <button className="instructorButton" onClick={sendReply} disabled={sendingReply} type="button">
                     {sendingReply ? "Sending..." : "Send Reply Email"}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <strong>Reply / Follow-up History:</strong>
+            <div className="receptionDetailBox">
+              <div className="receptionDetailTitle">Reply / Follow-up History</div>
 
-              <div
-                style={{
-                  marginTop: 10,
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  background: "#fafafa",
-                  padding: 12,
-                }}
-              >
-                {followupsLoading ? (
-                  <div>Loading history...</div>
-                ) : followups.length === 0 ? (
-                  <div style={{ color: "#666" }}>No follow-up history yet.</div>
-                ) : (
-                  <div style={{ display: "grid", gap: 10 }}>
-                    {followups.map((item) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          border: "1px solid #e3e3e3",
-                          borderRadius: 8,
-                          background: "#fff",
-                          padding: 12,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: 12,
-                            flexWrap: "wrap",
-                            marginBottom: 8,
-                          }}
-                        >
-                          <div>
-                            <strong>{item.staff_name || "Staff"}</strong>
-                          </div>
-                          <div style={{ fontSize: 12, color: "#666" }}>
-                            {isEmailReplyNote(item.note) ? "Email Reply" : "Follow Up"} •{" "}
-                            {formatDateTime(item.created_at)}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            lineHeight: 1.6,
-                            color: "#333",
-                          }}
-                        >
-                          {cleanHistoryNote(item.note)}
-                        </div>
+              {followupsLoading ? (
+                <div className="instructorMuted">Loading history...</div>
+              ) : followups.length === 0 ? (
+                <div className="instructorMuted">No follow-up history yet.</div>
+              ) : (
+                <div className="receptionCardStack">
+                  {followups.map((item) => (
+                    <div key={item.id} className="receptionHistoryCard">
+                      <div className="receptionButtonRow receptionButtonRowBetween receptionHistoryHeader">
+                        <strong>{item.staff_name || "Staff"}</strong>
+                        <span className="instructorMuted">
+                          {isEmailReplyNote(item.note) ? "Email Reply" : "Follow Up"} • {formatDateTime(item.created_at)}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <div className="receptionHistoryText">{cleanHistoryNote(item.note)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 10,
-                justifyContent: "flex-end",
-              }}
-            >
+            <div className="receptionButtonRow receptionButtonRowEnd">
               <button
+                className="receptionSecondaryButton"
                 onClick={() => updateStatus(selected.id, "CONTACTED")}
                 disabled={busyId === selected.id}
+                type="button"
               >
                 {busyId === selected.id ? "Updating..." : "Mark as Contacted"}
               </button>
-
               <button
+                className="receptionSecondaryButton"
                 onClick={() => updateStatus(selected.id, "FOLLOW_UP")}
                 disabled={busyId === selected.id}
+                type="button"
               >
                 Follow Up
               </button>
-
               <button
+                className="receptionSecondaryButton"
                 onClick={() => updateStatus(selected.id, "CONVERTED")}
                 disabled={busyId === selected.id}
+                type="button"
               >
                 Converted
               </button>
-
               <button
+                className="receptionSecondaryButton"
                 onClick={() => updateStatus(selected.id, "CLOSED")}
                 disabled={busyId === selected.id}
+                type="button"
               >
-                Close
+                Close Inquiry
               </button>
-
-              <button onClick={closeModal}>Cancel</button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

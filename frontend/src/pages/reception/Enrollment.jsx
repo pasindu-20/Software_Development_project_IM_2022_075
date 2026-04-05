@@ -23,7 +23,7 @@ export default function RecEnrollment() {
     setLoading(true);
     try {
       const res = await listEnrollmentsApi();
-      setRows(res.data || []);
+      setRows(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       setRows([]);
       setErr(e?.response?.data?.message || "Failed to load enrollments");
@@ -35,7 +35,7 @@ export default function RecEnrollment() {
   const loadClasses = async () => {
     try {
       const res = await listPublicClassesApi();
-      setClasses(res.data || []);
+      setClasses(Array.isArray(res.data) ? res.data : []);
     } catch {
       setClasses([]);
     }
@@ -69,81 +69,97 @@ export default function RecEnrollment() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2>Manage Enrollment</h2>
+    <div className="instructorPage receptionPage">
+      <div className="instructorPageHeader">
+        <h2 className="instructorPageTitle">Manage Enrollment</h2>
+      </div>
 
-      <form
-        onSubmit={submit}
-        style={{
-          background: "white",
-          padding: 16,
-          borderRadius: 12,
-          display: "grid",
-          gap: 10,
-          maxWidth: 680,
-        }}
-      >
-        <div style={{ fontWeight: 700 }}>Create Enrollment</div>
-
-        <input
-          placeholder="Child ID"
-          value={child_id}
-          onChange={(e) => setChildId(e.target.value)}
-        />
-
-        <select value={class_id} onChange={(e) => setClassId(e.target.value)}>
-          <option value="">Select Class</option>
-          {classes.map((cls) => (
-            <option key={cls.id} value={cls.id}>
-              {cls.id} - {cls.title}
-            </option>
-          ))}
-        </select>
-
-        <div style={{ fontSize: 13, color: "#666" }}>
-          Use an existing child ID. This flow currently enrolls already-registered children.
+      <form onSubmit={submit} className="instructorContentCard receptionFormCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Create Enrollment</h3>
+            <p className="instructorSectionText">
+             
+            </p>
+          </div>
         </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
-        {info && <div style={{ color: "green" }}>{info}</div>}
+        <div className="receptionStack">
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Child ID</span>
+            <input
+              placeholder="Child ID"
+              value={child_id}
+              onChange={(e) => setChildId(e.target.value)}
+            />
+          </label>
 
-        <button disabled={busy} type="submit">
-          {busy ? "Saving…" : "Create Enrollment"}
-        </button>
+          <label className="instructorField">
+            <span className="instructorFieldLabel">Select Class</span>
+            <select value={class_id} onChange={(e) => setClassId(e.target.value)}>
+              <option value="">Select Class</option>
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.id} - {cls.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {err ? <div className="instructorError">{err}</div> : null}
+        {info ? <div className="instructorSuccess">{info}</div> : null}
+
+        <div className="receptionButtonRow">
+          <button className="instructorButton" disabled={busy} type="submit">
+            {busy ? "Saving…" : "Create Enrollment"}
+          </button>
+        </div>
       </form>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 12 }}>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Enrollments</div>
+      <div className="instructorContentCard">
+        <div className="instructorSectionHeader">
+          <div>
+            <h3 className="instructorSectionTitle">Enrollments</h3>
+            <p className="instructorSectionText">Current enrollment records and statuses.</p>
+          </div>
+        </div>
 
         {loading ? (
-          <div>Loading…</div>
+          <div className="instructorMuted">Loading enrollments…</div>
         ) : rows.length === 0 ? (
-          <div style={{ color: "#666" }}>No enrollments found.</div>
+          <div className="instructorMuted">No enrollments found.</div>
         ) : (
-          <table width="100%" cellPadding="8" border="1">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Child</th>
-                <th>Guardian</th>
-                <th>Phone</th>
-                <th>Class</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.id}</td>
-                  <td>{r.child_name || "—"}</td>
-                  <td>{r.guardian_name || "—"}</td>
-                  <td>{r.guardian_phone || "—"}</td>
-                  <td>{r.class_title || r.class_id || "—"}</td>
-                  <td>{r.status || "PENDING"}</td>
+          <div className="instructorTableOuter">
+            <table className="instructorTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Child</th>
+                  <th>Guardian</th>
+                  <th>Phone</th>
+                  <th>Class</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.id}</td>
+                    <td>{r.child_name || "—"}</td>
+                    <td>{r.guardian_name || "—"}</td>
+                    <td>{r.guardian_phone || "—"}</td>
+                    <td>{r.class_title || r.class_id || "—"}</td>
+                    <td>
+                      <span className={`receptionStatusPill ${String(r.status || "pending").toLowerCase()}`}>
+                        {r.status || "PENDING"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -1,6 +1,5 @@
 /*nav bar*/
 
-
 .navDropdown {
   position: relative;
   display: flex;
@@ -5788,4 +5787,658 @@
   .instructorButton {
     width: 100%;
   }
+}
+
+
+/* =========================
+   RECEPTIONIST UI - CLEAN
+   ========================= */
+
+.portalMainInstructor {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.receptionPage {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.receptionStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.receptionQuickGrid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.65fr) minmax(0, 1.35fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.receptionActionList,
+.receptionCardStack,
+.receptionStack {
+  display: grid;
+  gap: 14px;
+}
+
+.receptionActionCard,
+.receptionDetailBox,
+.receptionHistoryCard {
+  border: 1px solid #ececec;
+  border-radius: 18px;
+  background: #fafafa;
+  padding: 16px;
+}
+
+.receptionActionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.receptionActionCopy h4,
+.receptionDetailTitle {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.receptionActionCopy p,
+.receptionDetailItem,
+.receptionHistoryText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2a2a2a;
+}
+
+.receptionDetailStrong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #45129e;
+}
+
+.receptionActionRight,
+.receptionButtonRow,
+.receptionTableActions,
+.receptionLinkRow,
+.receptionSearchRow,
+.receptionFormActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.receptionButtonRowBetween {
+  justify-content: space-between;
+}
+
+.receptionButtonRowEnd {
+  justify-content: flex-end;
+}
+
+.receptionSearchRow {
+  align-items: stretch;
+}
+
+.receptionSearchRow input,
+.receptionSearchRow .instructorField {
+  flex: 1 1 260px;
+}
+
+.receptionActionBadge {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  background: #efefef;
+  color: #777777;
+}
+
+.receptionActionBadgeActive {
+  background: #f0e8ff;
+  color: #403369;
+}
+
+.receptionSecondaryButton,
+.receptionMiniButton,
+.receptionIconButton {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid #d8d8d8;
+  background: #ffffff;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.receptionMiniButton {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionIconButton {
+  min-width: 44px;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.receptionSecondaryButton:hover,
+.receptionMiniButton:hover,
+.receptionIconButton:hover {
+  background: #403369;
+  color: #ffffff;
+  border-color: #403369;
+}
+
+.receptionFormCard {
+  max-width: 760px;
+}
+
+.receptionFormGrid2,
+.receptionFormGrid3,
+.receptionDetailGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.receptionFormGrid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.receptionFormGrid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+
+.receptionDetailGrid {
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+}
+
+.receptionFieldNarrow {
+  max-width: 280px;
+}
+
+.receptionTextarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #d8d8d8;
+  background: #ffffff;
+  color: #1c1c1c;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.receptionTextarea:focus {
+  border-color: #111111;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
+}
+
+.receptionEmptyState,
+.receptionMessageBox {
+  border: 1px solid #ececec;
+  border-radius: 18px;
+  background: #fafafa;
+  padding: 16px;
+  color: #555555;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.receptionMessageBox {
+  white-space: pre-wrap;
+  min-height: 120px;
+}
+
+.receptionLinkRow a {
+  color: #45129e;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.receptionLinkRow a:hover {
+  text-decoration: underline;
+}
+
+.receptionStatusPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #e3def5;
+  background: #f5f1ff;
+  color: #45129e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: capitalize;
+}
+
+.receptionStatusPill.confirmed,
+.receptionStatusPill.active,
+.receptionStatusPill.contacted,
+.receptionStatusPill.success,
+.receptionStatusPill.converted,
+.receptionStatusPill.checked\ in,
+.receptionStatusPill.checked_in {
+  border-color: #d6e8dc;
+  background: #eef8f0;
+  color: #237147;
+}
+
+.receptionStatusPill.pending,
+.receptionStatusPill.new,
+.receptionStatusPill.follow_up {
+  border-color: #e3def5;
+  background: #f5f1ff;
+  color: #45129e;
+}
+
+.receptionStatusPill.closed,
+.receptionStatusPill.failed,
+.receptionStatusPill.cancelled {
+  border-color: #efd0d0;
+  background: #fcf2f2;
+  color: #a23232;
+}
+
+.receptionModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.receptionModalCard {
+  width: 100%;
+  max-width: 960px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 18px 50px rgba(17, 17, 17, 0.12);
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.receptionModalHeader,
+.receptionHistoryHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* safe spacing for receptionist forms */
+.receptionPage form,
+.receptionPage .instructorContentCard form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.receptionPage .instructorField,
+.receptionPage .receptionField,
+.receptionPage .formField {
+  display: grid;
+  gap: 8px;
+}
+
+.receptionPage .instructorField + .instructorButton,
+.receptionPage .instructorField + .receptionSecondaryButton,
+.receptionPage .instructorField + .receptionMiniButton,
+.receptionPage .receptionTextarea + .instructorButton,
+.receptionPage .receptionTextarea + .receptionSecondaryButton,
+.receptionPage .receptionTextarea + .receptionMiniButton {
+  margin-top: 14px;
+}
+
+.receptionPage .receptionFormActions {
+  margin-top: 14px;
+}
+
+.receptionPage .receptionRefreshButton {
+  margin-top: 14px;
+}
+
+/* do not affect horizontal search/input rows */
+.receptionSearchRow > .instructorButton,
+.receptionSearchRow > .receptionSecondaryButton,
+.receptionSearchRow > .receptionMiniButton,
+.receptionSearchRow .receptionRefreshButton {
+  margin-top: 0 !important;
+}
+
+/* dashboard page */
+.receptionDashboardPage {
+  gap: 12px;
+}
+
+.receptionDashboardPage .instructorPageHeader {
+  margin-bottom: 0;
+}
+
+.receptionDashboardPage .instructorPageTitle {
+  font-size: 24px;
+}
+
+.receptionDashboardPage .receptionDashboardStatsGrid {
+  gap: 10px;
+}
+
+.receptionDashboardPage .instructorStatCard {
+  padding: 14px 16px;
+  min-height: 82px;
+  border-radius: 20px;
+}
+
+.receptionDashboardPage .instructorStatIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.receptionDashboardPage .instructorStatLabel {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.receptionDashboardPage .instructorStatValue {
+  font-size: 24px;
+}
+
+.receptionDashboardPage .receptionDashboardQuickGrid {
+  grid-template-columns: minmax(320px, 0.65fr) minmax(0, 1.35fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.receptionDashboardPage .receptionDashboardPanel {
+  padding: 18px;
+  border-radius: 22px;
+}
+
+.receptionDashboardPage .instructorSectionHeader {
+  margin-bottom: 12px;
+}
+
+.receptionDashboardPage .instructorSectionTitle {
+  font-size: 18px;
+}
+
+.receptionDashboardPage .instructorSectionText {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.receptionDashboardPage .receptionSecondaryButton,
+.receptionDashboardPage .instructorButton {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.receptionDashboardPage .receptionActionList {
+  gap: 10px;
+}
+
+.receptionDashboardPage .receptionActionCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  align-items: center;
+  gap: 14px;
+  min-height: 94px;
+  padding: 14px 16px;
+}
+
+.receptionDashboardPage .receptionActionCopy h4 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.receptionDashboardPage .receptionActionCopy p {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.receptionDashboardPage .receptionActionRight {
+  width: 160px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.receptionDashboardPage .receptionActionRight .instructorButton {
+  width: 100%;
+}
+
+.receptionDashboardPage .receptionActionBadge {
+  min-width: 34px;
+  height: 34px;
+  font-size: 13px;
+}
+
+.receptionDashboardPage .instructorTableOuter {
+  border-radius: 18px;
+}
+
+.receptionDashboardPage .instructorTable th,
+.receptionDashboardPage .instructorTable td {
+  padding: 12px 14px;
+}
+
+.receptionDashboardPage .instructorTable th {
+  font-size: 12px;
+}
+
+.receptionDashboardPage .instructorTable td {
+  font-size: 13px;
+}
+
+/* inquiry page */
+.receptionInquiriesPage,
+.receptionInquiriesPage .instructorContentCard,
+.receptionInquiriesPage .instructorTableOuter {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.receptionInquiriesPage .instructorTableOuter {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.receptionInquiriesPage .instructorTable {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.receptionInquiriesPage .instructorTable th,
+.receptionInquiriesPage .instructorTable td {
+  padding: 12px 14px;
+  white-space: normal;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(1),
+.receptionInquiriesPage .instructorTable td:nth-child(1) {
+  width: 5%;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(2),
+.receptionInquiriesPage .instructorTable td:nth-child(2) {
+  width: 16%;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(3),
+.receptionInquiriesPage .instructorTable td:nth-child(3) {
+  width: 10%;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(4),
+.receptionInquiriesPage .instructorTable td:nth-child(4) {
+  width: 20%;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(5),
+.receptionInquiriesPage .instructorTable td:nth-child(5) {
+  width: 8%;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(6),
+.receptionInquiriesPage .instructorTable td:nth-child(6) {
+  width: 11%;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(7),
+.receptionInquiriesPage .instructorTable td:nth-child(7) {
+  width: 14%;
+}
+
+.receptionInquiriesPage .instructorTable th:nth-child(8),
+.receptionInquiriesPage .instructorTable td:nth-child(8) {
+  width: 16%;
+}
+
+.receptionInquiriesPage .receptionTableActions {
+  grid-template-columns: repeat(2, minmax(95px, 1fr));
+  gap: 8px;
+}
+
+.receptionInquiriesPage .receptionTableActions .receptionMiniButton {
+  width: 100%;
+  min-width: 90px;
+  min-height: 20px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.receptionInquiriesPage .receptionTableActions .receptionMiniButton:first-child {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1280px) {
+  .receptionStatsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .receptionDashboardPage .receptionDashboardQuickGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .receptionInquiriesPage .instructorTable {
+    min-width: 980px;
+    table-layout: auto;
+  }
+}
+
+@media (max-width: 1100px) {
+  .receptionQuickGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receptionFormGrid3,
+  .receptionDetailGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .receptionStatsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .receptionInquiriesPage .receptionTableActions {
+    grid-template-columns: 1fr;
+  }
+
+  .receptionInquiriesPage .receptionTableActions .receptionMiniButton:first-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .receptionStatsGrid,
+  .receptionFormGrid2,
+  .receptionFormGrid3,
+  .receptionDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receptionActionCard,
+  .receptionButtonRowBetween,
+  .receptionModalHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .receptionTableActions {
+    min-width: 0;
+  }
+
+  .receptionDashboardPage .receptionActionCard {
+    grid-template-columns: 1fr;
+  }
+
+  .receptionDashboardPage .receptionActionRight {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.portalMain,
+.portalMainInstructor,
+.instructorTableOuter,
+.receptionModalCard {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
