@@ -31,6 +31,35 @@ function getCurrentTimeString() {
   return `${hh}:${mm}`;
 }
 
+const PLAY_AREA_OPEN_TIME = "09:00";
+const PLAY_AREA_CLOSE_TIME = "18:00";
+const PLAY_AREA_LAST_START_TIME = "17:59";
+
+function addHoursToTime(time, hoursToAdd) {
+  if (!time) return "";
+
+  const [hourStr, minuteStr] = String(time).split(":");
+  const date = new Date();
+  date.setHours(Number(hourStr || 0), Number(minuteStr || 0), 0, 0);
+  date.setHours(date.getHours() + hoursToAdd);
+
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function getPlayAreaEndTime(start) {
+  if (!start) return "";
+  const calculatedEnd = addHoursToTime(start, 3);
+  return calculatedEnd > PLAY_AREA_CLOSE_TIME ? PLAY_AREA_CLOSE_TIME : calculatedEnd;
+}
+
+function getPlayAreaStartMin(bookingDate, today, currentTime) {
+  if (bookingDate !== today) return PLAY_AREA_OPEN_TIME;
+  if (!currentTime || currentTime <= PLAY_AREA_OPEN_TIME) return PLAY_AREA_OPEN_TIME;
+  return currentTime;
+}
+
 function isValidCustomerName(name) {
   return /^[A-Za-z\s]+$/.test(name.trim());
 }
@@ -62,6 +91,7 @@ export default function RecManualBooking() {
   const today = getTodayDateString();
   const currentTime = getCurrentTimeString();
 
+  const isPlayAreaType = booking_type === "PLAY_AREA";
   const isManualTimeType = booking_type === "PLAY_AREA" || booking_type === "PARTY";
   const isAutoTimeType = booking_type === "CLASS" || booking_type === "EVENT";
 
@@ -166,6 +196,43 @@ export default function RecManualBooking() {
     }
   }, [selectedItem, booking_type, isAutoTimeType, isManualTimeType]);
 
+  useEffect(() => {
+    if (!isPlayAreaType) return;
+
+    if (!booking_date) {
+      setStartTime("");
+      setEndTime("");
+      return;
+    }
+
+    const minStartTime = getPlayAreaStartMin(booking_date, today, currentTime);
+
+    if (
+      startTime &&
+      (
+        startTime < minStartTime ||
+        startTime < PLAY_AREA_OPEN_TIME ||
+        startTime > PLAY_AREA_LAST_START_TIME
+      )
+    ) {
+      setStartTime("");
+      setEndTime("");
+    }
+  }, [isPlayAreaType, booking_date, startTime, today, currentTime]);
+
+  useEffect(() => {
+    if (!isPlayAreaType) return;
+
+    if (startTime) {
+      const generatedEndTime = getPlayAreaEndTime(startTime);
+      if (generatedEndTime !== endTime) {
+        setEndTime(generatedEndTime);
+      }
+    } else if (endTime) {
+      setEndTime("");
+    }
+  }, [isPlayAreaType, startTime, endTime]);
+
   const handleNameChange = (e) => {
     const value = e.target.value;
     if (/^[A-Za-z\s]*$/.test(value)) {
@@ -210,21 +277,53 @@ export default function RecManualBooking() {
     let finalTimeSlot = time_slot;
 
     if (isManualTimeType) {
-      if (!startTime || !endTime) {
-        return setErr("Please select both start time and end time.");
-      }
-
-      if (booking_date === today && startTime < currentTime) {
+      if (!startTime) {
         return setErr(
-          "For today's booking, start time cannot be earlier than the current time."
+          isPlayAreaType
+            ? "Please select a start time."
+            : "Please select both start time and end time."
         );
       }
 
-      if (startTime >= endTime) {
-        return setErr("End time must be later than start time.");
-      }
+      if (isPlayAreaType) {
+        if (booking_date === today && currentTime >= PLAY_AREA_CLOSE_TIME) {
+          return setErr("Today's play area booking time is over. Please choose another date.");
+        }
 
-      finalTimeSlot = `${startTime} - ${endTime}`;
+        if (startTime < PLAY_AREA_OPEN_TIME || startTime > PLAY_AREA_LAST_START_TIME) {
+          return setErr("Play area start time must be between 09:00 AM and 06:00 PM.");
+        }
+
+        if (booking_date === today && startTime < currentTime) {
+          return setErr(
+            "For today's booking, start time cannot be earlier than the current time."
+          );
+        }
+
+        const generatedEndTime = getPlayAreaEndTime(startTime);
+
+        if (!generatedEndTime || startTime >= generatedEndTime) {
+          return setErr("Please select a valid play area start time before 06:00 PM.");
+        }
+
+        finalTimeSlot = `${startTime} - ${generatedEndTime}`;
+      } else {
+        if (!endTime) {
+          return setErr("Please select both start time and end time.");
+        }
+
+        if (booking_date === today && startTime < currentTime) {
+          return setErr(
+            "For today's booking, start time cannot be earlier than the current time."
+          );
+        }
+
+        if (startTime >= endTime) {
+          return setErr("End time must be later than start time.");
+        }
+
+        finalTimeSlot = `${startTime} - ${endTime}`;
+      }
     }
 
     if (isAutoTimeType && !finalTimeSlot) {
@@ -377,8 +476,22 @@ export default function RecManualBooking() {
                 <input
                   type="time"
                   value={startTime}
-                  min={booking_date === today ? currentTime : undefined}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  min={
+                    isPlayAreaType
+                      ? getPlayAreaStartMin(booking_date, today, currentTime)
+                      : booking_date === today
+                        ? currentTime
+                        : undefined
+                  }
+                  max={isPlayAreaType ? PLAY_AREA_LAST_START_TIME : undefined}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setStartTime(value);
+
+                    if (isPlayAreaType) {
+                      setEndTime(getPlayAreaEndTime(value));
+                    }
+                  }}
                 />
               </label>
 
@@ -387,8 +500,18 @@ export default function RecManualBooking() {
                 <input
                   type="time"
                   value={endTime}
-                  min={startTime || (booking_date === today ? currentTime : undefined)}
-                  onChange={(e) => setEndTime(e.target.value)}
+                  min={
+                    isPlayAreaType
+                      ? undefined
+                      : startTime || (booking_date === today ? currentTime : undefined)
+                  }
+                  onChange={(e) => {
+                    if (!isPlayAreaType) {
+                      setEndTime(e.target.value);
+                    }
+                  }}
+                  readOnly={isPlayAreaType}
+                  disabled={isPlayAreaType}
                 />
               </label>
             </div>

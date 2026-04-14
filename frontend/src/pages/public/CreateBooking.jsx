@@ -27,22 +27,51 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString();
 }
 
+const PLAY_AREA_OPEN_TIME = "09:00";
+const PLAY_AREA_CLOSE_TIME = "18:00";
+const PLAY_AREA_LAST_START_TIME = "17:59";
+
+function addHoursToTime(time, hoursToAdd) {
+  if (!time) return "";
+
+  const [hourStr, minuteStr] = String(time).split(":");
+  const date = new Date();
+  date.setHours(Number(hourStr || 0), Number(minuteStr || 0), 0, 0);
+  date.setHours(date.getHours() + hoursToAdd);
+
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function getPlayAreaEndTime(start) {
+  if (!start) return "";
+  const calculatedEnd = addHoursToTime(start, 3);
+  return calculatedEnd > PLAY_AREA_CLOSE_TIME ? PLAY_AREA_CLOSE_TIME : calculatedEnd;
+}
+
+function getPlayAreaStartMin(bookingDate, today, currentTime) {
+  if (bookingDate !== today) return PLAY_AREA_OPEN_TIME;
+  if (!currentTime || currentTime <= PLAY_AREA_OPEN_TIME) return PLAY_AREA_OPEN_TIME;
+  return currentTime;
+}
+
 const PAYMENT_OPTIONS = [
   {
     key: "CARD",
-    
+
     title: "Card Payment",
     desc: "Pay securely online using your card.",
   },
   {
     key: "CASH",
-    
+
     title: "Cash Payment",
     desc: "Pay physically at the reception counter.",
   },
   {
     key: "BANK_TRANSFER",
-   
+
     title: "Bank Transfer",
     desc: "Upload your bank slip for receptionist approval.",
   },
@@ -63,6 +92,13 @@ export default function CreateBooking() {
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
+  }, []);
+
+  const currentTimeStr = useMemo(() => {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
   }, []);
 
   const [form, setForm] = useState({
@@ -131,6 +167,14 @@ export default function CreateBooking() {
   }, [isPlayAreaBooking, selectedPlayAreaId, playAreaIdFromUrl]);
 
   useEffect(() => {
+    if (isPlayAreaBooking && startTime) {
+      const generatedEndTime = getPlayAreaEndTime(startTime);
+      if (generatedEndTime !== endTime) {
+        setEndTime(generatedEndTime);
+        return;
+      }
+    }
+
     if (startTime && endTime) {
       setForm((prev) => ({
         ...prev,
@@ -142,7 +186,7 @@ export default function CreateBooking() {
         time_slot: "",
       }));
     }
-  }, [startTime, endTime]);
+  }, [startTime, endTime, isPlayAreaBooking]);
 
   useEffect(() => {
     if (paymentMethod !== "BANK_TRANSFER") {
@@ -157,6 +201,30 @@ export default function CreateBooking() {
       playAreas.find((item) => String(item.id) === String(selectedPlayAreaId)) || null
     );
   }, [playAreas, selectedPlayAreaId]);
+
+  useEffect(() => {
+    if (!isPlayAreaBooking) return;
+
+    if (!form.booking_date) {
+      setStartTime("");
+      setEndTime("");
+      return;
+    }
+
+    const minStartTime = getPlayAreaStartMin(form.booking_date, todayStr, currentTimeStr);
+
+    if (
+      startTime &&
+      (
+        startTime < minStartTime ||
+        startTime < PLAY_AREA_OPEN_TIME ||
+        startTime > PLAY_AREA_LAST_START_TIME
+      )
+    ) {
+      setStartTime("");
+      setEndTime("");
+    }
+  }, [isPlayAreaBooking, form.booking_date, startTime, todayStr, currentTimeStr]);
 
   useEffect(() => {
     if (!isPlayAreaBooking) return;
@@ -301,12 +369,40 @@ export default function CreateBooking() {
       return setErr("Past dates cannot be selected.");
     }
 
-    if (!startTime || !endTime) {
-      return setErr("Please select both start time and end time.");
-    }
+    if (isPlayAreaBooking) {
+      if (!startTime) {
+        return setErr("Please select a start time.");
+      }
 
-    if (!isEndAfterStart(startTime, endTime)) {
-      return setErr("End time must be later than start time.");
+      if (form.booking_date === todayStr && currentTimeStr >= PLAY_AREA_CLOSE_TIME) {
+        return setErr("Today's play area booking time is over. Please choose another date.");
+      }
+
+      if (startTime < PLAY_AREA_OPEN_TIME || startTime > PLAY_AREA_LAST_START_TIME) {
+        return setErr("Play area start time must be between 09:00 AM and 06:00 PM.");
+      }
+
+      const generatedEndTime = getPlayAreaEndTime(startTime);
+
+      if (!generatedEndTime || !isEndAfterStart(startTime, generatedEndTime)) {
+        return setErr("Please select a valid play area start time before 06:00 PM.");
+      }
+
+      if (form.booking_date === todayStr && startTime < currentTimeStr) {
+        return setErr("For today's booking, start time cannot be earlier than the current time.");
+      }
+
+      if (generatedEndTime !== endTime) {
+        setEndTime(generatedEndTime);
+      }
+    } else {
+      if (!startTime || !endTime) {
+        return setErr("Please select both start time and end time.");
+      }
+
+      if (!isEndAfterStart(startTime, endTime)) {
+        return setErr("End time must be later than start time.");
+      }
     }
 
     if (isPlayAreaBooking) {
@@ -484,7 +580,7 @@ export default function CreateBooking() {
 
       <div className="bookingModernGrid">
         <section className="bookingModernCard">
-          
+
           <h2 className="bookingModernCardTitle">Booking Details</h2>
           <p className="bookingModernCardText">
             Fill in the booking information below and continue with payment.
@@ -575,7 +671,20 @@ export default function CreateBooking() {
                   className="bookingModernInput"
                   type="time"
                   value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  min={
+                    isPlayAreaBooking
+                      ? getPlayAreaStartMin(form.booking_date, todayStr, currentTimeStr)
+                      : undefined
+                  }
+                  max={isPlayAreaBooking ? PLAY_AREA_LAST_START_TIME : undefined}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setStartTime(value);
+
+                    if (isPlayAreaBooking) {
+                      setEndTime(getPlayAreaEndTime(value));
+                    }
+                  }}
                 />
               </div>
 
@@ -585,7 +694,13 @@ export default function CreateBooking() {
                   className="bookingModernInput"
                   type="time"
                   value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
+                  onChange={(e) => {
+                    if (!isPlayAreaBooking) {
+                      setEndTime(e.target.value);
+                    }
+                  }}
+                  readOnly={isPlayAreaBooking}
+                  disabled={isPlayAreaBooking}
                 />
               </div>
             </div>
