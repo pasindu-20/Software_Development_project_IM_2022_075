@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import StatCard from "../../components/StatCard";
+import {
+  CalendarClock,
+  GraduationCap,
+  Landmark,
+  MessageCircleMore,
+} from "lucide-react";
 import {
   adminCardsApi,
   inquiryByStatusApi,
@@ -71,7 +76,7 @@ export default function AdminDashboard() {
           console.error("Revenue load failed:", revenueRes.reason);
           setErr(
             revenueRes.reason?.response?.data?.message ||
-            "Failed to load monthly revenue"
+              "Failed to load monthly revenue"
           );
         }
       } finally {
@@ -83,9 +88,9 @@ export default function AdminDashboard() {
   }, []);
 
   const revenueTotal = useMemo(() => {
-    const v = cards?.totalRevenue;
-    if (typeof v === "number") return v.toLocaleString();
-    return "-";
+    const raw = cards?.totalRevenue;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value.toLocaleString() : "-";
   }, [cards]);
 
   const revenueYAxisMax = useMemo(() => {
@@ -100,176 +105,175 @@ export default function AdminDashboard() {
     return Math.ceil(paddedMax / 1000) * 1000;
   }, [revenue]);
 
+  const hasInquiryData = inqStatus.some((item) => Number(item.count || 0) > 0);
+  const hasRevenueData = revenue.some((item) => Number(item.total || 0) > 0);
+
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <h2>       </h2>
+    <div className="instructorPage adminDashboardPage">
+      <div className="instructorPageHeader adminDashboardTopRow">
+        <div>
+          <h2 className="instructorPageTitle">Admin Dashboard</h2>
+          <p className="instructorSectionText adminDashboardSubtitle">
+            
+          </p>
+        </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex",  flexWrap: "wrap" }}>
-            <button
-              onClick={() => navigate("/reception/dashboard")}
-              style={{
-                border: "none",
-                borderRadius: 10,
-                padding: "10px 16px",
-                background: "#403369",
-                color: "#fff",
-                fontWeight: 700,
-                cursor: "pointer",
-                scale: "0.9",
-              }}
-            >
-              Switch to Reception Dashboard
-            </button>
+        <div className="adminDashboardTopActions">
+          <button
+            onClick={() => navigate("/reception/dashboard")}
+            className="adminSwitchButton adminSwitchButtonAlt"
+            type="button"
+          >
+            Switch to Reception Dashboard
+          </button>
 
-            <button
-              onClick={() => navigate("/instructor/dashboard")}
-              style={{
-                border: "none",
-                borderRadius: 10,
-                padding: "10px 16px",
-                background: "#45129e",
-                color: "#fff",
-                fontWeight: 700,
-                cursor: "pointer",
-                scale: "0.9",
-              }}
-            >
-              Switch to Instructor Dashboard
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/instructor/dashboard")}
+            className="adminSwitchButton"
+            type="button"
+          >
+            Switch to Instructor Dashboard
+          </button>
         </div>
       </div>
 
-      {err ? (
-        <div
-          style={{
-            background: "#fff0f0",
-            border: "1px solid #ffd6d6",
-            padding: 12,
-            borderRadius: 12,
-            color: "#b00020",
-          }}
-        >
-          {err}
-        </div>
-      ) : null}
+      {err ? <div className="instructorError">{err}</div> : null}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: 12,
-        }}
-      >
-        <StatCard title="Total Inquiries" value={cards?.totalInquiries} />
-        <StatCard title="New Inquiries" value={cards?.newInquiries} />
-        <StatCard title="Total Enrollments" value={cards?.totalEnrollments} />
-        <StatCard title="Total Revenue (LKR)" value={revenueTotal} />
+      <div className="instructorStatsGrid adminDashboardStatsGrid">
+        <StatCard
+          icon={MessageCircleMore}
+          title="Total Inquiries"
+          value={cards?.totalInquiries ?? "—"}
+        />
+        <StatCard
+          icon={CalendarClock}
+          title="New Inquiries"
+          value={cards?.newInquiries ?? "—"}
+        />
+        <StatCard
+          icon={GraduationCap}
+          title="Total Enrollments"
+          value={cards?.totalEnrollments ?? "—"}
+        />
+        <StatCard
+          icon={Landmark}
+          title="Total Revenue (LKR)"
+          value={revenueTotal}
+        />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #eee",
-            borderRadius: 12,
-            padding: 14,
-          }}
-        >
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>
-            Inquiries by Status
+      <div className="adminDashboardCharts">
+        <div className="instructorContentCard adminChartCard">
+          <div className="instructorSectionHeader">
+            <div>
+              <h3 className="instructorSectionTitle">Inquiries by Status</h3>
+              <p className="instructorSectionText">
+                Current customer inquiry distribution.
+              </p>
+            </div>
           </div>
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={inqStatus}
-                  dataKey="count"
-                  nameKey="status"
-                  outerRadius={90}
+
+          <div className="adminChartArea">
+            {loading ? (
+              <div className="instructorMuted adminChartEmpty">Loading chart data…</div>
+            ) : !hasInquiryData ? (
+              <div className="instructorMuted adminChartEmpty">
+                No inquiry data available.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={inqStatus}
+                    dataKey="count"
+                    nameKey="status"
+                    innerRadius={58}
+                    outerRadius={92}
+                    paddingAngle={3}
+                    stroke="#ffffff"
+                    strokeWidth={2}
+                  >
+                    {inqStatus.map((entry, index) => (
+                      <Cell
+                        key={`pie-cell-${entry.status}-${index}`}
+                        fill={inquiryStatusColors[entry.status] || "#c9abd9"}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div className="instructorContentCard adminChartCard">
+          <div className="instructorSectionHeader">
+            <div>
+              <h3 className="instructorSectionTitle">Monthly Revenue</h3>
+              <p className="instructorSectionText">
+                Revenue summary for the latest months.
+              </p>
+            </div>
+          </div>
+
+          <div className="adminChartArea">
+            {loading ? (
+              <div className="instructorMuted adminChartEmpty">Loading chart data…</div>
+            ) : !hasRevenueData ? (
+              <div className="instructorMuted adminChartEmpty">
+                No revenue data available.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={revenue}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 4 }}
                 >
-                  {inqStatus.map((entry, index) => (
-                    <Cell
-                      key={`pie-cell-${entry.status}-${index}`}
-                      fill={inquiryStatusColors[entry.status] || "#c9abd9"}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="monthLabel" />
+                  <YAxis
+                    domain={[0, revenueYAxisMax]}
+                    tickFormatter={(value) => Number(value).toLocaleString()}
+                  />
+                  <Tooltip
+                    formatter={(value) => [
+                      `LKR ${Number(value || 0).toLocaleString()}`,
+                      "Revenue",
+                    ]}
+                    labelFormatter={(_, payload) =>
+                      payload?.[0]?.payload?.fullMonthLabel || ""
+                    }
+                  />
+                  <Bar dataKey="total" radius={[10, 10, 0, 0]} name="Revenue (LKR)">
+                    {revenue.map((entry, index) => (
+                      <Cell
+                        key={`cell-${entry.monthLabel || entry.month || index}`}
+                        fill={revenueBarColors[index % revenueBarColors.length]}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
-          {loading ? (
-            <div style={{ color: "#777", fontSize: 12 }}>Loading…</div>
-          ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #eee",
-            borderRadius: 12,
-            padding: 14,
-          }}
-        >
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>
-            Monthly Revenue
-          </div>
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={revenue}
-                margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="monthLabel" />
-                <YAxis
-                  domain={[0, revenueYAxisMax]}
-                  tickFormatter={(value) => Number(value).toLocaleString()}
-                />
-                <Tooltip
-                  formatter={(value) => [
-                    `LKR ${Number(value || 0).toLocaleString()}`,
-                    "Revenue",
-                  ]}
-                  labelFormatter={(_, payload) =>
-                    payload?.[0]?.payload?.fullMonthLabel || ""
-                  }
-                />
-                <Bar dataKey="total" name="Revenue (LKR)">
-                  {revenue.map((entry, index) => (
-                    <Cell
-                      key={`cell-${entry.month}-${index}`}
-                      fill={revenueBarColors[index % revenueBarColors.length]}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          {loading ? (
-            <div style={{ color: "#777", fontSize: 12 }}>Loading…</div>
-          ) : null}
-        </div>
+function StatCard({ icon: Icon, title, value }) {
+  return (
+    <div className="instructorStatCard">
+      <div className="instructorStatIcon">
+        <Icon size={20} strokeWidth={2} />
+      </div>
+
+      <div>
+        <div className="instructorStatLabel">{title}</div>
+        <div className="instructorStatValue">{value}</div>
       </div>
     </div>
   );

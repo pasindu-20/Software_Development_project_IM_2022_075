@@ -34,6 +34,17 @@ const receptionIconMap = {
   "Customer Inquiry": MessageCircle,
 };
 
+const adminIconMap = {
+  Dashboard: LayoutDashboard,
+  "User Management": Users,
+  "Manage Payments": Landmark,
+  "Manage Reservation": Rows3,
+  "Manage Events/Classes": BookOpen,
+  "Manage Play Area": PlusCircle,
+  "Manage Party Packages": GraduationCap,
+  "Customer Inquiry": MessageCircle,
+};
+
 export default function Sidebar({ title, items }) {
   const { logout, role } = useAuth();
   const location = useLocation();
@@ -41,7 +52,9 @@ export default function Sidebar({ title, items }) {
 
   const isInstructorPortal = location.pathname.startsWith("/instructor");
   const isReceptionPortal = location.pathname.startsWith("/reception");
+  const isAdminPortal = location.pathname.startsWith("/admin");
   const isStaffPortal = isInstructorPortal || isReceptionPortal;
+
   const isAdminInsideStaffView =
     role === "ADMIN" &&
     (location.pathname.startsWith("/reception") ||
@@ -109,6 +122,65 @@ export default function Sidebar({ title, items }) {
           <button
             onClick={logout}
             className="sidebarInstructorLogoutButton"
+            type="button"
+          >
+            <LogOut size={16} strokeWidth={2} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
+  if (isAdminPortal) {
+    return (
+      <aside className="sidebarAdminShell">
+        <div className="sidebarAdminTop">
+          <div className="sidebarAdminBrand">
+            <div className="sidebarAdminBrandMark">
+              <img
+                src="https://res.cloudinary.com/du6mnjqdn/image/upload/v1775075925/images_qw2txg.png"
+                alt="Company Logo"
+                className="sidebarAdminBrandImage"
+              />
+            </div>
+
+            <div>
+              <div className="sidebarAdminBrandName">Poddo Play House</div>
+              <div className="sidebarAdminBrandSub">
+                {title || "Admin Dashboard"}
+              </div>
+            </div>
+          </div>
+
+          <div className="sidebarAdminSectionLabel"></div>
+
+          <nav className="sidebarAdminNav">
+            {items.map((x) => {
+              const Icon = adminIconMap[x.label] || LayoutDashboard;
+
+              return (
+                <NavLink
+                  key={x.to}
+                  to={x.to}
+                  className={({ isActive }) =>
+                    `sidebarAdminLink${
+                      isActive ? " sidebarAdminLinkActive" : ""
+                    }`
+                  }
+                >
+                  <Icon size={18} strokeWidth={2} />
+                  <span>{x.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="sidebarAdminBottom">
+          <button
+            onClick={logout}
+            className="sidebarAdminLogoutButton"
             type="button"
           >
             <LogOut size={16} strokeWidth={2} />

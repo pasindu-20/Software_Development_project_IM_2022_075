@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import SimpleTable from "../../components/SimpleTable";
 import api from "../../api/axios";
 
+function getStatusClassName(value) {
+  const v = String(value || "").toLowerCase();
+  if (v === "converted" || v === "contacted" || v === "closed") return "active";
+  if (v === "new" || v === "follow_up" || v === "follow-up") return "pending";
+  return "";
+}
+
 export default function AdminInquiries() {
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
@@ -17,11 +24,15 @@ export default function AdminInquiries() {
         : [];
       setRows(data);
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to load inquiries (Unauthorized?)");
+      setErr(
+        e?.response?.data?.message || "Failed to load inquiries (Unauthorized?)"
+      );
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const cols = [
     { key: "id", header: "ID" },
@@ -30,31 +41,49 @@ export default function AdminInquiries() {
     { key: "phone", header: "Phone" },
     { key: "inquiry_type", header: "Type" },
     { key: "message", header: "Message" },
-    { key: "status", header: "Status" },
-    { key: "created_at", header: "Created", render: (r) => (r.created_at ? new Date(r.created_at).toLocaleString() : "-") },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => (
+        <span className={`adminStatusPill ${getStatusClassName(r.status)}`}>
+          {r.status || "-"}
+        </span>
+      ),
+    },
+    {
+      key: "created_at",
+      header: "Created",
+      render: (r) =>
+        r.created_at ? new Date(r.created_at).toLocaleString() : "-",
+    },
   ];
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
-      <div>
-        <div className="badgeSoft">📩 Admin</div>
-        <h1 style={{ margin: "8px 0 0" }}>Customer Inquiry</h1>
-        <div style={{ opacity: 0.75, fontWeight: 600 }}>View all customer inquiries from the website.</div>
+    <div className="instructorPage adminPageStack">
+      <div className="instructorPageHeader adminPageHeader">
+        <div className="adminPageTitleBlock">
+          <h2 className="instructorPageTitle">Customer Inquiry</h2>
+          <p className="adminPageTitleSub">
+            View all inquiry messages sent through the website.
+          </p>
+        </div>
       </div>
 
-      {err ? (
-        <div className="kidCard" style={{ padding: 12, border: "1px solid #ffd6d6", background: "#fff0f0", color: "#b00020", fontWeight: 800 }}>
-          {err}
-        </div>
-      ) : null}
+      {err ? <div className="adminNotice adminNoticeError">{err}</div> : null}
 
-      <div className="kidCard" style={{ padding: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <div style={{ fontWeight: 900 }}>Inquiries</div>
-          <button className="kidBtnGhost" onClick={load}>Refresh</button>
+      <div className="instructorContentCard adminTableCard">
+        <div className="adminTableToolbar">
+          <div className="adminTableTitleGroup">
+            <h3 className="adminTableTitle">Inquiries</h3>
+            <p className="adminTableText"></p>
+          </div>
+
+          <button className="adminGhostButton" onClick={load} type="button">
+            Refresh
+          </button>
         </div>
 
-        <div style={{ marginTop: 12 }}>
+        <div className="adminTableWrap">
           <SimpleTable columns={cols} rows={rows} />
         </div>
       </div>

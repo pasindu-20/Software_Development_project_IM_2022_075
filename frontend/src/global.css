@@ -6442,3 +6442,661 @@ body {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
+
+/* =========================
+   ADMIN UI CLEANUP
+   ========================= */
+
+.portalLayoutAdmin {
+  grid-template-columns: 280px minmax(0, 1fr);
+  background: #f5f5f7;
+}
+
+.portalMainAdmin {
+  padding: 28px;
+  min-width: 0;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.92), rgba(245, 245, 247, 0) 24%),
+    linear-gradient(180deg, #fafafa 0%, #f5f5f7 100%);
+}
+
+.sidebarAdminShell {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: #ffffff;
+  border-right: 1px solid #e7e7e7;
+  padding: 24px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebarAdminTop {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebarAdminBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 4px 0;
+}
+
+.sidebarAdminBrandMark {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid #d8d8d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 3px;
+}
+
+.sidebarAdminBrandImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.sidebarAdminBrandName {
+  font-size: 15px;
+  font-weight: 800;
+  color: #151515;
+  line-height: 1.2;
+}
+
+.sidebarAdminBrandSub {
+  font-size: 12px;
+  color: #666666;
+  margin-top: 3px;
+}
+
+.sidebarAdminSectionLabel {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7a7a7a;
+}
+
+.sidebarAdminNav {
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sidebarAdminLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #242424;
+  border-radius: 14px;
+  padding: 13px 14px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.sidebarAdminLink:hover {
+  background: #f3d4f6; /* keep existing hover tone */
+  color: #111111;
+  border-color: #ead4ec;
+}
+
+.sidebarAdminLinkActive {
+  background: #f3d4f6;
+  color: #111111;
+  border-color: #ead4ec;
+}
+
+.sidebarAdminBottom {
+  margin-top: auto;
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #ececec;
+  background: #ffffff;
+}
+
+.sidebarAdminLogoutButton {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid #d22b2b;
+  background: #ffffff;
+  color: #d22b2b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebarAdminLogoutButton:hover {
+  background: #d22b2b;
+  color: #ffffff;
+  border-color: #cfcfcf;
+}
+
+.adminDashboardPage {
+  min-width: 0;
+}
+
+.adminDashboardTopRow {
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.adminDashboardSubtitle {
+  margin: 6px 0 0;
+}
+
+.adminDashboardTopActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adminSwitchButton {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: #45129e;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adminSwitchButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(69, 18, 158, 0.14);
+}
+
+.adminSwitchButtonAlt {
+  background: #403369;
+}
+
+.adminDashboardStatsGrid .instructorStatCard {
+  min-height: 94px;
+}
+
+.adminDashboardStatsGrid .instructorStatIcon {
+  background: #f5f1ff;
+  border-color: #ece2ff;
+  color: #45129e;
+}
+
+.adminDashboardCharts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+
+.adminChartCard {
+  padding: 22px;
+  min-width: 0;
+}
+
+.adminChartArea {
+  height: 320px;
+  min-width: 0;
+}
+
+.adminChartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* improve old admin page blocks too */
+.badgeSoft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #f5f1ff;
+  color: #45129e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.kidCard {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 18px 50px rgba(17, 17, 17, 0.06);
+}
+
+.kidBtnGhost {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid #d8d8d8;
+  background: #ffffff;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kidBtnGhost:hover {
+  background: #f7f7f7;
+}
+
+@media (max-width: 1100px) {
+  .adminDashboardCharts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .portalLayoutAdmin {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebarAdminShell {
+    position: relative;
+    top: auto;
+    height: auto;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid #e7e7e7;
+    overflow: visible;
+  }
+
+  .sidebarAdminTop {
+    flex: unset;
+    min-height: auto;
+  }
+
+  .sidebarAdminNav {
+    overflow: visible;
+  }
+
+  .portalMainAdmin {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .adminDashboardTopActions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adminSwitchButton {
+    width: 100%;
+  }
+
+  .adminChartCard {
+    padding: 18px;
+    border-radius: 20px;
+  }
+}
+/* =========================
+   ADMIN PAGES CLEANUP
+   ========================= */
+
+.adminPageStack {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.adminPageHeader {
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.adminPageTitleBlock {
+  display: grid;
+  gap: 6px;
+}
+
+.adminPageTitleSub {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.adminNotice {
+  border-radius: 18px;
+  border: 1px solid transparent;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.adminNoticeError {
+  background: #fff4f4;
+  border-color: #ffd4d4;
+  color: #b42318;
+}
+
+.adminNoticeSuccess {
+  background: #f2fff6;
+  border-color: #ccefd8;
+  color: #067647;
+}
+
+.adminFormCard,
+.adminTableCard {
+  padding: 22px;
+}
+
+.adminFormLimit {
+  max-width: 640px;
+}
+
+.adminFormWide {
+  max-width: 820px;
+}
+
+.adminCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.adminCardTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.adminCardText {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #667085;
+}
+
+.adminFormGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.adminFormGrid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.adminField {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.adminFieldCompact {
+  max-width: 280px;
+}
+
+.adminFieldLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475467;
+}
+
+.adminInput,
+.adminSelect,
+.adminTextarea {
+  width: 100%;
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  color: #101828;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.adminInput,
+.adminSelect {
+  min-height: 46px;
+}
+
+.adminTextarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.adminInput:focus,
+.adminSelect:focus,
+.adminTextarea:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.14);
+}
+
+.adminInput::placeholder,
+.adminTextarea::placeholder {
+  color: #98a2b3;
+}
+
+.adminButtonRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.adminPrimaryButton,
+.adminGhostButton,
+.adminActionButton {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.adminPrimaryButton {
+  background: #45129e;
+  color: #ffffff;
+}
+
+.adminPrimaryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(69, 18, 158, 0.16);
+}
+
+.adminPrimaryButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.adminGhostButton {
+  background: #ffffff;
+  color: #111827;
+  border-color: #d0d5dd;
+}
+
+.adminGhostButton:hover {
+  background: #f8fafc;
+}
+
+.adminTableToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.adminTableTitleGroup {
+  display: grid;
+  gap: 4px;
+}
+
+.adminTableTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.adminTableText {
+  margin: 0;
+  font-size: 14px;
+  color: #667085;
+}
+
+.adminTableWrap {
+  margin-top: 14px;
+  min-width: 0;
+}
+
+.adminActionGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.adminActionButton {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+}
+
+.adminActionButtonNeutral {
+  background: #ffffff;
+  color: #111827;
+  border-color: #d0d5dd;
+}
+
+.adminActionButtonNeutral:hover {
+  background: #f8fafc;
+}
+
+.adminActionButtonSuccess {
+  background: #067647;
+  color: #ffffff;
+}
+
+.adminActionButtonSuccess:hover {
+  filter: brightness(1.03);
+}
+
+.adminActionButtonDanger {
+  background: #b42318;
+  color: #ffffff;
+}
+
+.adminActionButtonDanger:hover {
+  filter: brightness(1.03);
+}
+
+.adminStatusPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #f5f1ff;
+  color: #5b21b6;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.adminStatusPill.active {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.adminStatusPill.inactive {
+  background: #fff1f1;
+  color: #b42318;
+}
+
+.adminStatusPill.pending {
+  background: #fff8eb;
+  color: #b54708;
+}
+
+.adminTextLink {
+  color: #45129e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.adminTextLink:hover {
+  text-decoration: underline;
+}
+
+.adminCheckboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #344054;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.adminCheckboxRow input {
+  width: 16px;
+  height: 16px;
+}
+
+.adminFormFooterText {
+  font-size: 12px;
+  color: #667085;
+}
+
+@media (max-width: 768px) {
+  .adminFormGrid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .adminFormCard,
+  .adminTableCard {
+    padding: 18px;
+  }
+
+  .adminFieldCompact {
+    max-width: none;
+  }
+}

@@ -6,6 +6,13 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString();
 }
 
+function getStatusClassName(value) {
+  const v = String(value || "").toLowerCase();
+  if (v === "active") return "active";
+  if (v === "inactive") return "inactive";
+  return "";
+}
+
 export default function AdminPartyPackages() {
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
@@ -179,38 +186,44 @@ export default function AdminPartyPackages() {
       render: (r) => (r.is_featured ? "Yes" : "No"),
     },
     { key: "sort_order", header: "Sort Order" },
-    { key: "status", header: "Status" },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => (
+        <span className={`adminStatusPill ${getStatusClassName(r.status)}`}>
+          {r.status || "-"}
+        </span>
+      ),
+    },
     {
       key: "actions",
       header: "Actions",
       render: (r) => (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="adminActionGroup">
           <button
             type="button"
-            className="kidBtn"
+            className="adminActionButton adminActionButtonNeutral"
             onClick={() => startEdit(r)}
-            style={{ padding: "8px 12px" }}
           >
             Update
           </button>
 
           <button
             type="button"
-            className="kidBtn"
+            className={`adminActionButton ${
+              r.status === "ACTIVE"
+                ? "adminActionButtonDanger"
+                : "adminActionButtonSuccess"
+            }`}
             onClick={() => toggleStatus(r)}
-            style={{
-              padding: "8px 12px",
-              background: r.status === "ACTIVE" ? "#b00020" : "#0a6b2b",
-            }}
           >
             {r.status === "ACTIVE" ? "Inactivate" : "Activate"}
           </button>
 
           <button
             type="button"
-            className="kidBtn"
+            className="adminActionButton adminActionButtonDanger"
             onClick={() => deleteRow(r)}
-            style={{ padding: "8px 12px", background: "#7f1d1d" }}
           >
             Delete
           </button>
@@ -220,135 +233,202 @@ export default function AdminPartyPackages() {
   ];
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div>
-        <div className="badgeSoft">🎉 Admin</div>
-        <h1 style={{ margin: "8px 0 0" }}>Manage Party Packages</h1>
+    <div className="instructorPage adminPageStack">
+      <div className="instructorPageHeader adminPageHeader">
+        <div className="adminPageTitleBlock">
+          <h2 className="instructorPageTitle">Manage Party Packages</h2>
+          <p className="adminPageTitleSub">
+            Create, update, activate, and manage party packages.
+          </p>
+        </div>
       </div>
 
-      {err ? (
-        <div className="kidCard" style={{ padding: 12, color: "#b00020" }}>
-          {err}
-        </div>
-      ) : null}
-
-      {info ? (
-        <div className="kidCard" style={{ padding: 12, color: "#0a6b2b" }}>
-          {info}
-        </div>
-      ) : null}
+      {err ? <div className="adminNotice adminNoticeError">{err}</div> : null}
+      {info ? <div className="adminNotice adminNoticeSuccess">{info}</div> : null}
 
       <form
         onSubmit={submitForm}
-        className="kidCard"
-        style={{ padding: 16, display: "grid", gap: 10, maxWidth: 760 }}
+        className="instructorContentCard adminFormCard adminFormWide"
       >
-        <div style={{ fontWeight: 900 }}>
-          {editingId ? "✏️ Update Party Package" : "➕ Add New Party Package"}
+        <div className="adminCardHeader">
+          <div>
+            <h3 className="adminCardTitle">
+              {editingId ? "Update Party Package" : "Add New Party Package"}
+            </h3>
+            <p className="adminCardText">
+              
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input
-            placeholder="Package Code (ex: Package 01)"
-            value={packageCode}
-            onChange={(e) => setPackageCode(e.target.value)}
-          />
-          <input
-            placeholder="Package Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
+        <div className="adminFormGrid">
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Package code</span>
+              <input
+                className="adminInput"
+                placeholder="Package Code (ex: Package 01)"
+                value={packageCode}
+                onChange={(e) => setPackageCode(e.target.value)}
+              />
+            </label>
 
-        <textarea
-          placeholder="Short Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          style={{ resize: "vertical" }}
-        />
+            <label className="adminField">
+              <span className="adminFieldLabel">Package name</span>
+              <input
+                className="adminInput"
+                placeholder="Package Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+          </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input
-            type="number"
-            min="0"
-            placeholder="Price (LKR)"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
-          <input
-            type="number"
-            min="1"
-            placeholder="Maximum Children"
-            value={maxChildren}
-            onChange={(e) => setMaxChildren(e.target.value)}
-          />
-        </div>
+          <label className="adminField">
+            <span className="adminFieldLabel">Short description</span>
+            <textarea
+              className="adminTextarea"
+              placeholder="Short Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
+          </label>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input
-            placeholder="Duration Text"
-            value={durationText}
-            onChange={(e) => setDurationText(e.target.value)}
-          />
-          <input
-            placeholder="Badge Text (ex: Premium)"
-            value={badgeText}
-            onChange={(e) => setBadgeText(e.target.value)}
-          />
-        </div>
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Price (LKR)</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="0"
+                placeholder="Price (LKR)"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </label>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input
-            type="number"
-            min="0"
-            placeholder="Sort Order"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-          />
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
+            <label className="adminField">
+              <span className="adminFieldLabel">Maximum children</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="1"
+                placeholder="Maximum Children"
+                value={maxChildren}
+                onChange={(e) => setMaxChildren(e.target.value)}
+              />
+            </label>
+          </div>
 
-        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="checkbox"
-            checked={isFeatured}
-            onChange={(e) => setIsFeatured(e.target.checked)}
-          />
-          Mark as featured package
-        </label>
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Duration text</span>
+              <input
+                className="adminInput"
+                placeholder="Duration Text"
+                value={durationText}
+                onChange={(e) => setDurationText(e.target.value)}
+              />
+            </label>
 
-        <textarea
-          placeholder="Features (one feature per line)"
-          value={featuresText}
-          onChange={(e) => setFeaturesText(e.target.value)}
-          rows={8}
-          style={{ resize: "vertical" }}
-        />
+            <label className="adminField">
+              <span className="adminFieldLabel">Badge text</span>
+              <input
+                className="adminInput"
+                placeholder="Badge Text (ex: Premium)"
+                value={badgeText}
+                onChange={(e) => setBadgeText(e.target.value)}
+              />
+            </label>
+          </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="kidBtn" type="submit" disabled={busy}>
-            {busy
-              ? editingId
-                ? "Updating..."
-                : "Saving..."
-              : editingId
-              ? "Update Package"
-              : "Create Package"}
-          </button>
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Sort order</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="0"
+                placeholder="Sort Order"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              />
+            </label>
 
-          {editingId ? (
-            <button type="button" className="kidBtn ghost" onClick={resetForm}>
-              Cancel Edit
+            <label className="adminField">
+              <span className="adminFieldLabel">Status</span>
+              <select
+                className="adminSelect"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="adminCheckboxRow">
+            <input
+              type="checkbox"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+            />
+            <span>Mark as featured package</span>
+          </label>
+
+          <label className="adminField">
+            <span className="adminFieldLabel">Features</span>
+            <textarea
+              className="adminTextarea"
+              placeholder="Features (one feature per line)"
+              value={featuresText}
+              onChange={(e) => setFeaturesText(e.target.value)}
+              rows={8}
+            />
+          </label>
+
+          <div className="adminButtonRow">
+            <button className="adminPrimaryButton" type="submit" disabled={busy}>
+              {busy
+                ? editingId
+                  ? "Updating..."
+                  : "Saving..."
+                : editingId
+                ? "Update Package"
+                : "Create Package"}
             </button>
-          ) : null}
+
+            {editingId ? (
+              <button
+                type="button"
+                className="adminGhostButton"
+                onClick={resetForm}
+              >
+                Cancel Edit
+              </button>
+            ) : null}
+          </div>
         </div>
       </form>
 
-      <SimpleTable columns={cols} rows={rows} />
+      <div className="instructorContentCard adminTableCard">
+        <div className="adminTableToolbar">
+          <div className="adminTableTitleGroup">
+            <h3 className="adminTableTitle">Party Packages</h3>
+            <p className="adminTableText">Existing package records and status.</p>
+          </div>
+
+          <button className="adminGhostButton" onClick={load} type="button">
+            Refresh
+          </button>
+        </div>
+
+        <div className="adminTableWrap">
+          <SimpleTable columns={cols} rows={rows} />
+        </div>
+      </div>
     </div>
   );
 }
