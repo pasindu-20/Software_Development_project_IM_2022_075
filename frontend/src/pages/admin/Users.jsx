@@ -2,13 +2,21 @@ import { useEffect, useState } from "react";
 import SimpleTable from "../../components/SimpleTable";
 import { createStaffUserApi, listStaffUsersApi } from "../../api/adminUsersApi";
 
+function getStatusClassName(value) {
+  const v = String(value || "").toLowerCase();
+  if (v === "active") return "active";
+  if (v === "inactive") return "inactive";
+  if (v === "pending") return "pending";
+  return "";
+}
+
 export default function AdminUsers() {
   const [rows, setRows] = useState([]);
 
   const [full_name, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("RECEPTIONIST"); // default
+  const [role, setRole] = useState("RECEPTIONIST");
 
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
@@ -43,16 +51,15 @@ export default function AdminUsers() {
         full_name,
         email,
         phone: phone || null,
-        role, // "RECEPTIONIST" | "INSTRUCTOR"
+        role,
       });
 
-      // backend returns tempPassword
       const tempPassword = res?.data?.tempPassword;
 
       setInfo(
         tempPassword
-          ? `Staff user created ✅ Temporary password: ${tempPassword}`
-          : "Staff user created successfully ✅"
+          ? `Staff user created successfully. Temporary password: ${tempPassword}`
+          : "Staff user created successfully."
       );
 
       setFullName("");
@@ -73,8 +80,16 @@ export default function AdminUsers() {
     { key: "full_name", header: "Name" },
     { key: "email", header: "Email" },
     { key: "phone", header: "Phone" },
-    { key: "role", header: "Role" }, // backend should return role as string
-    { key: "status", header: "Status" },
+    { key: "role", header: "Role" },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => (
+        <span className={`adminStatusPill ${getStatusClassName(r.status)}`}>
+          {r.status || "-"}
+        </span>
+      ),
+    },
     {
       key: "force_password_change",
       header: "Must Change Password",
@@ -83,103 +98,112 @@ export default function AdminUsers() {
     {
       key: "created_at",
       header: "Created",
-      render: (r) => (r.created_at ? new Date(r.created_at).toLocaleString() : "-"),
+      render: (r) =>
+        r.created_at ? new Date(r.created_at).toLocaleString() : "-",
     },
   ];
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
-      <div>
-        <h2 style={{ margin: 0 }}>User Management</h2>
-        <div style={{ color: "#666", marginTop: 6 }}>
-          Create Receptionist and Instructor accounts (Admin only).
+    <div className="instructorPage adminPageStack">
+      <div className="instructorPageHeader adminPageHeader">
+        <div className="adminPageTitleBlock">
+          <h2 className="instructorPageTitle">User Management</h2>
+          <p className="adminPageTitleSub">
+            Create and view receptionist and instructor staff accounts.
+          </p>
         </div>
       </div>
 
-      {err ? (
-        <div
-          style={{
-            background: "#fff0f0",
-            border: "1px solid #ffd6d6",
-            padding: 12,
-            borderRadius: 12,
-            color: "#b00020",
-          }}
-        >
-          {err}
-        </div>
-      ) : null}
-
-      {info ? (
-        <div
-          style={{
-            background: "#f0fff4",
-            border: "1px solid #b7ebc6",
-            padding: 12,
-            borderRadius: 12,
-            color: "#0a6b2b",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {info}
-        </div>
-      ) : null}
+      {err ? <div className="adminNotice adminNoticeError">{err}</div> : null}
+      {info ? <div className="adminNotice adminNoticeSuccess">{info}</div> : null}
 
       <form
         onSubmit={createUser}
-        style={{
-          background: "white",
-          border: "1px solid #eee",
-          borderRadius: 12,
-          padding: 14,
-          display: "grid",
-          gap: 10,
-          maxWidth: 560,
-        }}
+        className="instructorContentCard adminFormCard adminFormLimit"
       >
-        <div style={{ fontWeight: 700 }}>Create Staff Account</div>
+        <div className="adminCardHeader">
+          <div>
+            <h3 className="adminCardTitle">Create Staff Account</h3>
+            <p className="adminCardText">
+            
+            </p>
+          </div>
+        </div>
 
-        <input
-          placeholder="Full name"
-          value={full_name}
-          onChange={(e) => setFullName(e.target.value)}
-        />
+        <div className="adminFormGrid">
+          <label className="adminField">
+            <span className="adminFieldLabel">Full name</span>
+            <input
+              className="adminInput"
+              placeholder="Enter full name"
+              value={full_name}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </label>
 
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          type="email"
-        />
+          <label className="adminField">
+            <span className="adminFieldLabel">Email</span>
+            <input
+              className="adminInput"
+              placeholder="Enter email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+            />
+          </label>
 
-        <input
-          placeholder="Phone (optional)"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Phone</span>
+              <input
+                className="adminInput"
+                placeholder="Optional phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </label>
 
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="RECEPTIONIST">Receptionist</option>
-          <option value="INSTRUCTOR">Instructor</option>
-        </select>
+            <label className="adminField">
+              <span className="adminFieldLabel">Role</span>
+              <select
+                className="adminSelect"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="RECEPTIONIST">Receptionist</option>
+                <option value="INSTRUCTOR">Instructor</option>
+              </select>
+            </label>
+          </div>
 
-        <button disabled={busy} type="submit">
-          {busy ? "Creating..." : "Create Staff User"}
-        </button>
+          <div className="adminButtonRow">
+            <button className="adminPrimaryButton" disabled={busy} type="submit">
+              {busy ? "Creating..." : "Create Staff User"}
+            </button>
+          </div>
 
-        <div style={{ fontSize: 12, color: "#777" }}>
-          The system generates a temporary password. Staff must change it on first login.
+          <div className="adminFormFooterText">
+            Staff users will be asked to change their password on first login.
+          </div>
         </div>
       </form>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ fontWeight: 700 }}>Staff Users</div>
-        <button onClick={load} style={{ padding: "6px 10px" }}>
-          Refresh
-        </button>
-      </div>
+      <div className="instructorContentCard adminTableCard">
+        <div className="adminTableToolbar">
+          <div className="adminTableTitleGroup">
+            <h3 className="adminTableTitle">Staff Users</h3>
+            <p className="adminTableText">All receptionist and instructor accounts.</p>
+          </div>
 
-      <SimpleTable columns={columns} rows={rows} />
+          <button onClick={load} className="adminGhostButton" type="button">
+            Refresh
+          </button>
+        </div>
+
+        <div className="adminTableWrap">
+          <SimpleTable columns={columns} rows={rows} />
+        </div>
+      </div>
     </div>
   );
 }

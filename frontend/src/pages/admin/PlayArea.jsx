@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import SimpleTable from "../../components/SimpleTable";
 import api from "../../api/axios";
 
+function getStatusClassName(value) {
+  const v = String(value || "").toLowerCase();
+  if (v === "active") return "active";
+  if (v === "inactive") return "inactive";
+  return "";
+}
+
 export default function AdminPlayArea() {
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
@@ -81,9 +88,7 @@ export default function AdminPlayArea() {
     } catch (e2) {
       setErr(
         e2?.response?.data?.message ||
-          (editingId
-            ? "Failed to update play area"
-            : "Failed to create play area")
+          (editingId ? "Failed to update play area" : "Failed to create play area")
       );
     } finally {
       setBusy(false);
@@ -118,9 +123,7 @@ export default function AdminPlayArea() {
       setInfo(`Play area marked as ${nextStatus}`);
       await load();
     } catch (e) {
-      setErr(
-        e?.response?.data?.message || "Failed to update play area status"
-      );
+      setErr(e?.response?.data?.message || "Failed to update play area status");
     }
   };
 
@@ -156,7 +159,7 @@ export default function AdminPlayArea() {
       header: "Image URL",
       render: (r) =>
         r.image_url ? (
-          <a href={r.image_url} target="_blank" rel="noreferrer">
+          <a className="adminTextLink" href={r.image_url} target="_blank" rel="noreferrer">
             View Image
           </a>
         ) : (
@@ -170,41 +173,44 @@ export default function AdminPlayArea() {
       header: "Price",
       render: (r) => `LKR ${Number(r.price || 0).toFixed(2)}`,
     },
-    { key: "status", header: "Status" },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => (
+        <span className={`adminStatusPill ${getStatusClassName(r.status)}`}>
+          {r.status || "-"}
+        </span>
+      ),
+    },
     {
       key: "actions",
       header: "Actions",
       render: (r) => (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="adminActionGroup">
           <button
             type="button"
-            className="kidBtn"
+            className="adminActionButton adminActionButtonNeutral"
             onClick={() => startEdit(r)}
-            style={{ padding: "8px 12px" }}
           >
             Update
           </button>
 
           <button
             type="button"
-            className="kidBtn"
+            className={`adminActionButton ${
+              r.status === "ACTIVE"
+                ? "adminActionButtonDanger"
+                : "adminActionButtonSuccess"
+            }`}
             onClick={() => toggleStatus(r)}
-            style={{
-              padding: "8px 12px",
-              background: r.status === "ACTIVE" ? "#b00020" : "#0a6b2b",
-            }}
           >
             {r.status === "ACTIVE" ? "Inactivate" : "Activate"}
           </button>
 
           <button
             type="button"
-            className="kidBtn"
+            className="adminActionButton adminActionButtonDanger"
             onClick={() => deleteRow(r)}
-            style={{
-              padding: "8px 12px",
-              background: "#7f1d1d",
-            }}
           >
             Delete
           </button>
@@ -214,106 +220,147 @@ export default function AdminPlayArea() {
   ];
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div>
-        <div className="badgeSoft">🛝 Admin</div>
-        <h1 style={{ margin: "8px 0 0" }}>Manage Play Area</h1>
+    <div className="instructorPage adminPageStack">
+      <div className="instructorPageHeader adminPageHeader">
+        <div className="adminPageTitleBlock">
+          <h2 className="instructorPageTitle">Manage Play Area</h2>
+          <p className="adminPageTitleSub">
+            Create, edit, activate, and manage play area records.
+          </p>
+        </div>
       </div>
 
-      {err ? (
-        <div className="kidCard" style={{ padding: 12, color: "#b00020" }}>
-          {err}
-        </div>
-      ) : null}
-
-      {info ? (
-        <div className="kidCard" style={{ padding: 12, color: "#0a6b2b" }}>
-          {info}
-        </div>
-      ) : null}
+      {err ? <div className="adminNotice adminNoticeError">{err}</div> : null}
+      {info ? <div className="adminNotice adminNoticeSuccess">{info}</div> : null}
 
       <form
         onSubmit={submitForm}
-        className="kidCard"
-        style={{ padding: 16, display: "grid", gap: 10, maxWidth: 720 }}
+        className="instructorContentCard adminFormCard adminFormWide"
       >
-        <div style={{ fontWeight: 900 }}>
-          {editingId ? "✏️ Update Play Area" : "➕ Add New Play Area"}
+        <div className="adminCardHeader">
+          <div>
+            <h3 className="adminCardTitle">
+              {editingId ? "Update Play Area" : "Add New Play Area"}
+            </h3>
+            <p className="adminCardText">
+             
+            </p>
+          </div>
         </div>
 
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <div className="adminFormGrid">
+          <label className="adminField">
+            <span className="adminFieldLabel">Name</span>
+            <input
+              className="adminInput"
+              placeholder="Enter play area name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
 
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-        />
+          <label className="adminField">
+            <span className="adminFieldLabel">Description</span>
+            <textarea
+              className="adminTextarea"
+              placeholder="Enter description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+            />
+          </label>
 
-        <input
-          placeholder="Age Group (example: 4-7 years)"
-          value={ageGroup}
-          onChange={(e) => setAgeGroup(e.target.value)}
-        />
+          <label className="adminField">
+            <span className="adminFieldLabel">Age group</span>
+            <input
+              className="adminInput"
+              placeholder="Example: 4-7 years"
+              value={ageGroup}
+              onChange={(e) => setAgeGroup(e.target.value)}
+            />
+          </label>
 
-        <input
-          placeholder="Image URL"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-        />
+          <label className="adminField">
+            <span className="adminFieldLabel">Image URL</span>
+            <input
+              className="adminInput"
+              placeholder="Enter image URL"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+            />
+          </label>
 
-        <input
-          type="number"
-          min="1"
-          placeholder="Capacity"
-          value={capacity}
-          onChange={(e) => setCapacity(e.target.value)}
-        />
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Capacity</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="1"
+                placeholder="Capacity"
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+              />
+            </label>
 
-        <input
-          type="number"
-          min="1"
-          placeholder="Price (LKR)"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
+            <label className="adminField">
+              <span className="adminFieldLabel">Price (LKR)</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="1"
+                placeholder="Price"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </label>
+          </div>
 
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="INACTIVE">INACTIVE</option>
-        </select>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="kidBtn" disabled={busy} type="submit">
-            {busy
-              ? editingId
-                ? "Updating..."
-                : "Creating..."
-              : editingId
-              ? "Update"
-              : "Create"}
-          </button>
-
-          {editingId ? (
-            <button
-              type="button"
-              className="kidBtn"
-              onClick={resetForm}
-              style={{ background: "#6b7280" }}
+          <label className="adminField adminFieldCompact">
+            <span className="adminFieldLabel">Status</span>
+            <select
+              className="adminSelect"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
             >
-              Cancel
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </label>
+
+          <div className="adminButtonRow">
+            <button className="adminPrimaryButton" disabled={busy} type="submit">
+              {busy ? (editingId ? "Updating..." : "Creating...") : editingId ? "Update" : "Create"}
             </button>
-          ) : null}
+
+            {editingId ? (
+              <button
+                type="button"
+                className="adminGhostButton"
+                onClick={resetForm}
+              >
+                Cancel
+              </button>
+            ) : null}
+          </div>
         </div>
       </form>
 
-      <div className="kidCard" style={{ padding: 16 }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>📋 Play Areas</div>
-        <SimpleTable columns={cols} rows={rows} />
+      <div className="instructorContentCard adminTableCard">
+        <div className="adminTableToolbar">
+          <div className="adminTableTitleGroup">
+            <h3 className="adminTableTitle">Play Areas</h3>
+            <p className="adminTableText">Existing play area records.</p>
+          </div>
+
+          <button className="adminGhostButton" onClick={load} type="button">
+            Refresh
+          </button>
+        </div>
+
+        <div className="adminTableWrap">
+          <SimpleTable columns={cols} rows={rows} />
+        </div>
       </div>
     </div>
   );

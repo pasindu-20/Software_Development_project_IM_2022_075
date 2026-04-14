@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import SimpleTable from "../../components/SimpleTable";
 import api from "../../api/axios";
 
+function getStatusClassName(value) {
+  const v = String(value || "").toLowerCase();
+  if (v === "active") return "active";
+  if (v === "inactive") return "inactive";
+  return "";
+}
+
 export default function AdminEventsClasses() {
   const [rows, setRows] = useState([]);
   const [instructors, setInstructors] = useState([]);
@@ -33,12 +40,14 @@ export default function AdminEventsClasses() {
     setAgeMin("");
     setAgeMax("");
     setFee("");
-    setInstructorId("");
+    setInInstructorId("");
     setEventDate("");
     setStartTime("");
     setEndTime("");
     setStatus("ACTIVE");
   };
+
+  const setInInstructorId = (value) => setInstructorId(value);
 
   const load = async () => {
     setErr("");
@@ -112,7 +121,9 @@ export default function AdminEventsClasses() {
     } catch (e2) {
       setErr(
         e2?.response?.data?.message ||
-        (editingId ? "Failed to update class / event" : "Failed to create class / event")
+          (editingId
+            ? "Failed to update class / event"
+            : "Failed to create class / event")
       );
     } finally {
       setBusy(false);
@@ -130,7 +141,7 @@ export default function AdminEventsClasses() {
     setAgeMin(row.age_min ?? "");
     setAgeMax(row.age_max ?? "");
     setFee(row.fee ?? "");
-    setInstructorId(row.instructor_id ?? "");
+    setInInstructorId(row.instructor_id ?? "");
     setEventDate(row.event_date ? String(row.event_date).slice(0, 10) : "");
     setStartTime(row.start_time ? String(row.start_time).slice(0, 5) : "");
     setEndTime(row.end_time ? String(row.end_time).slice(0, 5) : "");
@@ -157,7 +168,9 @@ export default function AdminEventsClasses() {
 
   const deleteRow = async (row) => {
     const ok = window.confirm(
-      `Are you sure you want to delete this ${row.item_type?.toLowerCase() || "item"}?\n\n${row.title}`
+      `Are you sure you want to delete this ${
+        row.item_type?.toLowerCase() || "item"
+      }?\n\n${row.title}`
     );
 
     if (!ok) return;
@@ -191,7 +204,7 @@ export default function AdminEventsClasses() {
       header: "Image URL",
       render: (r) =>
         r.image_url ? (
-          <a href={r.image_url} target="_blank" rel="noreferrer">
+          <a className="adminTextLink" href={r.image_url} target="_blank" rel="noreferrer">
             View Image
           </a>
         ) : (
@@ -228,41 +241,44 @@ export default function AdminEventsClasses() {
       header: "End Time",
       render: (r) => (r.end_time ? String(r.end_time).slice(0, 5) : "-"),
     },
-    { key: "status", header: "Status" },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => (
+        <span className={`adminStatusPill ${getStatusClassName(r.status)}`}>
+          {r.status || "-"}
+        </span>
+      ),
+    },
     {
       key: "actions",
       header: "Actions",
       render: (r) => (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="adminActionGroup">
           <button
             type="button"
-            className="kidBtn"
+            className="adminActionButton adminActionButtonNeutral"
             onClick={() => startEdit(r)}
-            style={{ padding: "8px 12px" }}
           >
             Update
           </button>
 
           <button
             type="button"
-            className="kidBtn"
+            className={`adminActionButton ${
+              r.status === "ACTIVE"
+                ? "adminActionButtonDanger"
+                : "adminActionButtonSuccess"
+            }`}
             onClick={() => toggleStatus(r)}
-            style={{
-              padding: "8px 12px",
-              background: r.status === "ACTIVE" ? "#b00020" : "#0a6b2b",
-            }}
           >
             {r.status === "ACTIVE" ? "Inactivate" : "Activate"}
           </button>
 
           <button
             type="button"
-            className="kidBtn"
+            className="adminActionButton adminActionButtonDanger"
             onClick={() => deleteRow(r)}
-            style={{
-              padding: "8px 12px",
-              background: "#7f1d1d",
-            }}
           >
             Delete
           </button>
@@ -272,139 +288,215 @@ export default function AdminEventsClasses() {
   ];
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div>
-        <div className="badgeSoft">🎓 Admin</div>
-        <h1 style={{ margin: "8px 0 0" }}>Manage Events / Classes</h1>
+    <div className="instructorPage adminPageStack">
+      <div className="instructorPageHeader adminPageHeader">
+        <div className="adminPageTitleBlock">
+          <h2 className="instructorPageTitle">Manage Events / Classes</h2>
+          <p className="adminPageTitleSub">
+            Create, update, activate, and manage class and event records.
+          </p>
+        </div>
       </div>
 
-      {err ? (
-        <div className="kidCard" style={{ padding: 12, color: "#b00020" }}>
-          {err}
-        </div>
-      ) : null}
-
-      {info ? (
-        <div className="kidCard" style={{ padding: 12, color: "#0a6b2b" }}>
-          {info}
-        </div>
-      ) : null}
+      {err ? <div className="adminNotice adminNoticeError">{err}</div> : null}
+      {info ? <div className="adminNotice adminNoticeSuccess">{info}</div> : null}
 
       <form
         onSubmit={submitForm}
-        className="kidCard"
-        style={{ padding: 16, display: "grid", gap: 10, maxWidth: 720 }}
+        className="instructorContentCard adminFormCard adminFormWide"
       >
-        <div style={{ fontWeight: 900 }}>
-          {editingId ? "✏️ Update Class / Event" : "➕ Add New Class / Event"}
+        <div className="adminCardHeader">
+          <div>
+            <h3 className="adminCardTitle">
+              {editingId ? "Update Class / Event" : "Add New Class / Event"}
+            </h3>
+            <p className="adminCardText">
+              
+            </p>
+          </div>
         </div>
 
-        <select value={itemType} onChange={(e) => setItemType(e.target.value)}>
-          <option value="CLASS">CLASS</option>
-          <option value="EVENT">EVENT</option>
-        </select>
-
-        <input
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-          style={{ resize: "vertical" }}
-        />
-
-        <input
-          type="text"
-          placeholder="Image URL"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-        />
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input
-            type="number"
-            min="0"
-            placeholder="Minimum Age"
-            value={ageMin}
-            onChange={(e) => setAgeMin(e.target.value)}
-          />
-          <input
-            type="number"
-            min="0"
-            placeholder="Maximum Age"
-            value={ageMax}
-            onChange={(e) => setAgeMax(e.target.value)}
-          />
-        </div>
-
-        <input
-          type="number"
-          min="0"
-          placeholder="Fee (LKR)"
-          value={fee}
-          onChange={(e) => setFee(e.target.value)}
-        />
-
-        <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)}>
-          <option value="">Select Instructor</option>
-          {instructors.map((ins) => (
-            <option key={ins.id} value={ins.id}>
-              {ins.full_name}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          value={eventDate}
-          min={new Date().toISOString().split("T")[0]}
-          onChange={(e) => setEventDate(e.target.value)}
-        />
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-          />
-          <input
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-          />
-        </div>
-
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="INACTIVE">INACTIVE</option>
-        </select>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="kidBtn" disabled={busy} type="submit">
-            {busy ? (editingId ? "Updating..." : "Creating...") : editingId ? "Update" : "Create"}
-          </button>
-
-          {editingId ? (
-            <button
-              type="button"
-              className="kidBtn"
-              onClick={resetForm}
-              style={{ background: "#6b7280" }}
+        <div className="adminFormGrid">
+          <label className="adminField">
+            <span className="adminFieldLabel">Item type</span>
+            <select
+              className="adminSelect"
+              value={itemType}
+              onChange={(e) => setItemType(e.target.value)}
             >
-              Cancel
+              <option value="CLASS">CLASS</option>
+              <option value="EVENT">EVENT</option>
+            </select>
+          </label>
+
+          <label className="adminField">
+            <span className="adminFieldLabel">Title</span>
+            <input
+              className="adminInput"
+              placeholder="Enter title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </label>
+
+          <label className="adminField">
+            <span className="adminFieldLabel">Description</span>
+            <textarea
+              className="adminTextarea"
+              placeholder="Enter description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+            />
+          </label>
+
+          <label className="adminField">
+            <span className="adminFieldLabel">Image URL</span>
+            <input
+              className="adminInput"
+              type="text"
+              placeholder="Enter image URL"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+            />
+          </label>
+
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Minimum age</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="0"
+                placeholder="Minimum age"
+                value={ageMin}
+                onChange={(e) => setAgeMin(e.target.value)}
+              />
+            </label>
+
+            <label className="adminField">
+              <span className="adminFieldLabel">Maximum age</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="0"
+                placeholder="Maximum age"
+                value={ageMax}
+                onChange={(e) => setAgeMax(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Fee (LKR)</span>
+              <input
+                className="adminInput"
+                type="number"
+                min="0"
+                placeholder="Fee"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+              />
+            </label>
+
+            <label className="adminField">
+              <span className="adminFieldLabel">Instructor</span>
+              <select
+                className="adminSelect"
+                value={instructorId}
+                onChange={(e) => setInInstructorId(e.target.value)}
+              >
+                <option value="">Select Instructor</option>
+                {instructors.map((ins) => (
+                  <option key={ins.id} value={ins.id}>
+                    {ins.full_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Date</span>
+              <input
+                className="adminInput"
+                type="date"
+                value={eventDate}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setEventDate(e.target.value)}
+              />
+            </label>
+
+            <label className="adminField">
+              <span className="adminFieldLabel">Status</span>
+              <select
+                className="adminSelect"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="adminFormGrid2">
+            <label className="adminField">
+              <span className="adminFieldLabel">Start time</span>
+              <input
+                className="adminInput"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </label>
+
+            <label className="adminField">
+              <span className="adminFieldLabel">End time</span>
+              <input
+                className="adminInput"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="adminButtonRow">
+            <button className="adminPrimaryButton" disabled={busy} type="submit">
+              {busy ? (editingId ? "Updating..." : "Creating...") : editingId ? "Update" : "Create"}
             </button>
-          ) : null}
+
+            {editingId ? (
+              <button
+                type="button"
+                className="adminGhostButton"
+                onClick={resetForm}
+              >
+                Cancel
+              </button>
+            ) : null}
+          </div>
         </div>
       </form>
 
-      <div className="kidCard" style={{ padding: 16 }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>📋 Events / Classes</div>
-        <SimpleTable columns={cols} rows={rows} />
+      <div className="instructorContentCard adminTableCard">
+        <div className="adminTableToolbar">
+          <div className="adminTableTitleGroup">
+            <h3 className="adminTableTitle">Events / Classes</h3>
+            <p className="adminTableText">Existing class and event records.</p>
+          </div>
+
+          <button className="adminGhostButton" onClick={load} type="button">
+            Refresh
+          </button>
+        </div>
+
+        <div className="adminTableWrap">
+          <SimpleTable columns={cols} rows={rows} />
+        </div>
       </div>
     </div>
   );
