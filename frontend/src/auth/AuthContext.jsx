@@ -3,18 +3,53 @@ import { loginApi } from "../api/authApi";
 
 export const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [role, setRole] = useState(localStorage.getItem("role"));
-  const [user, setUser] = useState(() => {
+const AUTH_BOOT_KEY = "localhost_auth_boot_done";
+
+function clearStoredAuth() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("user");
+  localStorage.removeItem("force_password_change");
+}
+
+function getInitialAuthState() {
+  const isLocalhost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+
+  const alreadyBootedInThisTab = sessionStorage.getItem(AUTH_BOOT_KEY) === "1";
+
+  if (isLocalhost && !alreadyBootedInThisTab) {
+    clearStoredAuth();
+    sessionStorage.setItem(AUTH_BOOT_KEY, "1");
+  }
+
+  let parsedUser = null;
+  try {
     const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
-  });
+    parsedUser = raw ? JSON.parse(raw) : null;
+  } catch {
+    parsedUser = null;
+  }
+
+  return {
+    token: localStorage.getItem("token"),
+    role: localStorage.getItem("role"),
+    user: parsedUser,
+    forcePasswordChange: localStorage.getItem("force_password_change") === "1",
+  };
+}
+
+export function AuthProvider({ children }) {
+  const [bootState] = useState(() => getInitialAuthState());
+
+  const [token, setToken] = useState(bootState.token);
+  const [role, setRole] = useState(bootState.role);
+  const [user, setUser] = useState(bootState.user);
   const [forcePasswordChange, setForcePasswordChange] = useState(
-    localStorage.getItem("force_password_change") === "1"
+    bootState.forcePasswordChange
   );
 
-  // keep localStorage in sync
   useEffect(() => {
     if (token) localStorage.setItem("token", token);
     else localStorage.removeItem("token");
@@ -36,8 +71,6 @@ export function AuthProvider({ children }) {
 
   const login = async ({ email, password }) => {
     const res = await loginApi({ email, password });
-
-    // backend should return: token, role, user, force_password_change
     const data = res.data;
 
     setToken(data.token || null);
@@ -45,7 +78,7 @@ export function AuthProvider({ children }) {
     setUser(data.user || null);
     setForcePasswordChange(!!data.force_password_change);
 
-    return data; // IMPORTANT: return data to SignIn page
+    return data;
   };
 
   const logout = () => {
@@ -53,11 +86,7 @@ export function AuthProvider({ children }) {
     setRole(null);
     setUser(null);
     setForcePasswordChange(false);
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user");
-    localStorage.removeItem("force_password_change");
+    clearStoredAuth();
   };
 
   return (
