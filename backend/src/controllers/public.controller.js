@@ -221,10 +221,26 @@ exports.listPublicClasses = async (req, res) => {
     await ensureClassesTableShape();
 
     const [rows] = await db.query(`
-      SELECT id, item_type, title, description, image_url, age_min, age_max, fee, instructor_id, event_date, start_time, end_time, status, created_at
-      FROM classes
-      WHERE status='ACTIVE' AND item_type='CLASS'
-      ORDER BY created_at DESC, id DESC
+      SELECT c.id,
+             c.item_type,
+             c.title,
+             c.description,
+             c.image_url,
+             c.age_min,
+             c.age_max,
+             c.schedule_text,
+             c.fee,
+             c.instructor_id,
+             u.full_name AS instructor_name,
+             c.event_date,
+             c.start_time,
+             c.end_time,
+             c.status,
+             c.created_at
+      FROM classes c
+      LEFT JOIN users u ON u.id = c.instructor_id
+      WHERE c.status = 'ACTIVE' AND c.item_type = 'CLASS'
+      ORDER BY c.created_at DESC, c.id DESC
     `);
 
     res.json(

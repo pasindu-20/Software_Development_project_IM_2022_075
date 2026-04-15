@@ -2,11 +2,38 @@ import { useEffect, useState } from "react";
 import SimpleTable from "../../components/SimpleTable";
 import api from "../../api/axios";
 
+const WEEK_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
 function getStatusClassName(value) {
   const v = String(value || "").toLowerCase();
   if (v === "active") return "active";
   if (v === "inactive") return "inactive";
   return "";
+}
+
+function getDayNameFromDate(dateValue) {
+  if (!dateValue) return "";
+
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function getScheduleLabel(row) {
+  if (row.item_type === "CLASS") {
+    return row.schedule_text || getDayNameFromDate(row.event_date) || "-";
+  }
+
+  return row.event_date ? String(row.event_date).slice(0, 10) : "-";
 }
 
 export default function AdminEventsClasses() {
@@ -26,6 +53,7 @@ export default function AdminEventsClasses() {
   const [ageMax, setAgeMax] = useState("");
   const [fee, setFee] = useState("");
   const [instructorId, setInstructorId] = useState("");
+  const [scheduleDay, setScheduleDay] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -40,14 +68,13 @@ export default function AdminEventsClasses() {
     setAgeMin("");
     setAgeMax("");
     setFee("");
-    setInInstructorId("");
+    setInstructorId("");
+    setScheduleDay("");
     setEventDate("");
     setStartTime("");
     setEndTime("");
     setStatus("ACTIVE");
   };
-
-  const setInInstructorId = (value) => setInstructorId(value);
 
   const load = async () => {
     setErr("");
@@ -76,7 +103,8 @@ export default function AdminEventsClasses() {
     }
     if (fee === "" || Number(fee) < 0) return "Fee must be 0 or more";
     if (!instructorId) return "Instructor is required";
-    if (!eventDate) return "Date is required";
+    if (itemType === "CLASS" && !scheduleDay) return "Day is required for classes";
+    if (itemType === "EVENT" && !eventDate) return "Date is required for events";
     if (!startTime) return "Starting time is required";
     if (!endTime) return "Ending time is required";
     if (startTime >= endTime) return "Ending time must be greater than starting time";
@@ -102,7 +130,8 @@ export default function AdminEventsClasses() {
         age_max: Number(ageMax),
         fee: Number(fee),
         instructor_id: Number(instructorId),
-        event_date: eventDate,
+        schedule_text: itemType === "CLASS" ? scheduleDay : null,
+        event_date: itemType === "EVENT" ? eventDate : null,
         start_time: startTime,
         end_time: endTime,
         status,
@@ -141,7 +170,8 @@ export default function AdminEventsClasses() {
     setAgeMin(row.age_min ?? "");
     setAgeMax(row.age_max ?? "");
     setFee(row.fee ?? "");
-    setInInstructorId(row.instructor_id ?? "");
+    setInstructorId(row.instructor_id ?? "");
+    setScheduleDay(row.schedule_text || getDayNameFromDate(row.event_date) || "");
     setEventDate(row.event_date ? String(row.event_date).slice(0, 10) : "");
     setStartTime(row.start_time ? String(row.start_time).slice(0, 5) : "");
     setEndTime(row.end_time ? String(row.end_time).slice(0, 5) : "");
@@ -227,9 +257,9 @@ export default function AdminEventsClasses() {
       render: (r) => r.instructor_name || "-",
     },
     {
-      key: "event_date",
-      header: "Date",
-      render: (r) => (r.event_date ? String(r.event_date).slice(0, 10) : "-"),
+      key: "schedule_or_date",
+      header: "Day / Date",
+      render: (r) => getScheduleLabel(r),
     },
     {
       key: "start_time",
@@ -310,9 +340,7 @@ export default function AdminEventsClasses() {
             <h3 className="adminCardTitle">
               {editingId ? "Update Class / Event" : "Add New Class / Event"}
             </h3>
-            <p className="adminCardText">
-              
-            </p>
+            <p className="adminCardText"></p>
           </div>
         </div>
 
@@ -405,7 +433,7 @@ export default function AdminEventsClasses() {
               <select
                 className="adminSelect"
                 value={instructorId}
-                onChange={(e) => setInInstructorId(e.target.value)}
+                onChange={(e) => setInstructorId(e.target.value)}
               >
                 <option value="">Select Instructor</option>
                 {instructors.map((ins) => (
@@ -418,16 +446,34 @@ export default function AdminEventsClasses() {
           </div>
 
           <div className="adminFormGrid2">
-            <label className="adminField">
-              <span className="adminFieldLabel">Date</span>
-              <input
-                className="adminInput"
-                type="date"
-                value={eventDate}
-                min={new Date().toISOString().split("T")[0]}
-                onChange={(e) => setEventDate(e.target.value)}
-              />
-            </label>
+            {itemType === "CLASS" ? (
+              <label className="adminField">
+                <span className="adminFieldLabel">Day</span>
+                <select
+                  className="adminSelect"
+                  value={scheduleDay}
+                  onChange={(e) => setScheduleDay(e.target.value)}
+                >
+                  <option value="">Select Day</option>
+                  {WEEK_DAYS.map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label className="adminField">
+                <span className="adminFieldLabel">Date</span>
+                <input
+                  className="adminInput"
+                  type="date"
+                  value={eventDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setEventDate(e.target.value)}
+                />
+              </label>
+            )}
 
             <label className="adminField">
               <span className="adminFieldLabel">Status</span>

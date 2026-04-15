@@ -18,37 +18,37 @@ export default function Home() {
   const isParent = !!token && role === "PARENT";
 
   const upcomingClasses = [
-    {
-      id: 1,
-      title: "Art & Craft Workshop",
-      instructor: "Ms. Sarah Johnson",
-      date: "March 15, 2026",
-      time: "10:00 AM - 12:00 PM",
-      spots: 8,
-      image:
-        "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400",
-    },
-    {
-      id: 2,
-      title: "Music & Movement",
-      instructor: "Mr. David Lee",
-      date: "March 18, 2026",
-      time: "2:00 PM - 3:30 PM",
-      spots: 5,
-      image:
-        "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400",
-    },
-    {
-      id: 3,
-      title: "Creative Storytelling",
-      instructor: "Ms. Emily Brown",
-      date: "March 20, 2026",
-      time: "11:00 AM - 12:30 PM",
-      spots: 10,
-      image:
-        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400",
-    },
-  ];
+  {
+    id: 1,
+    title: "Art & Craft Workshop",
+    instructor: "Ms. Sarah Johnson",
+    day: "Saturday",
+    time: "10:00 AM - 12:00 PM",
+    spots: 8,
+    image:
+      "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400",
+  },
+  {
+    id: 2,
+    title: "Music & Movement",
+    instructor: "Mr. David Lee",
+    day: "Wednesday",
+    time: "2:00 PM - 3:30 PM",
+    spots: 5,
+    image:
+      "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400",
+  },
+  {
+    id: 3,
+    title: "Creative Storytelling",
+    instructor: "Ms. Emily Brown",
+    day: "Friday",
+    time: "11:00 AM - 12:30 PM",
+    spots: 10,
+    image:
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400",
+  },
+];
 
   return (
     <div className="homePage">
@@ -205,7 +205,7 @@ export default function Home() {
 
                 <div className="homeClassMeta">
                   <Calendar size={16} />
-                  <span>{classItem.date}</span>
+                  <span>{classItem.day}</span>
                 </div>
                 <div className="homeClassMeta">
                   <Clock size={16} />

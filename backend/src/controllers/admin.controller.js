@@ -197,6 +197,9 @@ async function ensureClassesTableShape() {
     await db.query(`ALTER TABLE classes ADD COLUMN age_max INT NULL AFTER age_min`);
   } catch (err) { }
   try {
+    await db.query(`ALTER TABLE classes ADD COLUMN schedule_text VARCHAR(200) NULL AFTER age_max`);
+  } catch (err) { }
+  try {
     await db.query(`ALTER TABLE classes ADD COLUMN item_type ENUM('CLASS','EVENT') NOT NULL DEFAULT 'CLASS' AFTER fee`);
   } catch (err) { }
   try {
@@ -496,6 +499,7 @@ exports.listEventsClasses = async (req, res) => {
              c.image_url,
              c.age_min,
              c.age_max,
+             c.schedule_text,
              c.fee,
              c.instructor_id,
              u.full_name AS instructor_name,
@@ -535,6 +539,7 @@ exports.createEventClass = async (req, res) => {
       age_max,
       fee,
       instructor_id,
+      schedule_text,
       event_date,
       start_time,
       end_time,
@@ -549,8 +554,25 @@ exports.createEventClass = async (req, res) => {
       return res.status(400).json({ message: "instructor_id is required" });
     }
 
-    if (!event_date) {
-      return res.status(400).json({ message: "event_date is required" });
+    const safeType = ["CLASS", "EVENT"].includes(item_type) ? item_type : "CLASS";
+    const safeFee = Number(fee || 0);
+    const safeScheduleText =
+      schedule_text && String(schedule_text).trim()
+        ? String(schedule_text).trim()
+        : null;
+    const safeAgeMin = age_min === "" || age_min == null ? null : Number(age_min);
+    const safeAgeMax = age_max === "" || age_max == null ? null : Number(age_max);
+    const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
+    const safeImageUrl =
+      image_url && String(image_url).trim() ? String(image_url).trim() : null;
+    const safeInstructorId = Number(instructor_id);
+
+    if (safeType === "CLASS" && !safeScheduleText) {
+      return res.status(400).json({ message: "schedule_text is required for classes" });
+    }
+
+    if (safeType === "EVENT" && !event_date) {
+      return res.status(400).json({ message: "event_date is required for events" });
     }
 
     if (!start_time) {
@@ -560,14 +582,6 @@ exports.createEventClass = async (req, res) => {
     if (!end_time) {
       return res.status(400).json({ message: "end_time is required" });
     }
-
-    const safeType = ["CLASS", "EVENT"].includes(item_type) ? item_type : "CLASS";
-    const safeFee = Number(fee || 0);
-    const safeAgeMin = age_min === "" || age_min == null ? null : Number(age_min);
-    const safeAgeMax = age_max === "" || age_max == null ? null : Number(age_max);
-    const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
-    const safeImageUrl = image_url && String(image_url).trim() ? String(image_url).trim() : null;
-    const safeInstructorId = Number(instructor_id);
 
     if (!Number.isInteger(safeInstructorId) || safeInstructorId <= 0) {
       return res.status(400).json({ message: "instructor_id must be valid" });
@@ -590,7 +604,9 @@ exports.createEventClass = async (req, res) => {
     }
 
     if (safeAgeMin != null && safeAgeMax != null && safeAgeMax < safeAgeMin) {
-      return res.status(400).json({ message: "age_max must be greater than or equal to age_min" });
+      return res.status(400).json({
+        message: "age_max must be greater than or equal to age_min",
+      });
     }
 
     if (!Number.isFinite(safeFee) || safeFee < 0) {
@@ -601,13 +617,16 @@ exports.createEventClass = async (req, res) => {
       return res.status(400).json({ message: "end_time must be greater than start_time" });
     }
 
-    const [instructorRows] = await db.query(`
+    const [instructorRows] = await db.query(
+      `
       SELECT u.id
       FROM users u
       JOIN roles r ON r.id = u.role_id
       WHERE u.id = ? AND r.name = 'INSTRUCTOR'
       LIMIT 1
-    `, [safeInstructorId]);
+    `,
+      [safeInstructorId]
+    );
 
     if (!instructorRows.length) {
       return res.status(400).json({ message: "Selected instructor is invalid" });
@@ -615,10 +634,10 @@ exports.createEventClass = async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO classes (
-        item_type, title, description, image_url, age_min, age_max, fee,
+        item_type, title, description, image_url, age_min, age_max, schedule_text, fee,
         instructor_id, event_date, start_time, end_time, status
       )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         safeType,
         String(title).trim(),
@@ -626,9 +645,10 @@ exports.createEventClass = async (req, res) => {
         safeImageUrl,
         safeAgeMin,
         safeAgeMax,
+        safeType === "CLASS" ? safeScheduleText : null,
         safeFee,
         safeInstructorId,
-        event_date,
+        safeType === "EVENT" ? event_date : null,
         start_time,
         end_time,
         safeStatus,
@@ -663,6 +683,7 @@ exports.updateEventClass = async (req, res) => {
       age_max,
       fee,
       instructor_id,
+      schedule_text,
       event_date,
       start_time,
       end_time,
@@ -677,8 +698,25 @@ exports.updateEventClass = async (req, res) => {
       return res.status(400).json({ message: "instructor_id is required" });
     }
 
-    if (!event_date) {
-      return res.status(400).json({ message: "event_date is required" });
+    const safeType = ["CLASS", "EVENT"].includes(item_type) ? item_type : "CLASS";
+    const safeFee = Number(fee || 0);
+    const safeScheduleText =
+      schedule_text && String(schedule_text).trim()
+        ? String(schedule_text).trim()
+        : null;
+    const safeAgeMin = age_min === "" || age_min == null ? null : Number(age_min);
+    const safeAgeMax = age_max === "" || age_max == null ? null : Number(age_max);
+    const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
+    const safeImageUrl =
+      image_url && String(image_url).trim() ? String(image_url).trim() : null;
+    const safeInstructorId = Number(instructor_id);
+
+    if (safeType === "CLASS" && !safeScheduleText) {
+      return res.status(400).json({ message: "schedule_text is required for classes" });
+    }
+
+    if (safeType === "EVENT" && !event_date) {
+      return res.status(400).json({ message: "event_date is required for events" });
     }
 
     if (!start_time) {
@@ -688,14 +726,6 @@ exports.updateEventClass = async (req, res) => {
     if (!end_time) {
       return res.status(400).json({ message: "end_time is required" });
     }
-
-    const safeType = ["CLASS", "EVENT"].includes(item_type) ? item_type : "CLASS";
-    const safeFee = Number(fee || 0);
-    const safeAgeMin = age_min === "" || age_min == null ? null : Number(age_min);
-    const safeAgeMax = age_max === "" || age_max == null ? null : Number(age_max);
-    const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
-    const safeImageUrl = image_url && String(image_url).trim() ? String(image_url).trim() : null;
-    const safeInstructorId = Number(instructor_id);
 
     if (!Number.isInteger(safeInstructorId) || safeInstructorId <= 0) {
       return res.status(400).json({ message: "instructor_id must be valid" });
@@ -718,7 +748,9 @@ exports.updateEventClass = async (req, res) => {
     }
 
     if (safeAgeMin != null && safeAgeMax != null && safeAgeMax < safeAgeMin) {
-      return res.status(400).json({ message: "age_max must be greater than or equal to age_min" });
+      return res.status(400).json({
+        message: "age_max must be greater than or equal to age_min",
+      });
     }
 
     if (!Number.isFinite(safeFee) || safeFee < 0) {
@@ -729,13 +761,16 @@ exports.updateEventClass = async (req, res) => {
       return res.status(400).json({ message: "end_time must be greater than start_time" });
     }
 
-    const [instructorRows] = await db.query(`
+    const [instructorRows] = await db.query(
+      `
       SELECT u.id
       FROM users u
       JOIN roles r ON r.id = u.role_id
       WHERE u.id = ? AND r.name = 'INSTRUCTOR'
       LIMIT 1
-    `, [safeInstructorId]);
+    `,
+      [safeInstructorId]
+    );
 
     if (!instructorRows.length) {
       return res.status(400).json({ message: "Selected instructor is invalid" });
@@ -749,6 +784,7 @@ exports.updateEventClass = async (req, res) => {
            image_url = ?,
            age_min = ?,
            age_max = ?,
+           schedule_text = ?,
            fee = ?,
            instructor_id = ?,
            event_date = ?,
@@ -763,9 +799,10 @@ exports.updateEventClass = async (req, res) => {
         safeImageUrl,
         safeAgeMin,
         safeAgeMax,
+        safeType === "CLASS" ? safeScheduleText : null,
         safeFee,
         safeInstructorId,
-        event_date,
+        safeType === "EVENT" ? event_date : null,
         start_time,
         end_time,
         safeStatus,
