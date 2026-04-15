@@ -16,6 +16,23 @@ function formatDate(dateValue) {
   });
 }
 
+function getDayNameFromDate(dateValue) {
+  if (!dateValue) return "";
+
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function getScheduleLabel(cls) {
+  if (cls.item_type === "CLASS") {
+    return cls.schedule_text || getDayNameFromDate(cls.event_date) || "Weekly schedule";
+  }
+
+  return formatDate(cls.event_date);
+}
+
 function formatTime(value) {
   if (!value) return "";
 
@@ -97,7 +114,7 @@ export default function EventClasses() {
                   ? `${cls.age_min}+ years`
                   : "All age groups";
 
-              const dateText = formatDate(cls.event_date);
+              const scheduleText = getScheduleLabel(cls);
               const timeText = formatTimeRange(cls.start_time, cls.end_time);
               const typeText = cls.item_type === "EVENT" ? "Event" : "Class";
 
@@ -133,7 +150,7 @@ export default function EventClasses() {
 
                     <div className="homeClassMeta">
                       <Calendar size={16} />
-                      <span>{dateText}</span>
+                      <span>{scheduleText}</span>
                     </div>
 
                     <div className="homeClassMeta">
@@ -203,8 +220,8 @@ export default function EventClasses() {
                             textDecoration: "none",
                           }}
                         >
-                          Sign in to Enroll
-                          <ArrowRight size={16} />
+                          Sign In to Enroll
+                          <Check size={16} />
                         </Link>
                       )}
                     </div>

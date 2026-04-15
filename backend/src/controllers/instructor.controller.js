@@ -82,6 +82,10 @@ async function ensureClassesTableShape() {
   `);
 
   try {
+    await db.query(`ALTER TABLE classes ADD COLUMN schedule_text VARCHAR(200) NULL AFTER age_max`);
+  } catch (err) { }
+
+  try {
     await db.query(`ALTER TABLE classes ADD COLUMN instructor_id INT NULL AFTER item_type`);
   } catch (err) { }
 

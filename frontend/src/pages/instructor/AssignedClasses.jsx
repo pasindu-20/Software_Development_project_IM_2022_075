@@ -2,6 +2,23 @@ import { useEffect, useState } from "react";
 import { getMyAssignedClassesApi } from "../../api/instructorApi";
 import useInstructorView from "../../hooks/useInstructorView";
 
+function getDayNameFromDate(dateValue) {
+  if (!dateValue) return "";
+
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function getScheduleLabel(item) {
+  if (item.item_type === "CLASS") {
+    return item.schedule_text || getDayNameFromDate(item.event_date) || "-";
+  }
+
+  return item.event_date ? String(item.event_date).slice(0, 10) : "-";
+}
+
 export default function AssignedClasses() {
   const {
     isAdminInstructorView,
@@ -109,7 +126,7 @@ export default function AssignedClasses() {
                   <th>Type</th>
                   <th>Title</th>
                   <th>Age Range</th>
-                  <th>Date</th>
+                  <th>Day / Date</th>
                   <th>Time</th>
                   <th>Fee</th>
                   <th>Enrolled</th>
@@ -127,9 +144,7 @@ export default function AssignedClasses() {
                     <td>
                       {row.age_min ?? "-"} - {row.age_max ?? "-"}
                     </td>
-                    <td>
-                      {row.event_date ? String(row.event_date).slice(0, 10) : "-"}
-                    </td>
+                    <td>{getScheduleLabel(row)}</td>
                     <td>
                       {row.start_time ? String(row.start_time).slice(0, 5) : "-"}
                       {row.end_time ? ` - ${String(row.end_time).slice(0, 5)}` : ""}

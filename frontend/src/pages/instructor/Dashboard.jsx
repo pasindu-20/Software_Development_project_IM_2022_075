@@ -7,6 +7,23 @@ import {
 import { useAuth } from "../../auth/useAuth";
 import useInstructorView from "../../hooks/useInstructorView";
 
+function getDayNameFromDate(dateValue) {
+  if (!dateValue) return "";
+
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function getScheduleLabel(item) {
+  if (item.item_type === "CLASS") {
+    return item.schedule_text || getDayNameFromDate(item.event_date) || "-";
+  }
+
+  return item.event_date ? String(item.event_date).slice(0, 10) : "-";
+}
+
 export default function InsDashboard() {
   const { user } = useAuth();
   const {
@@ -135,9 +152,7 @@ export default function InsDashboard() {
           <div className="instructorHeroCard">
             <div className="instructorHeroEyebrow">Teaching overview</div>
             <h3 className="instructorHeroTitle">Welcome back, {displayName}</h3>
-            <p className="instructorHeroText">
-              
-            </p>
+            <p className="instructorHeroText"></p>
           </div>
 
           <div className="instructorStatsGrid">
@@ -186,7 +201,7 @@ export default function InsDashboard() {
                     <tr>
                       <th>Type</th>
                       <th>Title</th>
-                      <th>Date</th>
+                      <th>Day / Date</th>
                       <th>Time</th>
                       <th>Enrolled</th>
                       <th>Today Attendance</th>
@@ -201,9 +216,7 @@ export default function InsDashboard() {
                           </span>
                         </td>
                         <td>{c.title || `Class #${c.id}`}</td>
-                        <td>
-                          {c.event_date ? String(c.event_date).slice(0, 10) : "-"}
-                        </td>
+                        <td>{getScheduleLabel(c)}</td>
                         <td>
                           {c.start_time ? String(c.start_time).slice(0, 5) : "-"}
                           {c.end_time ? ` - ${String(c.end_time).slice(0, 5)}` : ""}
