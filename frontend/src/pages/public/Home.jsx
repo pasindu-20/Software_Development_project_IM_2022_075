@@ -1,4 +1,4 @@
-// frontend/src/pages/public/Home.jsx
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -10,6 +10,63 @@ import {
   Users,
 } from "lucide-react";
 import { useAuth } from "../../auth/useAuth";
+import { listPublicClassesApi } from "../../api/publicApi";
+
+function getDayNameFromDate(dateValue) {
+  if (!dateValue) return "";
+
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function getScheduleLabel(cls) {
+  if (cls?.schedule_text && String(cls.schedule_text).trim()) {
+    return String(cls.schedule_text).trim();
+  }
+
+  const dayName = getDayNameFromDate(cls?.event_date);
+  return dayName || "Schedule will be announced";
+}
+
+function formatTime(value) {
+  if (!value) return "";
+
+  const parts = String(value).split(":");
+  const hour = Number(parts[0]);
+  const minute = Number(parts[1]);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return value;
+
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+function formatTimeRange(startTime, endTime) {
+  if (!startTime || !endTime) return "Time will be announced";
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+}
+
+function getAgeLabel(cls) {
+  if (cls?.age) return cls.age;
+
+  if (cls?.age_min != null && cls?.age_max != null) {
+    return `${cls.age_min}-${cls.age_max} years`;
+  }
+
+  if (cls?.age_min != null) {
+    return `${cls.age_min}+ years`;
+  }
+
+  if (cls?.age_max != null) {
+    return `Up to ${cls.age_max} years`;
+  }
+
+  return "Latest Class";
+}
 
 export default function Home() {
   const { user } = useAuth();
@@ -17,38 +74,27 @@ export default function Home() {
   const role = localStorage.getItem("role");
   const isParent = !!token && role === "PARENT";
 
-  const upcomingClasses = [
-  {
-    id: 1,
-    title: "Art & Craft Workshop",
-    instructor: "Ms. Sarah Johnson",
-    day: "Saturday",
-    time: "10:00 AM - 12:00 PM",
-    spots: 8,
-    image:
-      "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400",
-  },
-  {
-    id: 2,
-    title: "Music & Movement",
-    instructor: "Mr. David Lee",
-    day: "Wednesday",
-    time: "2:00 PM - 3:30 PM",
-    spots: 5,
-    image:
-      "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400",
-  },
-  {
-    id: 3,
-    title: "Creative Storytelling",
-    instructor: "Ms. Emily Brown",
-    day: "Friday",
-    time: "11:00 AM - 12:30 PM",
-    spots: 10,
-    image:
-      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400",
-  },
-];
+  const [latestClasses, setLatestClasses] = useState([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+
+  useEffect(() => {
+    const loadLatestClasses = async () => {
+      setClassesLoading(true);
+
+      try {
+        const res = await listPublicClassesApi();
+        const rows = Array.isArray(res.data) ? res.data : [];
+        setLatestClasses(rows.slice(0, 3));
+      } catch (error) {
+        console.error("Failed to load latest classes:", error);
+        setLatestClasses([]);
+      } finally {
+        setClassesLoading(false);
+      }
+    };
+
+    loadLatestClasses();
+  }, []);
 
   return (
     <div className="homePage">
@@ -188,40 +234,82 @@ export default function Home() {
         </div>
 
         <div className="homeClassesGrid">
-          {upcomingClasses.map((classItem) => (
-            <div key={classItem.id} className="homeClassCard">
-              <div className="homeClassImageWrap">
-                <img
-                  src={classItem.image}
-                  alt={classItem.title}
-                  className="homeClassImage"
-                />
-                <div className="homeSpots">{classItem.spots} spots left</div>
-              </div>
+          {classesLoading ? (
+            <div className="classListBottomCard">Loading latest classes...</div>
+          ) : latestClasses.length > 0 ? (
+            latestClasses.map((classItem) => {
+              const imageSrc =
+                classItem.image_url && String(classItem.image_url).trim()
+                  ? classItem.image_url
+                  : "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800";
 
-              <div className="homeClassBody">
-                <h3 className="homeClassTitle">{classItem.title}</h3>
-                <p className="homeInstructor">by {classItem.instructor}</p>
+              const instructorName =
+                classItem.instructor_name && String(classItem.instructor_name).trim()
+                  ? classItem.instructor_name
+                  : "Poddo Team";
 
-                <div className="homeClassMeta">
-                  <Calendar size={16} />
-                  <span>{classItem.day}</span>
-                </div>
-                <div className="homeClassMeta">
-                  <Clock size={16} />
-                  <span>{classItem.time}</span>
-                </div>
-                <div className="homeClassMeta">
-                  <Users size={16} />
-                  <span>Limited seats available</span>
-                </div>
+              const scheduleText = getScheduleLabel(classItem);
+              const timeText = formatTimeRange(
+                classItem.start_time,
+                classItem.end_time
+              );
+              const badgeText = getAgeLabel(classItem);
 
-                <Link to="/classes" className="homeEnrollBtn">
-                  Enroll Now
-                </Link>
-              </div>
+              return (
+                <div key={classItem.id} className="homeClassCard">
+                  <div className="homeClassImageWrap">
+                    <img
+                      src={imageSrc}
+                      alt={classItem.title || "Class"}
+                      className="homeClassImage"
+                    />
+                    <div className="homeSpots">{badgeText}</div>
+                  </div>
+
+                  <div className="homeClassBody">
+                    <h3 className="homeClassTitle">{classItem.title}</h3>
+                    <p className="homeInstructor">by {instructorName}</p>
+
+                    <div className="homeClassMeta">
+                      <Calendar size={16} />
+                      <span>{scheduleText}</span>
+                    </div>
+
+                    <div className="homeClassMeta">
+                      <Clock size={16} />
+                      <span>{timeText}</span>
+                    </div>
+
+                    <div className="homeClassMeta">
+                      <Users size={16} />
+                      <span>
+                        {classItem.description && String(classItem.description).trim()
+                          ? classItem.description
+                          : "Limited seats available"}
+                      </span>
+                    </div>
+
+                    <Link
+                      to={
+                        isParent
+                          ? `/profile/enroll?class_id=${encodeURIComponent(
+                              classItem.id
+                            )}`
+                          : "/auth/signin"
+                      }
+                      className="homeEnrollBtn"
+                    >
+                      {isParent ? "Enroll Now" : "Sign In to Enroll"}
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="classListBottomCard">
+              No active classes available right now.
             </div>
-          ))}
+          )}
         </div>
       </section>
 
