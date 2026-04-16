@@ -1,9 +1,60 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const db = require("../config/db");
+const { sendMail } = require("../utils/mailer");
 
 function generateTempPassword() {
   return "Tmp@" + crypto.randomBytes(4).toString("hex");
+}
+
+function buildStaffWelcomeEmail({ full_name, email, role, tempPassword }) {
+  const app = process.env.APP_NAME || "Poddo Playhouse";
+  const frontend = process.env.FRONTEND_URL || "http://localhost:5173";
+  const signInLink = `${frontend}/#/admin/signin`;
+  const changePasswordLink = `${frontend}/#/auth/change-password`;
+
+  return {
+    subject: `${app} - Your Staff Account Details`,
+    text:
+      `Hello ${full_name},\n\n` +
+      `A ${role.toLowerCase()} account has been created for you in ${app}.\n\n` +
+      `Email: ${email}\n` +
+      `Temporary Password: ${tempPassword}\n\n` +
+      `Staff Sign In: ${signInLink}\n` +
+      `Change Password Page: ${changePasswordLink}\n\n` +
+      `Please sign in with the temporary password. On your first login, you will be asked to change your password.\n\n` +
+      `Thank you.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; color: #111827;">
+        <h2 style="margin-bottom: 12px;">Welcome to ${app}</h2>
+
+        <p>Hello ${full_name},</p>
+        <p>A <strong>${role}</strong> staff account has been created for you.</p>
+
+        <div style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 20px 0;">
+          <p style="margin: 0 0 10px;"><strong>Email:</strong> ${email}</p>
+          <p style="margin: 0 0 10px;"><strong>Temporary Password:</strong> ${tempPassword}</p>
+          <p style="margin: 0;"><strong>Important:</strong> You must change this password on your first login.</p>
+        </div>
+
+        <p style="margin: 18px 0 10px;">Use this link to sign in:</p>
+        <p style="margin: 0 0 18px;">
+          <a href="${signInLink}" target="_blank" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700;">
+            Open Staff Sign In
+          </a>
+        </p>
+
+        <p style="margin: 18px 0 8px;">Change password page:</p>
+        <p style="margin: 0 0 18px; word-break: break-all;">
+          <a href="${changePasswordLink}" target="_blank">${changePasswordLink}</a>
+        </p>
+
+        <p style="font-size: 13px; color: #6b7280;">
+          If you did not expect this account, please contact the administrator.
+        </p>
+      </div>
+    `,
+  };
 }
 
 async function ensurePlayAreasTable() {
@@ -24,13 +75,13 @@ async function ensurePlayAreasTable() {
 
   try {
     await db.query(`ALTER TABLE play_areas ADD COLUMN description TEXT NULL`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE play_areas ADD COLUMN age_group VARCHAR(100) NULL`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE play_areas ADD COLUMN image_url TEXT NULL`);
-  } catch (err) { }
+  } catch (err) {}
 }
 
 async function ensurePartyPackagesTable() {
@@ -55,31 +106,31 @@ async function ensurePartyPackagesTable() {
 
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN description TEXT NULL AFTER name`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN price DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER description`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN max_children INT NOT NULL DEFAULT 0 AFTER price`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN duration_text VARCHAR(150) NULL AFTER max_children`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN badge_text VARCHAR(100) NULL AFTER duration_text`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN is_featured TINYINT(1) NOT NULL DEFAULT 0 AFTER badge_text`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN sort_order INT NOT NULL DEFAULT 0 AFTER is_featured`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN features_json LONGTEXT NULL AFTER sort_order`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE party_packages ADD COLUMN status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE' AFTER features_json`);
-  } catch (err) { }
+  } catch (err) {}
 
   const [countRows] = await db.query(`SELECT COUNT(*) AS count FROM party_packages`);
   const count = Number(countRows[0]?.count || 0);
@@ -186,37 +237,37 @@ async function ensureClassesTableShape() {
 
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN description TEXT NULL AFTER title`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN image_url TEXT NULL AFTER description`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN age_min INT NULL AFTER image_url`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN age_max INT NULL AFTER age_min`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN schedule_text VARCHAR(200) NULL AFTER age_max`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN item_type ENUM('CLASS','EVENT') NOT NULL DEFAULT 'CLASS' AFTER fee`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN instructor_id INT NULL AFTER item_type`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN event_date DATE NULL AFTER instructor_id`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN start_time TIME NULL AFTER event_date`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN end_time TIME NULL AFTER start_time`);
-  } catch (err) { }
+  } catch (err) {}
   try {
     await db.query(`ALTER TABLE classes ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
-  } catch (err) { }
+  } catch (err) {}
 }
 
 exports.createStaff = async (req, res) => {
@@ -251,9 +302,32 @@ exports.createStaff = async (req, res) => {
       [full_name, email, phone || null, password_hash, role_id]
     );
 
-    res.status(201).json({
-      message: "Staff account created",
+    const mailPayload = buildStaffWelcomeEmail({
+      full_name,
+      email,
+      role,
       tempPassword,
+    });
+
+    try {
+      await sendMail({
+        to: email,
+        subject: mailPayload.subject,
+        text: mailPayload.text,
+        html: mailPayload.html,
+      });
+    } catch (mailErr) {
+      console.error("createStaff email error:", mailErr);
+      return res.status(201).json({
+        message: "Staff account created, but email could not be sent",
+        emailSent: false,
+        tempPassword,
+      });
+    }
+
+    res.status(201).json({
+      message: "Staff account created and email sent",
+      emailSent: true,
     });
   } catch (err) {
     console.error("createStaff error:", err);
@@ -352,8 +426,6 @@ function buildLastThreeMonthsRevenue(rows) {
 
   return data;
 }
-
-
 
 exports.dashboardCards = async (req, res) => {
   try {
@@ -1192,7 +1264,7 @@ exports.updatePartyPackage = async (req, res) => {
     }
 
     const safeStatus = ["ACTIVE", "INACTIVE"].includes(status) ? status : "ACTIVE";
-    const safeFeatures = normalizePartyPackageFeatures(features, max_children, duration_text);
+    const safeFeatures = normalizePartyPackageFeatures(features, max_children, durationText);
 
     const [result] = await db.query(
       `UPDATE party_packages
@@ -1278,7 +1350,6 @@ exports.deletePartyPackage = async (req, res) => {
     res.status(500).json({ message: "Failed to delete party package" });
   }
 };
-
 
 exports.listReservations = async (req, res) => {
   try {
