@@ -59,23 +59,27 @@ function getPlayAreaStartMin(bookingDate, today, currentTime) {
 const PAYMENT_OPTIONS = [
   {
     key: "CARD",
-
     title: "Card Payment",
     desc: "Pay securely online using your card.",
   },
   {
     key: "CASH",
-
     title: "Cash Payment",
     desc: "Pay physically at the reception counter.",
   },
   {
     key: "BANK_TRANSFER",
-
     title: "Bank Transfer",
     desc: "Upload your bank slip for receptionist approval.",
   },
 ];
+
+const BUSINESS_BANK_DETAILS = {
+  accountName: "Poddo Playhouse",
+  accountNumber: "0880456789",
+  bankName: "Commercial Bank",
+  branchName: "Nawala Branch",
+};
 
 export default function CreateBooking() {
   const navigate = useNavigate();
@@ -580,7 +584,6 @@ export default function CreateBooking() {
 
       <div className="bookingModernGrid">
         <section className="bookingModernCard">
-
           <h2 className="bookingModernCardTitle">Booking Details</h2>
           <p className="bookingModernCardText">
             Fill in the booking information below and continue with payment.
@@ -761,6 +764,159 @@ export default function CreateBooking() {
 
                 {paymentMethod === "BANK_TRANSFER" ? (
                   <div className="bookingModernBankBox">
+                    <div
+                      style={{
+                        padding: "16px",
+                        borderRadius: "16px",
+                        background: "rgba(255,255,255,0.96)",
+                        border: "1px solid rgba(31,41,55,0.08)",
+                        display: "grid",
+                        gap: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: 800,
+                          color: "#1f2937",
+                        }}
+                      >
+                        Bank Transfer Details
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                          gap: "12px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: "4px",
+                            padding: "12px 14px",
+                            borderRadius: "14px",
+                            background: "rgba(248,250,252,0.95)",
+                            border: "1px solid rgba(31,41,55,0.06)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              color: "#6b7280",
+                            }}
+                          >
+                            Account Name
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 800,
+                              color: "#1f2937",
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {BUSINESS_BANK_DETAILS.accountName}
+                          </span>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: "4px",
+                            padding: "12px 14px",
+                            borderRadius: "14px",
+                            background: "rgba(248,250,252,0.95)",
+                            border: "1px solid rgba(31,41,55,0.06)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              color: "#6b7280",
+                            }}
+                          >
+                            Account Number
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 800,
+                              color: "#1f2937",
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {BUSINESS_BANK_DETAILS.accountNumber}
+                          </span>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: "4px",
+                            padding: "12px 14px",
+                            borderRadius: "14px",
+                            background: "rgba(248,250,252,0.95)",
+                            border: "1px solid rgba(31,41,55,0.06)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              color: "#6b7280",
+                            }}
+                          >
+                            Bank
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 800,
+                              color: "#1f2937",
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {BUSINESS_BANK_DETAILS.bankName}
+                          </span>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: "4px",
+                            padding: "12px 14px",
+                            borderRadius: "14px",
+                            background: "rgba(248,250,252,0.95)",
+                            border: "1px solid rgba(31,41,55,0.06)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              color: "#6b7280",
+                            }}
+                          >
+                            Branch
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 800,
+                              color: "#1f2937",
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {BUSINESS_BANK_DETAILS.branchName}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
                       <label className="bookingModernLabel">Reference Number</label>
                       <input
