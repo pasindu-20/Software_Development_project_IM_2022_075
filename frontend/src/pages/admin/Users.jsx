@@ -54,12 +54,15 @@ export default function AdminUsers() {
         role,
       });
 
+      const emailSent = res?.data?.emailSent;
       const tempPassword = res?.data?.tempPassword;
 
       setInfo(
-        tempPassword
-          ? `Staff user created successfully. Temporary password: ${tempPassword}`
-          : "Staff user created successfully."
+        emailSent
+          ? "Staff user created successfully. Temporary password and change password page were sent by email."
+          : tempPassword
+            ? `Staff user created, but the email could not be sent. Temporary password: ${tempPassword}`
+            : "Staff user created successfully."
       );
 
       setFullName("");
@@ -125,7 +128,7 @@ export default function AdminUsers() {
           <div>
             <h3 className="adminCardTitle">Create Staff Account</h3>
             <p className="adminCardText">
-            
+              New staff users will receive their temporary password by email and will be asked to change it on first login.
             </p>
           </div>
         </div>
@@ -183,7 +186,7 @@ export default function AdminUsers() {
           </div>
 
           <div className="adminFormFooterText">
-            Staff users will be asked to change their password on first login.
+            Staff users will receive their temporary password by email and will be asked to change their password on first login.
           </div>
         </div>
       </form>
