@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CalendarClock,
+  Download,
   GraduationCap,
   Landmark,
   MessageCircleMore,
 } from "lucide-react";
 import {
   adminCardsApi,
+  downloadIncomeReportApi,
   inquiryByStatusApi,
   monthlyRevenueApi,
 } from "../../api/adminApi";
@@ -26,12 +28,56 @@ import {
   Cell,
 } from "recharts";
 
+function getFileNameFromDisposition(disposition, fallback) {
+  const value = String(disposition || "");
+  const utf8Match = value.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const simpleMatch = value.match(/filename="?([^";]+)"?/i);
+  if (simpleMatch?.[1]) {
+    return simpleMatch[1];
+  }
+
+  return fallback;
+}
+
+function buildReportMonthOptions(startYear = 2026, startMonth = 2) {
+  const options = [];
+  const today = new Date();
+
+  const start = new Date(startYear, startMonth - 1, 1);
+  const end = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+
+  while (cursor <= end) {
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth() + 1;
+
+    options.push({
+      value: `${year}-${String(month).padStart(2, "0")}`,
+      label: cursor.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+    });
+
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return options;
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
   const [cards, setCards] = useState(null);
   const [inqStatus, setInqStatus] = useState([]);
   const [revenue, setRevenue] = useState([]);
+  const [selectedReportMonth, setSelectedReportMonth] = useState("");
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -43,6 +89,10 @@ export default function AdminDashboard() {
     CONVERTED: "#3b82f6",
     CLOSED: "#ef4444",
   };
+
+  const reportMonthOptions = useMemo(() => {
+    return buildReportMonthOptions(2026, 2);
+  }, []);
 
   useEffect(() => {
     const run = async () => {
@@ -71,7 +121,8 @@ export default function AdminDashboard() {
         }
 
         if (revenueRes.status === "fulfilled") {
-          setRevenue(revenueRes.value.data || []);
+          const revenueRows = revenueRes.value.data || [];
+          setRevenue(revenueRows);
         } else {
           console.error("Revenue load failed:", revenueRes.reason);
           setErr(
@@ -79,13 +130,18 @@ export default function AdminDashboard() {
               "Failed to load monthly revenue"
           );
         }
+
+        setSelectedReportMonth((current) => {
+          if (current) return current;
+          return reportMonthOptions[reportMonthOptions.length - 1]?.value || "";
+        });
       } finally {
         setLoading(false);
       }
     };
 
     run();
-  }, []);
+  }, [reportMonthOptions]);
 
   const revenueTotal = useMemo(() => {
     const raw = cards?.totalRevenue;
@@ -108,14 +164,50 @@ export default function AdminDashboard() {
   const hasInquiryData = inqStatus.some((item) => Number(item.count || 0) > 0);
   const hasRevenueData = revenue.some((item) => Number(item.total || 0) > 0);
 
+  const handleDownloadIncomeReport = async () => {
+    const month =
+      selectedReportMonth ||
+      reportMonthOptions[reportMonthOptions.length - 1]?.value;
+
+    if (!month) {
+      setErr("No report month available to download.");
+      return;
+    }
+
+    try {
+      setErr("");
+      setDownloadingReport(true);
+
+      const response = await downloadIncomeReportApi(month);
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const fallbackName = `income-report-${month}.pdf`;
+
+      link.href = url;
+      link.download = getFileNameFromDisposition(
+        response.headers?.["content-disposition"],
+        fallbackName
+      );
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Income report download failed:", error);
+      setErr("Failed to download the income report");
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
+
   return (
     <div className="instructorPage adminDashboardPage">
       <div className="instructorPageHeader adminDashboardTopRow">
         <div>
           <h2 className="instructorPageTitle">Admin Dashboard</h2>
-          <p className="instructorSectionText adminDashboardSubtitle">
-            
-          </p>
+          <p className="instructorSectionText adminDashboardSubtitle"></p>
         </div>
 
         <div className="adminDashboardTopActions">
@@ -175,7 +267,9 @@ export default function AdminDashboard() {
 
           <div className="adminChartArea">
             {loading ? (
-              <div className="instructorMuted adminChartEmpty">Loading chart data…</div>
+              <div className="instructorMuted adminChartEmpty">
+                Loading chart data…
+              </div>
             ) : !hasInquiryData ? (
               <div className="instructorMuted adminChartEmpty">
                 No inquiry data available.
@@ -209,18 +303,49 @@ export default function AdminDashboard() {
         </div>
 
         <div className="instructorContentCard adminChartCard">
-          <div className="instructorSectionHeader">
+          <div className="instructorSectionHeader adminChartCardHeader">
             <div>
               <h3 className="instructorSectionTitle">Monthly Revenue</h3>
               <p className="instructorSectionText">
                 Revenue summary for the latest months.
               </p>
             </div>
+
+            <div className="adminReportToolbar">
+              <select
+                className="adminReportSelect"
+                value={selectedReportMonth}
+                onChange={(e) => setSelectedReportMonth(e.target.value)}
+                disabled={!reportMonthOptions.length || downloadingReport}
+              >
+                {reportMonthOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                className="adminReportDownloadButton"
+                type="button"
+                onClick={handleDownloadIncomeReport}
+                disabled={!reportMonthOptions.length || downloadingReport}
+              >
+                <Download size={16} strokeWidth={2.2} />
+                <span>
+                  {downloadingReport
+                    ? "Preparing Report..."
+                    : "Download Income Report"}
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="adminChartArea">
             {loading ? (
-              <div className="instructorMuted adminChartEmpty">Loading chart data…</div>
+              <div className="instructorMuted adminChartEmpty">
+                Loading chart data…
+              </div>
             ) : !hasRevenueData ? (
               <div className="instructorMuted adminChartEmpty">
                 No revenue data available.
@@ -229,11 +354,13 @@ export default function AdminDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={revenue}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 4 }}
+                  margin={{ top: 10, right: 10, left: 20, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="monthLabel" />
                   <YAxis
+                    width={80}
+                    tickMargin={8}
                     domain={[0, revenueYAxisMax]}
                     tickFormatter={(value) => Number(value).toLocaleString()}
                   />
@@ -246,11 +373,17 @@ export default function AdminDashboard() {
                       payload?.[0]?.payload?.fullMonthLabel || ""
                     }
                   />
-                  <Bar dataKey="total" radius={[10, 10, 0, 0]} name="Revenue (LKR)">
+                  <Bar
+                    dataKey="total"
+                    radius={[10, 10, 0, 0]}
+                    name="Revenue (LKR)"
+                  >
                     {revenue.map((entry, index) => (
                       <Cell
                         key={`cell-${entry.monthLabel || entry.month || index}`}
-                        fill={revenueBarColors[index % revenueBarColors.length]}
+                        fill={
+                          revenueBarColors[index % revenueBarColors.length]
+                        }
                       />
                     ))}
                   </Bar>
