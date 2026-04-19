@@ -13,98 +13,81 @@ function nl2br(value) {
   return escapeHtml(value).replace(/\n/g, "<br />");
 }
 
+function getBaseEmailShell({ headerLabel, title, contentHtml }) {
+  return `
+    <div style="margin:0; padding:0; background:#f4f7fb; font-family:Inter, Arial, Helvetica, sans-serif; color:#0f172a;">
+      <div style="max-width:640px; margin:0 auto; padding:32px 16px;">
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; overflow:hidden; box-shadow:0 10px 30px rgba(15,23,42,0.06);">
+          
+          <div style="height:6px; background:linear-gradient(90deg, #ec4899 0%, #f472b6 50%, #f9a8d4 100%);"></div>
+
+          <div style="padding:28px 28px 8px;">
+            <div style="display:inline-block; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#be185d; background:#fdf2f8; border:1px solid #fbcfe8; padding:8px 12px; border-radius:999px;">
+              ${escapeHtml(headerLabel)}
+            </div>
+
+            <h1 style="margin:18px 0 0; font-size:14px; line-height:1.25; font-weight:400; color:#0f172a;">
+              ${escapeHtml(title)}
+            </h1>
+          </div>
+
+          <div style="padding:10px 28px 30px;">
+            ${contentHtml}
+          </div>
+        </div>
+
+        <div style="padding:16px 8px 0; text-align:center; font-size:12px; line-height:1.6; color:#64748b;">
+          Poddo Play House
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 async function sendInquiryAcknowledgementEmail({
   customerName,
   email,
-  phone,
-  inquiryType,
-  message,
 }) {
   if (!email) return;
 
   const appName = process.env.APP_NAME || "Poddo Play House";
+  const safeCustomerName = customerName || "Customer";
 
   await sendMail({
     to: email,
     subject: `Thank you for contacting ${appName}`,
     text: [
-      `Hi ${customerName || "Customer"},`,
+      `Hi ${safeCustomerName},`,
       "",
       `Thank you for contacting ${appName}.`,
       "We have received your message successfully.",
-      "Our team will respond to you soon.",
-      "",
-      "Your inquiry details:",
-      `Name: ${customerName || "-"}`,
-      `Email: ${email || "-"}`,
-      `Phone: ${phone || "-"}`,
-      `Inquiry Type: ${inquiryType || "-"}`,
-      `Message: ${message || "-"}`,
+      "Our team will contact you soon.",
       "",
       `Regards,`,
       `${appName} Team`,
     ].join("\n"),
-    html: `
-      <div style="background:#f4f6f8; padding:24px; font-family:Arial, Helvetica, sans-serif; color:#1f2937;">
-        <div style="max-width:760px; margin:0 auto; background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
-          
-          <div style="background:linear-gradient(135deg, #f693e0 0%, #f4c2f2 100%); color:#ffffff; padding:26px 28px;">
-            <img
-              src="https://res.cloudinary.com/du6mnjqdn/image/upload/v1775075925/images_qw2txg.png"
-              alt="Logo"
-              style="height:48px; margin-bottom:10px;"
-            />
-            <div style="font-size:12px; letter-spacing:1.2px; text-transform:uppercase; opacity:0.9;">
-              ${escapeHtml(appName)}
-            </div>
-            <div style="font-size:13px; opacity:0.92; margin-top:4px;">
-              Contact Request Received
-            </div>
-          </div>
+    html: getBaseEmailShell({
+      headerLabel: "Message Received",
+      title: "Thank you for contacting us",
+      contentHtml: `
+        <p style="margin:0 0 16px; font-size:16px; line-height:1.8; color:#334155;">
+          Hi ${escapeHtml(safeCustomerName)},
+        </p>
 
-          <div style="padding:24px;">
-            <p>Hi ${escapeHtml(customerName || "Customer")},</p>
+        <p style="margin:0 0 16px; font-size:16px; line-height:1.8; color:#334155;">
+          Thank you for contacting <strong style="color:#0f172a;">${escapeHtml(appName)}</strong>.
+        </p>
 
-            <p>Thank you for contacting <strong>${escapeHtml(appName)}</strong>.</p>
+        <p style="margin:0; font-size:16px; line-height:1.8; color:#334155;">
+          We have received your message successfully, and our team will contact you soon.
+        </p>
 
-            <p>We have received your message successfully. Our team will respond to you soon.</p>
-
-            <div style="margin-top:16px; padding:14px 16px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px;">
-              <div style="font-weight:700; margin-bottom:10px;">Your Inquiry Details</div>
-
-              <table style="width:100%; border-collapse:collapse;">
-                <tbody>
-                  <tr>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb; background:#f8fafc; width:34%; font-weight:700;">Name</td>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb;">${escapeHtml(customerName || "-")}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb; background:#f8fafc; font-weight:700;">Email</td>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb;">${escapeHtml(email || "-")}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb; background:#f8fafc; font-weight:700;">Phone</td>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb;">${escapeHtml(phone || "-")}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb; background:#f8fafc; font-weight:700;">Inquiry Type</td>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb;">${escapeHtml(inquiryType || "-")}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb; background:#f8fafc; font-weight:700;">Message</td>
-                    <td style="padding:10px 12px; border:1px solid #e5e7eb;">${nl2br(message || "-")}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div style="margin-top:18px; font-size:14px; line-height:1.7; color:#4b5563;">
-              Thank you for reaching out to us. We appreciate your interest and will get back to you as soon as possible.
-            </div>
-          </div>
+        <div style="margin-top:28px; padding-top:18px; border-top:1px solid #e2e8f0; font-size:15px; line-height:1.8; color:#475569;">
+          Regards,<br />
+          ${escapeHtml(appName)} Team
         </div>
-      </div>
-    `,
+      `,
+    }),
   });
 }
 
@@ -114,82 +97,45 @@ async function sendInquiryReplyEmail({
   subject,
   replyMessage,
   staffName,
-  originalMessage,
 }) {
   if (!email) return;
 
   const appName = process.env.APP_NAME || "Poddo Play House";
   const safeCustomerName = customerName || "Customer";
   const safeStaffName = staffName || `${appName} Team`;
+  const safeSubject = subject || "Inquiry Response";
 
   await sendMail({
     to: email,
-    subject,
+    subject: safeSubject,
     text: [
       `Hi ${safeCustomerName},`,
       "",
-      `Thank you for contacting ${appName}.`,
-      "Please find our response below:",
-      "",
       replyMessage || "-",
-      "",
-      originalMessage ? "Your original inquiry:" : null,
-      originalMessage || null,
       "",
       `Regards,`,
       safeStaffName,
       `${appName}`,
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    html: `
-      <div style="background:#f4f6f8; padding:24px; font-family:Arial, Helvetica, sans-serif; color:#1f2937;">
-        <div style="max-width:760px; margin:0 auto; background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;">
-          <div style="background:linear-gradient(135deg, #f693e0 0%, #f4c2f2 100%); color:#ffffff; padding:26px 28px;">
-            <img
-              src="https://res.cloudinary.com/du6mnjqdn/image/upload/v1775075925/images_qw2txg.png"
-              alt="Logo"
-              style="height:48px; margin-bottom:10px;"
-            />
-            <div style="font-size:12px; letter-spacing:1.2px; text-transform:uppercase; opacity:0.9;">
-              ${escapeHtml(appName)}
-            </div>
-            <div style="font-size:13px; opacity:0.92; margin-top:4px;">
-              Inquiry Response
-            </div>
-          </div>
+    ].join("\n"),
+    html: getBaseEmailShell({
+      headerLabel: "Customer Support",
+      title: "Response to your inquiry",
+      contentHtml: `
+        <p style="margin:0 0 18px; font-size:16px; line-height:1.8; color:#334155;">
+          Hi ${escapeHtml(safeCustomerName)},
+        </p>
 
-          <div style="padding:24px;">
-            <p>Hi ${escapeHtml(safeCustomerName)},</p>
-
-            <p>Thank you for contacting <strong>${escapeHtml(appName)}</strong>.</p>
-            <p>Please find our response below:</p>
-
-            <div style="margin-top:16px; padding:16px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px;">
-              <div style="font-weight:700; margin-bottom:10px;">Our Reply</div>
-              <div style="white-space:normal; line-height:1.7;">${nl2br(replyMessage || "-")}</div>
-            </div>
-
-            ${
-              originalMessage
-                ? `
-                  <div style="margin-top:16px; padding:16px; background:#ffffff; border:1px solid #e5e7eb; border-radius:12px;">
-                    <div style="font-weight:700; margin-bottom:10px;">Your Original Inquiry</div>
-                    <div style="white-space:normal; line-height:1.7; color:#4b5563;">${nl2br(originalMessage)}</div>
-                  </div>
-                `
-                : ""
-            }
-
-            <div style="margin-top:18px; font-size:14px; line-height:1.7; color:#4b5563;">
-              Regards,<br />
-              ${escapeHtml(safeStaffName)}<br />
-              ${escapeHtml(appName)}
-            </div>
-          </div>
+        <div style="font-size:16px; line-height:1.85; color:#334155;">
+          ${nl2br(replyMessage || "-")}
         </div>
-      </div>
-    `,
+
+        <div style="margin-top:28px; padding-top:18px; border-top:1px solid #e2e8f0; font-size:15px; line-height:1.8; color:#475569;">
+          Regards,<br />
+          ${escapeHtml(safeStaffName)}<br />
+          ${escapeHtml(appName)}
+        </div>
+      `,
+    }),
   });
 }
 
