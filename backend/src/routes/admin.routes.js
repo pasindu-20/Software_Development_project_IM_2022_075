@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/admin.controller");
+const adminReportController = require("../controllers/admin.report.controller");
 const authenticate = require("../middlewares/authenticate");
 const authorize = require("../middlewares/authorize");
 
@@ -14,6 +15,7 @@ router.get("/staff", ...adminOnly, adminController.listStaff);
 router.get("/dashboard/cards", ...adminOnly, adminController.dashboardCards);
 router.get("/dashboard/inquiries-by-status", ...adminOnly, adminController.inquiriesByStatus);
 router.get("/dashboard/monthly-revenue", ...adminOnly, adminController.monthlyRevenue);
+router.get("/dashboard/monthly-income-report", ...adminOnly, adminReportController.downloadMonthlyIncomeReport);
 
 // classes and events
 router.get("/instructors", ...adminOnly, adminController.listInstructors);
@@ -37,10 +39,10 @@ router.put("/party-packages/:id", ...adminOnly, adminController.updatePartyPacka
 router.delete("/party-packages/:id", ...adminOnly, adminController.deletePartyPackage);
 router.patch("/party-packages/:id/status", ...adminOnly, adminController.updatePartyPackageStatus);
 
-//manage reservation
+// manage reservation
 router.get("/reservations", ...adminOnly, adminController.listReservations);
 
-//manage payments
+// manage payments
 router.get("/payments", ...adminOnly, adminController.listPayments);
 
 module.exports = router;
