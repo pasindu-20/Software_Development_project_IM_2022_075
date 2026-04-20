@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import SimpleTable from "../../components/SimpleTable";
 import api from "../../api/axios";
 
 const WEEK_DAYS = [
@@ -35,6 +34,25 @@ function getScheduleLabel(row) {
 
   return row.event_date ? String(row.event_date).slice(0, 10) : "-";
 }
+
+const headerCellStyle = {
+  textAlign: "left",
+  padding: "12px 10px",
+  fontSize: 12,
+  color: "#334155",
+  borderBottom: "1px solid #eee",
+  whiteSpace: "nowrap",
+  verticalAlign: "top",
+};
+
+const bodyCellStyle = {
+  padding: "12px 10px",
+  fontSize: 13,
+  color: "#0f172a",
+  verticalAlign: "top",
+  wordBreak: "break-word",
+  overflowWrap: "anywhere",
+};
 
 export default function AdminEventsClasses() {
   const [rows, setRows] = useState([]);
@@ -223,99 +241,6 @@ export default function AdminEventsClasses() {
       setErr(e?.response?.data?.message || "Failed to delete class / event");
     }
   };
-
-  const cols = [
-    { key: "id", header: "ID" },
-    { key: "item_type", header: "Type" },
-    { key: "title", header: "Title" },
-    { key: "description", header: "Description" },
-    {
-      key: "image_url",
-      header: "Image URL",
-      render: (r) =>
-        r.image_url ? (
-          <a className="adminTextLink" href={r.image_url} target="_blank" rel="noreferrer">
-            View Image
-          </a>
-        ) : (
-          "-"
-        ),
-    },
-    {
-      key: "age_range",
-      header: "Age Range",
-      render: (r) => `${r.age_min ?? "-"} - ${r.age_max ?? "-"}`,
-    },
-    {
-      key: "fee",
-      header: "Fee",
-      render: (r) => `LKR ${Number(r.fee || 0).toFixed(2)}`,
-    },
-    {
-      key: "instructor_name",
-      header: "Instructor",
-      render: (r) => r.instructor_name || "-",
-    },
-    {
-      key: "schedule_or_date",
-      header: "Day / Date",
-      render: (r) => getScheduleLabel(r),
-    },
-    {
-      key: "start_time",
-      header: "Start Time",
-      render: (r) => (r.start_time ? String(r.start_time).slice(0, 5) : "-"),
-    },
-    {
-      key: "end_time",
-      header: "End Time",
-      render: (r) => (r.end_time ? String(r.end_time).slice(0, 5) : "-"),
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (r) => (
-        <span className={`adminStatusPill ${getStatusClassName(r.status)}`}>
-          {r.status || "-"}
-        </span>
-      ),
-    },
-    {
-      key: "actions",
-      header: "Actions",
-      render: (r) => (
-        <div className="adminActionGroup">
-          <button
-            type="button"
-            className="adminActionButton adminActionButtonNeutral"
-            onClick={() => startEdit(r)}
-          >
-            Update
-          </button>
-
-          <button
-            type="button"
-            className={`adminActionButton ${
-              r.status === "ACTIVE"
-                ? "adminActionButtonDanger"
-                : "adminActionButtonSuccess"
-            }`}
-            onClick={() => toggleStatus(r)}
-          >
-            {r.status === "ACTIVE" ? "Inactivate" : "Activate"}
-          </button>
-
-          <button
-            type="button"
-            className="adminActionButton adminActionButtonDanger"
-            onClick={() => deleteRow(r)}
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="instructorPage adminPageStack">
@@ -541,7 +466,165 @@ export default function AdminEventsClasses() {
         </div>
 
         <div className="adminTableWrap">
-          <SimpleTable columns={cols} rows={rows} />
+          <div
+            style={{
+              overflowX: "auto",
+              width: "100%",
+              maxWidth: "100%",
+              background: "#fff",
+              border: "1px solid #eee",
+              borderRadius: 12,
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                tableLayout: "fixed",
+              }}
+            >
+              <colgroup>
+                <col style={{ width: "4%" }} />
+                <col style={{ width: "6%" }} />
+                <col style={{ width: "9%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "9%" }} />
+                <col style={{ width: "7%" }} />
+                <col style={{ width: "7%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "13%" }} />
+              </colgroup>
+
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={headerCellStyle}>ID</th>
+                  <th style={headerCellStyle}>Type</th>
+                  <th style={headerCellStyle}>Title</th>
+                  <th style={headerCellStyle}>Description</th>
+                  <th style={headerCellStyle}>Image URL</th>
+                  <th style={headerCellStyle}>Age Range</th>
+                  <th style={headerCellStyle}>Fee</th>
+                  <th style={headerCellStyle}>Instructor</th>
+                  <th style={headerCellStyle}>Day / Date</th>
+                  <th style={headerCellStyle}>Start Time</th>
+                  <th style={headerCellStyle}>End Time</th>
+                  <th style={headerCellStyle}>Status</th>
+                  <th style={headerCellStyle}>Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={13} style={{ padding: 14, color: "#64748b" }}>
+                      No records found.
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((r, idx) => (
+                    <tr key={r.id || idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ ...bodyCellStyle, whiteSpace: "nowrap" }}>{r.id ?? "-"}</td>
+                      <td style={{ ...bodyCellStyle, whiteSpace: "nowrap" }}>{r.item_type || "-"}</td>
+                      <td style={bodyCellStyle}>{r.title || "-"}</td>
+                      <td style={bodyCellStyle}>{r.description || "-"}</td>
+                      <td style={bodyCellStyle}>
+                        {r.image_url ? (
+                          <a
+                            className="adminTextLink"
+                            href={r.image_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View Image
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td style={{ ...bodyCellStyle, whiteSpace: "nowrap" }}>
+                        {`${r.age_min ?? "-"} - ${r.age_max ?? "-"}`}
+                      </td>
+                      <td style={bodyCellStyle}>{`LKR ${Number(r.fee || 0).toFixed(2)}`}</td>
+                      <td style={bodyCellStyle}>{r.instructor_name || "-"}</td>
+                      <td style={bodyCellStyle}>{getScheduleLabel(r)}</td>
+                      <td style={{ ...bodyCellStyle, whiteSpace: "nowrap" }}>
+                        {r.start_time ? String(r.start_time).slice(0, 5) : "-"}
+                      </td>
+                      <td style={{ ...bodyCellStyle, whiteSpace: "nowrap" }}>
+                        {r.end_time ? String(r.end_time).slice(0, 5) : "-"}
+                      </td>
+                      <td style={{ ...bodyCellStyle, whiteSpace: "nowrap" }}>
+                        <span className={`adminStatusPill ${getStatusClassName(r.status)}`}>
+                          {r.status || "-"}
+                        </span>
+                      </td>
+                      <td style={bodyCellStyle}>
+                        <div
+                          className="adminActionGroup"
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                            flexWrap: "nowrap",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="adminActionButton adminActionButtonNeutral"
+                            style={{
+                              width: "100%",
+                              minHeight: 34,
+                              padding: "0 10px",
+                              fontSize: 13,
+                            }}
+                            onClick={() => startEdit(r)}
+                          >
+                            Update
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`adminActionButton ${
+                              r.status === "ACTIVE"
+                                ? "adminActionButtonDanger"
+                                : "adminActionButtonSuccess"
+                            }`}
+                            style={{
+                              width: "100%",
+                              minHeight: 34,
+                              padding: "0 10px",
+                              fontSize: 13,
+                            }}
+                            onClick={() => toggleStatus(r)}
+                          >
+                            {r.status === "ACTIVE" ? "Inactivate" : "Activate"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="adminActionButton adminActionButtonDanger"
+                            style={{
+                              width: "100%",
+                              minHeight: 34,
+                              padding: "0 10px",
+                              fontSize: 13,
+                            }}
+                            onClick={() => deleteRow(r)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

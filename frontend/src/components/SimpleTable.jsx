@@ -1,19 +1,36 @@
-export default function SimpleTable({ columns = [], rows = [] }) {
+export default function SimpleTable({
+  columns = [],
+  rows = [],
+  wrapperClassName = "",
+  tableClassName = "",
+  tableMinWidth = 700,
+}) {
   return (
     <div
+      className={wrapperClassName}
       style={{
         overflowX: "auto",
         background: "#fff",
         border: "1px solid #eee",
         borderRadius: 12,
+        width: "100%",
+        maxWidth: "100%",
       }}
     >
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
+      <table
+        className={tableClassName}
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          minWidth: tableMinWidth,
+        }}
+      >
         <thead>
           <tr style={{ background: "#f8fafc" }}>
             {columns.map((c) => (
               <th
                 key={c.key}
+                className={c.headerClassName || ""}
                 style={{
                   textAlign: "left",
                   padding: "12px 14px",
@@ -42,6 +59,7 @@ export default function SimpleTable({ columns = [], rows = [] }) {
                 {columns.map((c) => (
                   <td
                     key={c.key}
+                    className={c.cellClassName || ""}
                     style={{
                       padding: "12px 14px",
                       fontSize: 14,
